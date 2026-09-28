@@ -210,21 +210,22 @@ export function close() {
   onSelectCb = null;
 }
 
-/**
- * @param {object} opts
- * @param {'featured'|'gallery'|'attachment'} [opts.mode]
- * @param {string} [opts.folder] Default folder filter ('projects' recommended for project forms)
- * @param {'images'|'all'} [opts.mediaFilter]
- * @param {(item: { url: string, name: string, alt: string, type?: string, size?: number }) => void} [opts.onSelect]
- * @param {HTMLElement} [opts.returnFocus]
- */
-export function open({
-  mode = 'featured',
-  folder = 'projects',
-  mediaFilter = 'images',
-  onSelect,
-  returnFocus,
-} = {}) {
+export type MediaPickerOpenOptions = {
+  mode?: 'featured' | 'gallery' | 'attachment';
+  folder?: string;
+  mediaFilter?: string;
+  onSelect?: (item: { url: string; name: string; alt: string; type?: string; size?: number }) => void;
+  returnFocus?: HTMLElement | null;
+};
+
+export function open(opts: MediaPickerOpenOptions = {}) {
+  const {
+    mode = 'featured',
+    folder = 'projects',
+    mediaFilter = 'images',
+    onSelect,
+    returnFocus,
+  } = opts;
   ensureModal();
   onSelectCb = onSelect;
   returnFocusEl = returnFocus || document.activeElement;

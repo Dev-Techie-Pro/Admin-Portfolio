@@ -71,6 +71,9 @@ export function blogPostsToBatchPayload(records, existingRows) {
     sort_order: p.sortOrder ?? 0,
     meta_title: p.metaTitle || null,
     meta_description: p.metaDesc || null,
+    comments_enabled: p.commentsEnabled !== false,
+    likes_enabled: p.likesEnabled !== false,
+    comments_auto_approve: !!p.commentsAutoApprove,
     created_at: p.createdAt || new Date().toISOString(),
     tags: (p.tags || []).map((tag, i) => ({ tag, sort_order: i })),
   }));

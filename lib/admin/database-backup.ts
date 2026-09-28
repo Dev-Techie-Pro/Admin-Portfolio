@@ -30,6 +30,8 @@ const FALLBACK_TABLES = [
   'testimonials',
   'blog_posts',
   'blog_post_tags',
+  'blog_post_comments',
+  'blog_post_likes',
   'blog_categories',
   'contact_messages',
   'contact_message_replies',

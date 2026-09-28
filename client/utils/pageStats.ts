@@ -11,7 +11,19 @@ export function countInMonth(records, monthOffset = 0, dateField = 'createdAt') 
   }).length;
 }
 
-export function setStatTrend(elId, records, predicate, dateField = 'createdAt') {
+export function setStatTrend(elId: string, records: any[]): void;
+export function setStatTrend(
+  elId: string,
+  records: any[],
+  predicate: (record: any) => boolean,
+  dateField?: string,
+): void;
+export function setStatTrend(
+  elId: string,
+  records: any[],
+  predicate?: (record: any) => boolean,
+  dateField = 'createdAt',
+) {
   const el = $id(elId);
   if (!el) return;
   const filtered = predicate ? records.filter(predicate) : records;

@@ -1,5 +1,6 @@
 import { CrudCardModule } from '../../core/CrudCardModule.js';
-import { escapeHtml, $id, $all } from '../../utils/dom.js';
+import type { BulkSelectController } from '../../core/BulkSelectController.js';
+import { escapeHtml, $id, $all, $field, $select, $input, $img } from '../../utils/dom.js';
 import { storage } from '../../core/StorageService.js';
 import { syncPaSelect } from '../../utils/paSelect.js';
 import { isValidSlug } from '../../utils/strings.js';
@@ -11,11 +12,19 @@ import { renderPaBlogCard, renderPaBlogListRow } from '../../utils/paBlogCard.js
 import { BlogPostWorkspace } from './BlogPostWorkspace.js';
 import { setStatTrend, setStatValue } from '../../utils/pageStats.js';
 import { sortByNewestFirst } from '../../utils/format.js';
-import * as mediaPicker from '../../utils/MediaPicker.js';
+import { open as openMediaPicker, type MediaPickerOpenOptions } from '../../utils/MediaPicker.js';
 
 const SEED_BLOG_POSTS = [];
+const wiredImageDropzones = new WeakSet<HTMLElement>();
 
 export class BlogModule extends CrudCardModule {
+  declare nextId: number;
+  declare bulkSelect: BulkSelectController | null;
+  workspace!: BlogPostWorkspace;
+  _pendingOpenId: string | null = null;
+  _engagementByPostId!: Record<string, { likes?: number; comments?: number; pending?: number }>;
+  _blogCategories: Array<{ key: string; label?: string }> = [];
+
   constructor() {
     super({
       name: 'BlogPosts',
@@ -59,9 +68,32 @@ export class BlogModule extends CrudCardModule {
       },
       menuActions: { 'copy-slug': function copySlug(id) { this.copySlugUrl(id); } },
     });
-    this._pendingOpenId = null;
     this.store.set('blogTabFilter', 'all');
     this.workspace = new BlogPostWorkspace(this);
+    this._engagementByPostId = {};
+  }
+
+  async refreshEngagementSummaries() {
+    const records = this.store.get('records') || [];
+    if (!records.length) {
+      this._engagementByPostId = {};
+      return;
+    }
+    const ids = records.map((r) => r.id).join(',');
+    try {
+      const res = await fetch(`/api/blog-posts/engagement?ids=${encodeURIComponent(ids)}`, {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' },
+      });
+      if (!res.ok) return;
+      this._engagementByPostId = await res.json();
+    } catch {
+      /* ignore */
+    }
+  }
+
+  getEngagementForPost(id) {
+    return this._engagementByPostId?.[String(id)] || null;
   }
 
   seedData() { return []; }
@@ -92,6 +124,7 @@ export class BlogModule extends CrudCardModule {
     const maxId = Math.max(0, ...records.map((r) => Number(r.id) || 0));
     this.nextId = maxId + 1;
     this.store.set('records', records);
+    await this.refreshEngagementSummaries();
     try {
       const params = new URLSearchParams(window.location.search);
       const openId = params.get('open');
@@ -111,7 +144,7 @@ export class BlogModule extends CrudCardModule {
   }
 
   _populateCategoryFilter() {
-    const select = $id('paBlogCategoryFilter');
+    const select = $select('paBlogCategoryFilter');
     if (!select) return;
     const current = this.store.get('filters')?.category || 'all';
     const sorted = sortByNewestFirst(this._blogCategories || []);
@@ -125,7 +158,7 @@ export class BlogModule extends CrudCardModule {
     const sorted = sortByNewestFirst(this._blogCategories || []);
     const options = sorted.map((c) => `<option value="${escapeHtml(c.key)}">${escapeHtml(c.label)}</option>`).join('');
     const placeholder = '<option value="">Select category</option>';
-    const wsSelect = $id('blogWsCategory');
+    const wsSelect = $select('blogWsCategory');
     if (wsSelect) {
       wsSelect.innerHTML = placeholder + options;
       syncPaSelect(wsSelect);
@@ -156,7 +189,7 @@ export class BlogModule extends CrudCardModule {
   syncStatusTabs() {
     const filter = this.store.get('blogTabFilter') || 'all';
     $all('#paBlogStatusTabs .pa-status-tab').forEach((tab) => {
-      const active = tab.dataset.blogFilter === filter;
+      const active = tab.getAttribute('data-blog-filter') === filter;
       tab.classList.toggle('active', active);
       tab.setAttribute('aria-selected', active ? 'true' : 'false');
     });
@@ -207,6 +240,7 @@ export class BlogModule extends CrudCardModule {
       rowIndex,
       cardClass: this.bulkSelect?.cardClass(p.id) || '',
       idAttr: 'data-blog-id',
+      engagement: this.getEngagementForPost(p.id),
     });
   }
 
@@ -222,6 +256,7 @@ export class BlogModule extends CrudCardModule {
       cardClass: this.bulkSelect?.cardClass(p.id) || '',
       animationDelay: Math.min(index, 11) * 35,
       idAttr: 'data-blog-id',
+      engagement: this.getEngagementForPost(p.id),
     });
   }
 
@@ -241,7 +276,10 @@ export class BlogModule extends CrudCardModule {
   copySlugUrl(id) {
     const p = this.findById(id);
     if (!p) return;
-    navigator.clipboard?.writeText(`/blog/${p.slug}`).then(() => this.toast('Slug URL copied to clipboard', 'success'));
+    navigator.clipboard?.writeText(`/blog/${p.slug}`).then(
+      () => this.toast('Slug URL copied to clipboard', 'success', 2000),
+      () => this.toast('Clipboard not available.', 'danger'),
+    );
   }
 
   buildDuplicate(record, newId) {
@@ -249,15 +287,28 @@ export class BlogModule extends CrudCardModule {
     let suffix = 2;
     const slugs = new Set(this.store.get('records').map((r) => r.slug));
     while (slugs.has(slug)) slug = `${record.slug}-copy-${suffix++}`;
-    return { ...record, id: newId, title: `${record.title} (Copy)`, slug, status: 'Draft', featured: false, tags: [...record.tags], createdAt: new Date().toISOString() };
+    return {
+      ...record,
+      id: newId,
+      title: `${record.title} (Copy)`,
+      slug,
+      status: 'Draft',
+      featured: false,
+      tags: [...record.tags],
+      commentsEnabled: record.commentsEnabled !== false,
+      likesEnabled: record.likesEnabled !== false,
+      commentsAutoApprove: !!record.commentsAutoApprove,
+      createdAt: new Date().toISOString(),
+    };
   }
 
-  setFeaturedPreview(prefix, dataUrl, alt) {
+  setFeaturedPreview(prefix: string, dataUrl: string | null, alt?: string) {
+    const altText = alt ?? '';
     const wrap = $id(`${prefix}ImagePreviewWrap`);
-    const img = $id(`${prefix}ImagePreviewImg`);
+    const img = $img(`${prefix}ImagePreviewImg`);
     const dz = $id(`${prefix}ImageDropzone`);
     if (dataUrl) {
-      if (img) { img.src = dataUrl; img.alt = alt || ''; }
+      if (img) { img.src = dataUrl; img.alt = altText; }
       if (wrap) wrap.style.display = 'block';
       if (dz) dz.style.display = 'none';
     } else {
@@ -276,37 +327,40 @@ export class BlogModule extends CrudCardModule {
     if (!btn) return;
 
     this.on(btn, 'click', () => {
-      mediaPicker.open({
+      const pickerOpts: MediaPickerOpenOptions = {
         mode: 'featured',
         folder: 'blog',
         returnFocus: btn,
         onSelect: (item) => {
           if (prefix === 'blogWs') this.workspace.setWsImageData(item.url);
 
-          const altEl = $id(`${prefix}ImageAlt`);
+          const altEl = $field(`${prefix}ImageAlt`);
           if (altEl && item.alt && !altEl.value.trim()) altEl.value = item.alt;
 
           this.setFeaturedPreview(prefix, item.url, item.alt || altEl?.value || '');
           this.toast('Featured image selected from media library', 'success');
         },
-      });
+      };
+      openMediaPicker(pickerOpts);
     });
   }
 
   setupImageDropzone(prefix) {
     const dropzone = $id(`${prefix}ImageDropzone`);
-    const fileInput = $id(`${prefix}ImageFileInput`);
+    const fileInput = $input(`${prefix}ImageFileInput`);
     const removeBtn = $id(`${prefix}ImageRemoveBtn`);
-    if (!dropzone || !fileInput || dropzone._wired) return;
-    dropzone._wired = true;
-    const setData = (dataUrl) => {
+    if (!dropzone || !fileInput || wiredImageDropzones.has(dropzone)) return;
+    const imageFileInput: HTMLInputElement = fileInput;
+    wiredImageDropzones.add(dropzone);
+    const setData = (dataUrl: string | null) => {
       if (prefix === 'blogWs') this.workspace.setWsImageData(dataUrl);
-      this.setFeaturedPreview(prefix, dataUrl);
+      const alt = $field(`${prefix}ImageAlt`)?.value ?? '';
+      this.setFeaturedPreview(prefix, dataUrl, alt);
     };
-    this.on(dropzone, 'click', () => fileInput.click());
-    this.on(fileInput, 'change', async () => {
-      const file = fileInput.files?.[0];
-      fileInput.value = '';
+    this.on(dropzone, 'click', () => imageFileInput.click());
+    this.on(imageFileInput, 'change', async () => {
+      const file = imageFileInput.files?.[0];
+      imageFileInput.value = '';
       if (!file || !handleFileValidation(file)) return;
       try {
         const uploaded = await uploadCmsFileWithPreview(file, {
@@ -325,6 +379,7 @@ export class BlogModule extends CrudCardModule {
     ['dragenter', 'dragover'].forEach((evt) => this.on(dropzone, evt, (e) => { e.preventDefault(); dropzone.classList.add('dragover'); }));
     ['dragleave', 'drop'].forEach((evt) => this.on(dropzone, evt, (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
     this.on(dropzone, 'drop', async (e) => {
+      if (!(e instanceof DragEvent)) return;
       const file = e.dataTransfer?.files?.[0];
       if (!file || !handleFileValidation(file)) return;
       try {
@@ -349,7 +404,8 @@ export class BlogModule extends CrudCardModule {
     this.workspace.bind();
     $all('#paBlogStatusTabs .pa-status-tab').forEach((tab) => {
       this.on(tab, 'click', () => {
-        this.store.update({ blogTabFilter: tab.dataset.blogFilter || 'all', page: 1 });
+        const blogFilter = tab.getAttribute('data-blog-filter') || 'all';
+        this.store.update({ blogTabFilter: blogFilter, page: 1 });
         this.render();
       });
     });
@@ -383,44 +439,44 @@ export class BlogModule extends CrudCardModule {
     let valid = true;
     const p = 'blogWs';
 
-    const title = $id(`${p}Title`).value.trim();
+    const title = $field(`${p}Title`)?.value.trim() ?? '';
     this._toggleErr(`${p}Title`, !title);
     if (!title) valid = false;
 
-    const slugEl = $id(`${p}Slug`);
-    const slug = slugEl.value.trim();
+    const slugEl = $field(`${p}Slug`);
+    const slug = slugEl?.value.trim() ?? '';
     const slugErr = $id(`${p}SlugError`);
     if (!slug) {
-      slugEl.classList.add('error');
+      slugEl?.classList.add('error');
       if (slugErr) { slugErr.classList.add('visible'); slugErr.querySelector('span').textContent = 'URL slug is required'; }
       valid = false;
     } else if (!isValidSlug(slug)) {
-      slugEl.classList.add('error');
+      slugEl?.classList.add('error');
       if (slugErr) { slugErr.classList.add('visible'); slugErr.querySelector('span').textContent = 'Slug must be lowercase letters, digits, or hyphens (e.g. "my-post-title")'; }
       valid = false;
     } else {
       const editingId = this.currentEditId;
       const duplicate = this.store.get('records').find((post) => post.slug === slug && String(post.id) !== String(editingId));
       if (duplicate) {
-        slugEl.classList.add('error');
+        slugEl?.classList.add('error');
         if (slugErr) { slugErr.classList.add('visible'); slugErr.querySelector('span').textContent = `Slug "${slug}" is already in use`; }
         valid = false;
       } else {
-        slugEl.classList.remove('error');
+        slugEl?.classList.remove('error');
         slugErr?.classList.remove('visible');
       }
     }
 
-    const category = $id(`${p}Category`).value;
+    const category = $field(`${p}Category`)?.value ?? '';
     this._toggleErr(`${p}Category`, !category);
     if (!category) valid = false;
 
-    const excerpt = $id(`${p}Excerpt`).value.trim();
+    const excerpt = $field(`${p}Excerpt`)?.value.trim() ?? '';
     this._toggleErr(`${p}Excerpt`, !excerpt);
     if (!excerpt) valid = false;
 
     const contentEl = $id(`${p}Content`);
-    const contentPlain = contentEl.textContent.trim();
+    const contentPlain = contentEl?.textContent?.trim() ?? '';
     const content = getRteHtml(contentEl);
     $id(`${p}ContentError`)?.classList.toggle('visible', !contentPlain);
     $id(`${p}RteWrap`)?.classList.toggle('error', !contentPlain);
@@ -437,18 +493,21 @@ export class BlogModule extends CrudCardModule {
   }
 
   buildNewRecord(f) {
-    const publishedDate = $id('blogWsPublishedDate').value;
-    const sortOrderRaw = $id('blogWsSortOrder').value;
+    const publishedDate = $field('blogWsPublishedDate')?.value ?? '';
+    const sortOrderRaw = $field('blogWsSortOrder')?.value ?? '';
     return {
       title: f.title, slug: f.slug, category: f.category, excerpt: f.excerpt, content: f.content, tags: f.tags,
-      status: $id('blogWsStatus').value,
-      featured: $id('blogWsFeatured').value === '1',
+      status: $field('blogWsStatus')?.value ?? 'Draft',
+      featured: $field('blogWsFeatured')?.value === '1',
       imageUrl: this.workspace.getWsImageData() || '',
-      imageAlt: $id('blogWsImageAlt').value.trim(),
+      imageAlt: $field('blogWsImageAlt')?.value.trim() ?? '',
       publishedAt: publishedDate || new Date().toISOString().slice(0, 10),
       sortOrder: sortOrderRaw ? parseInt(sortOrderRaw, 10) : this.store.get('records').length + 1,
-      metaTitle: $id('blogWsMetaTitle').value.trim(),
-      metaDesc: $id('blogWsMetaDesc').value.trim(),
+      metaTitle: $field('blogWsMetaTitle')?.value.trim() ?? '',
+      metaDesc: $field('blogWsMetaDesc')?.value.trim() ?? '',
+      commentsEnabled: $field('blogWsCommentsEnabled')?.value !== '0',
+      likesEnabled: $field('blogWsLikesEnabled')?.value !== '0',
+      commentsAutoApprove: $field('blogWsCommentsAutoApprove')?.value === '1',
       createdAt: new Date().toISOString(),
     };
   }
@@ -460,15 +519,18 @@ export class BlogModule extends CrudCardModule {
     record.excerpt = f.excerpt;
     record.content = f.content;
     record.tags = f.tags;
-    record.status = $id('blogWsStatus').value;
-    record.featured = $id('blogWsFeatured').value === '1';
+    record.status = $field('blogWsStatus')?.value ?? record.status;
+    record.featured = $field('blogWsFeatured')?.value === '1';
     record.imageUrl = this.workspace.getWsImageData() || '';
-    record.imageAlt = $id('blogWsImageAlt').value.trim();
-    const publishedDate = $id('blogWsPublishedDate').value;
+    record.imageAlt = $field('blogWsImageAlt')?.value.trim() ?? '';
+    const publishedDate = $field('blogWsPublishedDate')?.value ?? '';
     record.publishedAt = publishedDate || record.publishedAt;
-    const sortOrderRaw = $id('blogWsSortOrder').value;
+    const sortOrderRaw = $field('blogWsSortOrder')?.value ?? '';
     record.sortOrder = sortOrderRaw ? parseInt(sortOrderRaw, 10) : record.sortOrder;
-    record.metaTitle = $id('blogWsMetaTitle').value.trim();
-    record.metaDesc = $id('blogWsMetaDesc').value.trim();
+    record.metaTitle = $field('blogWsMetaTitle')?.value.trim() ?? '';
+    record.metaDesc = $field('blogWsMetaDesc')?.value.trim() ?? '';
+    record.commentsEnabled = $field('blogWsCommentsEnabled')?.value !== '0';
+    record.likesEnabled = $field('blogWsLikesEnabled')?.value !== '0';
+    record.commentsAutoApprove = $field('blogWsCommentsAutoApprove')?.value === '1';
   }
 }

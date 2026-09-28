@@ -39,9 +39,9 @@ class CrudCardModule extends Module {
         viewMode: "grid"
       }
     });
-    this.config = { idField: "id", pageSize: 9, ...config };
     this.currentEditId = null;
     this.nextId = 1;
+    this.config = { idField: "id", pageSize: 9, ...config };
     this.bulkSelect = config.bulkSelect === false ? null : new BulkSelectController(this, {
       containerId: this.config.ids.grid,
       itemSelector: ".pa-card",
@@ -76,23 +76,23 @@ class CrudCardModule extends Module {
     throw new Error(`${this.name}: seedData() not implemented`);
   }
   /** @returns {string} HTML for one card. */
-  renderCard() {
+  renderCard(_record, _index) {
     throw new Error(`${this.name}: renderCard() not implemented`);
   }
   resetAddForm() {
     throw new Error(`${this.name}: resetAddForm() not implemented`);
   }
-  populateEditForm() {
+  populateEditForm(_record) {
     throw new Error(`${this.name}: populateEditForm() not implemented`);
   }
   /** @returns {{valid:boolean, [field:string]: any}} */
-  validateForm() {
+  validateForm(_prefix) {
     throw new Error(`${this.name}: validateForm() not implemented`);
   }
-  buildNewRecord() {
+  buildNewRecord(_validatedFields) {
     throw new Error(`${this.name}: buildNewRecord() not implemented`);
   }
-  applyEditToRecord() {
+  applyEditToRecord(_record, _validatedFields) {
     throw new Error(`${this.name}: applyEditToRecord() not implemented`);
   }
   matchesSearch(record, query) {
@@ -100,7 +100,7 @@ class CrudCardModule extends Module {
     if (!q) return true;
     return JSON.stringify(record).toLowerCase().includes(q);
   }
-  matchesFilters() {
+  matchesFilters(_record, _filters) {
     return true;
   }
   sortRecords(records) {
@@ -109,7 +109,7 @@ class CrudCardModule extends Module {
   getDeleteName(record) {
     return record.title || record.name || record.label || "";
   }
-  getDeleteExtraInfo() {
+  getDeleteExtraInfo(_record) {
     return "";
   }
   onAfterRender() {

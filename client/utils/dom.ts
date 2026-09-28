@@ -1,13 +1,16 @@
 const _queryCache = new Map();
 
-export function $(selector, scope = document) {
+/** Root for `$` / `$all` queries (document or any subtree element). */
+export type DomQueryRoot = Document | ParentNode;
+
+export function $(selector: string, scope: DomQueryRoot = document): Element | null {
   if (scope === document && selector.startsWith('#') && !selector.includes(' ')) {
     return document.getElementById(selector.slice(1));
   }
   return scope.querySelector(selector);
 }
 
-export function $all(selector, scope = document) {
+export function $all(selector: string, scope: DomQueryRoot = document): Element[] {
   return Array.from(scope.querySelectorAll(selector));
 }
 
@@ -51,6 +54,11 @@ export function $input(id: string): HTMLInputElement | null {
 export function $select(id: string): HTMLSelectElement | null {
   const el = $id(id);
   return el instanceof HTMLSelectElement ? el : null;
+}
+
+export function $img(id: string): HTMLImageElement | null {
+  const el = $id(id);
+  return el instanceof HTMLImageElement ? el : null;
 }
 
 export function clearDomCache() {

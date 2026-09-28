@@ -184,6 +184,46 @@ export const BLOG_POST_WORKSPACE_HTML = `
           </div>
         </div>
       </section>
+
+      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel id="paBlogWsEngagementPanel">
+        <button type="button" class="pa-blog-ws-panel-head" data-ws-panel-toggle aria-expanded="true">
+          <span class="pa-blog-ws-panel-head-left"><i class="ri-chat-3-line"></i> Comments &amp; likes</span>
+          <span class="pa-blog-ws-engagement-badge" id="paBlogWsEngagementBadge" hidden></span>
+          <i class="ri-arrow-down-s-line pa-blog-ws-panel-chevron" aria-hidden="true"></i>
+        </button>
+        <div class="pa-blog-ws-panel-body">
+          <p class="pa-blog-ws-engagement-hint">Shown on your public portfolio site. Save the post after changing toggles.</p>
+          <div class="pa-form-group">
+            <label class="pa-form-label" for="blogWsCommentsEnabled">Comments</label>
+            <select class="pa-form-select" id="blogWsCommentsEnabled">
+              <option value="1">Enabled on portfolio</option>
+              <option value="0">Disabled</option>
+            </select>
+          </div>
+          <div class="pa-form-group">
+            <label class="pa-form-label" for="blogWsLikesEnabled">Likes</label>
+            <select class="pa-form-select" id="blogWsLikesEnabled">
+              <option value="1">Enabled on portfolio</option>
+              <option value="0">Disabled</option>
+            </select>
+          </div>
+          <div class="pa-form-group">
+            <label class="pa-form-label" for="blogWsCommentsAutoApprove">New comments</label>
+            <select class="pa-form-select" id="blogWsCommentsAutoApprove">
+              <option value="0">Require approval (moderation)</option>
+              <option value="1">Publish immediately</option>
+            </select>
+          </div>
+          <div class="pa-blog-ws-engagement-stats" id="paBlogWsEngagementStats">
+            <span><i class="ri-thumb-up-line"></i> <strong id="paBlogWsLikeCount">0</strong> likes</span>
+            <span><i class="ri-chat-1-line"></i> <strong id="paBlogWsCommentCount">0</strong> approved</span>
+            <span class="pa-blog-ws-engagement-pending" id="paBlogWsPendingWrap" hidden><i class="ri-time-line"></i> <strong id="paBlogWsPendingCount">0</strong> pending</span>
+          </div>
+          <div class="pa-blog-ws-comments" id="paBlogWsCommentsList" aria-live="polite">
+            <div class="pa-blog-ws-comments-empty" id="paBlogWsCommentsEmpty">No comments yet. They will appear here when visitors comment on the portfolio.</div>
+          </div>
+        </div>
+      </section>
     </aside>
   </div>
 </div>`;

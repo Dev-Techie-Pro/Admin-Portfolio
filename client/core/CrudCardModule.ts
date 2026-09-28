@@ -1,5 +1,5 @@
 import { Module } from './Module.js';
-import { $id, $all } from '../utils/dom.js';
+import { $id, $all, $input, $field } from '../utils/dom.js';
 import { sortByNewestFirst } from '../utils/format.js';
 import { requestDelete } from '../modules/shell/confirm.js';
 import { closeAllCardMenus, toggleCardMenu } from '../modules/shell/cardMenu.js';
@@ -39,7 +39,45 @@ import { arrangeForLayout, renderGroupedCards } from '../utils/groupLayout.js';
  * Subclasses MAY override: `matchesSearch()`, `matchesFilters()`, `sortRecords()`,
  * `getDeleteName()`, `getDeleteExtraInfo()`, `onAfterRender()`.
  */
+export type CrudCardLayoutConfig = {
+  selectId: string;
+  singular?: string;
+  plural?: string;
+  getGroupInfo(this: CrudCardModule, record: unknown): unknown;
+};
+
+export type CrudFormValidationResult = {
+  valid: boolean;
+} & Record<string, unknown>;
+
+export type CrudCardModuleConfig = {
+  name?: string;
+  storageKey?: string;
+  idField?: string;
+  pageSize?: number;
+  ids?: Record<string, string>;
+  cardIdAttr?: string;
+  deleteType?: string;
+  bulkLabel?: string;
+  filterSelectIds?: Array<{ id: string; key: string }>;
+  layout?: CrudCardLayoutConfig;
+  listTable?: boolean;
+  defaultFilters?: Record<string, string>;
+  menuActions?: Record<string, (this: CrudCardModule, id: unknown) => void>;
+  buildDuplicate?: (this: CrudCardModule, record: unknown, nextId: number) => unknown;
+  page?: string;
+  addFocusId?: string;
+  editFocusId?: string;
+  tabGroup?: string | null;
+  bulkSelect?: boolean;
+};
+
 export class CrudCardModule extends Module {
+  config: CrudCardModuleConfig;
+  currentEditId: string | number | null = null;
+  nextId = 1;
+  bulkSelect!: BulkSelectController | null;
+
   /**
    * @param {object} config
    * @param {string} config.name
@@ -59,15 +97,13 @@ export class CrudCardModule extends Module {
       initialState: {
         records: [],
         searchQuery: '',
-        filters: { ...(config.defaultFilters || {}) },
+        filters: config.defaultFilters ? { ...config.defaultFilters } : {},
         layoutMode: 'flat',
         page: 1,
         viewMode: 'grid',
       },
     });
-    this.config = { idField: 'id', pageSize: 9, ...config };
-    this.currentEditId = null;
-    this.nextId = 1;
+    this.config = { idField: 'id', pageSize: 9, ...config } as CrudCardModuleConfig;
 
     this.bulkSelect = config.bulkSelect === false ? null : new BulkSelectController(this, {
       containerId: this.config.ids.grid,
@@ -104,13 +140,16 @@ export class CrudCardModule extends Module {
   /** @returns {Array<object>} fresh seed/demo records. */
   seedData() { throw new Error(`${this.name}: seedData() not implemented`); }
   /** @returns {string} HTML for one card. */
-  renderCard(/* record, index */) { throw new Error(`${this.name}: renderCard() not implemented`); }
+  renderCard(_record: any, _index: number): string {
+    throw new Error(`${this.name}: renderCard() not implemented`);
+  }
   resetAddForm() { throw new Error(`${this.name}: resetAddForm() not implemented`); }
-  populateEditForm(/* record */) { throw new Error(`${this.name}: populateEditForm() not implemented`); }
-  /** @returns {{valid:boolean, [field:string]: any}} */
-  validateForm(/* prefix */) { throw new Error(`${this.name}: validateForm() not implemented`); }
-  buildNewRecord(/* validatedFields */) { throw new Error(`${this.name}: buildNewRecord() not implemented`); }
-  applyEditToRecord(/* record, validatedFields */) { throw new Error(`${this.name}: applyEditToRecord() not implemented`); }
+  populateEditForm(_record) { throw new Error(`${this.name}: populateEditForm() not implemented`); }
+  validateForm(_prefix: string): CrudFormValidationResult {
+    throw new Error(`${this.name}: validateForm() not implemented`);
+  }
+  buildNewRecord(_validatedFields) { throw new Error(`${this.name}: buildNewRecord() not implemented`); }
+  applyEditToRecord(_record, _validatedFields) { throw new Error(`${this.name}: applyEditToRecord() not implemented`); }
 
 
   matchesSearch(record, query) {
@@ -119,13 +158,13 @@ export class CrudCardModule extends Module {
     return JSON.stringify(record).toLowerCase().includes(q);
   }
 
-  matchesFilters(/* record, filters */) { return true; }
+  matchesFilters(_record, _filters) { return true; }
 
   sortRecords(records) { return sortByNewestFirst(records); }
 
   getDeleteName(record) { return record.title || record.name || record.label || ''; }
 
-  getDeleteExtraInfo(/* record */) { return ''; }
+  getDeleteExtraInfo(_record) { return ''; }
 
   onAfterRender() {}
 
@@ -160,7 +199,7 @@ export class CrudCardModule extends Module {
       });
     }
 
-    const searchInput = $id('paSearchInput');
+    const searchInput = $input('paSearchInput');
     if (searchInput) {
       this.on(searchInput, 'input', () => {
         this.store.set('searchQuery', searchInput.value);
@@ -178,7 +217,7 @@ export class CrudCardModule extends Module {
     });
 
     (this.config.filterSelectIds || []).forEach((filterId) => {
-      const el = $id(filterId.id);
+      const el = $field(filterId.id);
       if (!el) return;
       this.on(el, 'change', () => {
         this.store.update({ filters: { ...this.store.get('filters'), [filterId.key]: el.value }, page: 1 });
@@ -233,7 +272,8 @@ export class CrudCardModule extends Module {
       listBtn.classList.toggle('active', mode === 'list');
     }
     
-    document.querySelectorAll('.pa-view-btn[data-view]').forEach(btn => {
+    $all('.pa-view-btn[data-view]').forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
       const view = btn.dataset.view;
       if (view === 'grid') {
         btn.classList.toggle('active', mode === 'grid');
@@ -256,7 +296,8 @@ export class CrudCardModule extends Module {
       listBtn.classList.toggle('active', mode === 'list');
     }
     
-    document.querySelectorAll('.pa-view-btn[data-view]').forEach(btn => {
+    $all('.pa-view-btn[data-view]').forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
       const view = btn.dataset.view;
       if (view === 'grid') {
         btn.classList.toggle('active', mode === 'grid');
@@ -264,22 +305,32 @@ export class CrudCardModule extends Module {
         btn.classList.toggle('active', mode === 'list');
       }
     });
-    
+
     this.render();
   }
 
 
   layoutSelect() {
     const id = this.config.layout?.selectId;
-    return id ? $id(id) : null;
+    return id ? $field(id) : null;
+  }
+
+  groupedLayoutConfig(): CrudCardLayoutConfig | null {
+    const layout = this.config.layout;
+    if (!layout || this.store.get('layoutMode') !== 'grouped') return null;
+    return layout;
   }
 
   isGroupedLayout() {
-    return !!this.config.layout && this.store.get('layoutMode') === 'grouped';
+    return this.groupedLayoutConfig() != null;
   }
 
-  groupInfo(record) {
-    return this.config.layout.getGroupInfo.call(this, record);
+  groupInfo(record: unknown) {
+    const layout = this.config.layout;
+    if (!layout) {
+      throw new Error(`${this.name}: groupInfo() requires config.layout`);
+    }
+    return layout.getGroupInfo.call(this, record);
   }
 
   syncLayoutSelect() {
@@ -289,10 +340,12 @@ export class CrudCardModule extends Module {
 
   getFiltered() {
     const { records, searchQuery, filters, layoutMode } = this.store._raw;
-    let results = this.sortRecords(records.slice());
+    const list = Array.isArray(records) ? records : [];
+    let results = this.sortRecords(list.slice());
     results = results.filter((r) => this.matchesFilters(r, filters));
-    if (searchQuery && searchQuery.trim()) {
-      results = results.filter((r) => this.matchesSearch(r, searchQuery));
+    const query = typeof searchQuery === 'string' ? searchQuery : '';
+    if (query.trim()) {
+      results = results.filter((r) => this.matchesSearch(r, query));
     }
     if (this.config.layout) {
       results = arrangeForLayout(results, layoutMode, (record) => this.groupInfo(record));
@@ -324,7 +377,8 @@ export class CrudCardModule extends Module {
   }
 
   syncListViewChrome(isList) {
-    const pag = $id(this.config.ids.paginationBtns)?.closest('.pa-pagination');
+    const pagEl = $id(this.config.ids?.paginationBtns)?.closest('.pa-pagination');
+    const pag = pagEl instanceof HTMLElement ? pagEl : null;
     syncListPaginationChrome(isList, pag);
   }
 
@@ -352,18 +406,20 @@ export class CrudCardModule extends Module {
         this.on($id(ids.emptyAddBtn), 'click', () => this.openAddPanel());
       } else if (isList && this.config.listTable) {
         grid.innerHTML = this.renderListTable(pageItems, start);
-      } else if (this.isGroupedLayout()) {
-        const { singular, plural } = this.config.layout;
-        grid.innerHTML = renderGroupedCards(
-          pageItems,
-          all,
-          (record) => this.groupInfo(record),
-          (record, i) => this.renderCard(record, i),
-          singular,
-          plural,
-        );
       } else {
-        grid.innerHTML = pageItems.map((r, i) => this.renderCard(r, i)).join('');
+        const groupedLayout = this.groupedLayoutConfig();
+        if (groupedLayout) {
+          grid.innerHTML = renderGroupedCards(
+            pageItems,
+            all,
+            (record) => this.groupInfo(record),
+            (record, i) => this.renderCard(record, i),
+            groupedLayout.singular,
+            groupedLayout.plural,
+          );
+        } else {
+          grid.innerHTML = pageItems.map((r, i) => this.renderCard(r, i)).join('');
+        }
       }
     }
     this.syncListViewChrome(isList && !!grid && pageItems.length > 0 && !!this.config.listTable);
@@ -415,8 +471,9 @@ export class CrudCardModule extends Module {
     info.textContent = `Showing ${startN} to ${endN} of ${totalItems}`;
 
     btnsWrap.querySelectorAll('.pa-page-btn').forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
       btn.addEventListener('click', () => {
-        this.store.set('page', parseInt(btn.dataset.page, 10));
+        this.store.set('page', parseInt(btn.dataset.page ?? '', 10));
         this.render();
         $id(ids.bodyScroll)?.scrollTo({ top: 0, behavior: 'smooth' });
       });
@@ -434,17 +491,20 @@ export class CrudCardModule extends Module {
   resetFilters() {
     this.store.batch(() => {
       this.store.set('searchQuery', '');
-      this.store.set('filters', { ...(this.config.defaultFilters || {}) });
+      this.store.set(
+        'filters',
+        this.config.defaultFilters ? { ...this.config.defaultFilters } : {},
+      );
       this.store.set('layoutMode', 'flat');
       this.store.set('page', 1);
     });
-    const searchInput = $id('paSearchInput');
+    const searchInput = $input('paSearchInput');
     if (searchInput) {
       searchInput.value = '';
       $id('paSearchWrap')?.classList.remove('has-value');
     }
     (this.config.filterSelectIds || []).forEach((f) => {
-      const el = $id(f.id);
+      const el = $field(f.id);
       if (el) el.value = 'all';
     });
     const layoutEl = this.layoutSelect();
@@ -458,9 +518,11 @@ export class CrudCardModule extends Module {
     const idAttr = this.config.cardIdAttr || 'data-id';
 
     $all('.pa-action-edit', grid).forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
       btn.addEventListener('click', () => this.openEditPanel(btn.getAttribute(idAttr) ?? btn.dataset.id));
     });
     $all('.pa-action-delete', grid).forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
       btn.addEventListener('click', () => {
         const id = btn.getAttribute(idAttr) ?? btn.dataset.id;
         const record = this.findById(id);
@@ -468,6 +530,7 @@ export class CrudCardModule extends Module {
       });
     });
     $all('.pa-action-more', grid).forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const host = btn.closest('.pa-lv-more-wrap, .pa-cat-card__footer-more, .pa-cat-card__list-actions, .pa-card-actions');
@@ -476,6 +539,7 @@ export class CrudCardModule extends Module {
       });
     });
     $all('.pa-card-menu-item', grid).forEach((item) => {
+      if (!(item instanceof HTMLElement)) return;
       item.addEventListener('click', (e) => {
         e.stopPropagation();
         const id = item.getAttribute(idAttr) ?? item.dataset.id;

@@ -13,6 +13,7 @@ class BlogPostWorkspace {
     this.wsOpenMode = "edit";
     this.closing = false;
     this.closeTimer = null;
+    this.engagementPostId = null;
     this.blog = blog;
   }
   bind() {
@@ -92,6 +93,7 @@ class BlogPostWorkspace {
     $id("paBlogWsHeadTitleText").textContent = "Add New Post";
     $id("paBlogWsHeadSubtitle").textContent = "Create a new article for your portfolio";
     $id("paBlogWsDeleteBtn").setAttribute("hidden", "");
+    this.resetEngagementUi();
     setTimeout(() => $id("blogWsTitle")?.focus(), 420);
   }
   async open(id, mode = "edit") {
@@ -129,6 +131,8 @@ class BlogPostWorkspace {
     $id("paBlogWsHeadTitleText").textContent = "Edit Post";
     $id("paBlogWsHeadSubtitle").textContent = record.slug ? `/${record.slug}` : "Update content and publishing settings";
     $id("paBlogWsDeleteBtn")?.removeAttribute("hidden");
+    this.engagementPostId = id;
+    void this.loadEngagement(id);
     if (mode !== "preview") setTimeout(() => $id("blogWsTitle")?.focus(), 420);
   }
   close() {
@@ -211,6 +215,14 @@ class BlogPostWorkspace {
     $id("blogWsStatus").value = "Draft";
     $id("blogWsFeatured").value = "0";
     $id("blogWsPublishedDate").value = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    $id("blogWsCommentsEnabled").value = "1";
+    $id("blogWsLikesEnabled").value = "1";
+    $id("blogWsCommentsAutoApprove").value = "0";
+    syncPaSelect($id("blogWsCommentsEnabled"));
+    syncPaSelect($id("blogWsLikesEnabled"));
+    syncPaSelect($id("blogWsCommentsAutoApprove"));
+    this.engagementPostId = null;
+    this.resetEngagementUi();
     this.blog.setFeaturedPreview("blogWs", null);
     this.updateTitleCount();
     this.updateExcerptCount();
@@ -236,6 +248,12 @@ class BlogPostWorkspace {
     $id("blogWsSortOrder").value = p.sortOrder != null ? String(p.sortOrder) : "";
     $id("blogWsMetaTitle").value = String(p.metaTitle || "");
     $id("blogWsMetaDesc").value = String(p.metaDesc || "");
+    $id("blogWsCommentsEnabled").value = p.commentsEnabled === false ? "0" : "1";
+    $id("blogWsLikesEnabled").value = p.likesEnabled === false ? "0" : "1";
+    $id("blogWsCommentsAutoApprove").value = p.commentsAutoApprove ? "1" : "0";
+    syncPaSelect($id("blogWsCommentsEnabled"));
+    syncPaSelect($id("blogWsLikesEnabled"));
+    syncPaSelect($id("blogWsCommentsAutoApprove"));
     this.wsImageData = p.imageUrl || null;
     this.blog.setFeaturedPreview("blogWs", this.wsImageData, String(p.imageAlt || ""));
     this.updateTitleCount();
@@ -314,6 +332,7 @@ class BlogPostWorkspace {
         const records = [...this.blog.store.get("records"), newPost];
         this.blog.store.set("records", records);
         await this.blog.persist();
+        await this.blog.refreshEngagementSummaries();
         this.blog.render();
         this.blog.toast("Blog post added", "success");
         this.blog.notify(`New blog post "${newPost.title}" was added.`, "ri-article-line");
@@ -323,8 +342,10 @@ class BlogPostWorkspace {
         if (!record) return;
         this.blog.applyEditToRecord(record, f);
         await this.blog.persist();
+        await this.blog.refreshEngagementSummaries();
         this.blog.render();
         this.blog.toast("Blog post saved", "success");
+        if (this.engagementPostId) void this.loadEngagement(this.engagementPostId);
         $id("paBlogWsHeadSubtitle").textContent = record.slug ? `/${record.slug}` : "";
       }
     } catch {
@@ -339,6 +360,144 @@ class BlogPostWorkspace {
     const record = this.blog.findById(id);
     if (!record) return;
     requestDelete(id, this.blog.config.deleteType, this.blog.getDeleteName(record));
+  }
+  resetEngagementUi() {
+    $id("paBlogWsLikeCount").textContent = "0";
+    $id("paBlogWsCommentCount").textContent = "0";
+    $id("paBlogWsPendingCount").textContent = "0";
+    $id("paBlogWsPendingWrap").hidden = true;
+    const badge = $id("paBlogWsEngagementBadge");
+    if (badge) {
+      badge.hidden = true;
+      badge.textContent = "";
+    }
+    const list = $id("paBlogWsCommentsList");
+    const empty = $id("paBlogWsCommentsEmpty");
+    if (list && empty) {
+      list.querySelectorAll(".pa-blog-ws-comment-item").forEach((el) => el.remove());
+      empty.hidden = false;
+    }
+  }
+  renderEngagement(data) {
+    const likes = data.likeCount ?? 0;
+    const comments = data.comments || [];
+    const approved = comments.filter((c) => c.status === "approved").length;
+    const pending = comments.filter((c) => c.status === "pending").length;
+    $id("paBlogWsLikeCount").textContent = String(likes);
+    $id("paBlogWsCommentCount").textContent = String(approved);
+    $id("paBlogWsPendingCount").textContent = String(pending);
+    $id("paBlogWsPendingWrap").hidden = pending === 0;
+    const badge = $id("paBlogWsEngagementBadge");
+    if (badge) {
+      if (pending > 0) {
+        badge.hidden = false;
+        badge.textContent = `${pending} pending`;
+      } else {
+        badge.hidden = true;
+        badge.textContent = "";
+      }
+    }
+    const list = $id("paBlogWsCommentsList");
+    const empty = $id("paBlogWsCommentsEmpty");
+    if (!list || !empty) return;
+    list.querySelectorAll(".pa-blog-ws-comment-item").forEach((el) => el.remove());
+    if (!comments.length) {
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+    const postId = this.engagementPostId;
+    comments.forEach((c) => {
+      const item = document.createElement("article");
+      item.className = "pa-blog-ws-comment-item";
+      item.dataset.commentId = c.id;
+      const statusLabel = escapeHtml(c.status);
+      const date = escapeHtml(new Date(c.createdAt).toLocaleString());
+      const email = c.authorEmail ? `<span class="pa-blog-ws-comment-email">${escapeHtml(c.authorEmail)}</span>` : "";
+      const modActions = c.status === "pending" ? `<button type="button" class="pa-btn pa-btn-cancel pa-btn-sm" data-comment-action="approve" data-comment-id="${escapeHtml(c.id)}">Approve</button>
+           <button type="button" class="pa-btn pa-btn-cancel pa-btn-sm" data-comment-action="spam" data-comment-id="${escapeHtml(c.id)}">Spam</button>` : `<button type="button" class="pa-btn pa-btn-cancel pa-btn-sm" data-comment-action="reject" data-comment-id="${escapeHtml(c.id)}">Hide</button>`;
+      item.innerHTML = `
+        <header class="pa-blog-ws-comment-head">
+          <strong>${escapeHtml(c.authorName)}</strong>${email}
+          <span class="pa-blog-ws-comment-meta">${statusLabel} \xB7 ${date}</span>
+        </header>
+        <p class="pa-blog-ws-comment-body">${escapeHtml(c.body)}</p>
+        <div class="pa-blog-ws-comment-actions">
+          ${modActions}
+          <button type="button" class="pa-btn pa-btn-cancel pa-btn-sm pa-blog-ws-comment-delete" data-comment-action="delete" data-comment-id="${escapeHtml(c.id)}">Delete</button>
+        </div>`;
+      list.appendChild(item);
+    });
+    if (postId) {
+      $all("[data-comment-action]", list).forEach((btn) => {
+        this.blog.on(btn, "click", () => {
+          const action = btn.getAttribute("data-comment-action");
+          const commentId = btn.getAttribute("data-comment-id");
+          if (!action || !commentId) return;
+          void this.moderateComment(postId, commentId, action);
+        });
+      });
+    }
+  }
+  async loadEngagement(postId) {
+    try {
+      const res = await fetch(`/api/blog-posts/${encodeURIComponent(String(postId))}/engagement`, {
+        credentials: "same-origin",
+        headers: { Accept: "application/json" }
+      });
+      if (!res.ok) {
+        this.resetEngagementUi();
+        return;
+      }
+      const data = await res.json();
+      if (data?.commentsEnabled != null) {
+        $id("blogWsCommentsEnabled").value = data.commentsEnabled ? "1" : "0";
+        $id("blogWsLikesEnabled").value = data.likesEnabled ? "1" : "0";
+        $id("blogWsCommentsAutoApprove").value = data.commentsAutoApprove ? "1" : "0";
+        syncPaSelect($id("blogWsCommentsEnabled"));
+        syncPaSelect($id("blogWsLikesEnabled"));
+        syncPaSelect($id("blogWsCommentsAutoApprove"));
+      }
+      this.renderEngagement(data);
+    } catch {
+      this.resetEngagementUi();
+    }
+  }
+  async moderateComment(postId, commentId, action) {
+    const statusMap = {
+      approve: "approved",
+      reject: "rejected",
+      spam: "spam"
+    };
+    try {
+      if (action === "delete") {
+        const res2 = await fetch(
+          `/api/blog-posts/${encodeURIComponent(String(postId))}/engagement?commentId=${encodeURIComponent(commentId)}`,
+          { method: "DELETE", credentials: "same-origin" }
+        );
+        if (!res2.ok) throw new Error("delete failed");
+        const payload2 = await res2.json();
+        this.renderEngagement(payload2.engagement || {});
+        this.blog.toast("Comment removed", "success");
+        void this.blog.refreshEngagementSummaries();
+        return;
+      }
+      const status = statusMap[action];
+      if (!status) return;
+      const res = await fetch(`/api/blog-posts/${encodeURIComponent(String(postId))}/engagement`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ commentId, status })
+      });
+      if (!res.ok) throw new Error("update failed");
+      const payload = await res.json();
+      this.renderEngagement(payload.engagement || {});
+      this.blog.toast(action === "approve" ? "Comment approved" : "Comment updated", "success");
+      void this.blog.refreshEngagementSummaries();
+    } catch {
+      this.blog.toast("Could not update comment", "danger");
+    }
   }
 }
 export {

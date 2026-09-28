@@ -30,7 +30,11 @@ function ensureToastWrap() {
  * @param {'success'|'info'|'danger'} [type]
  * @param {number} [duration] ms before auto-dismiss
  */
-export function showToast(msg, type = 'info', duration = 3500) {
+export function showToast(
+  msg: string,
+  type: 'success' | 'info' | 'danger' = 'info',
+  duration = 3500,
+) {
   const wrap = ensureToastWrap();
   if (!wrap) {
     console.warn('[toast]', type, msg);
@@ -62,7 +66,11 @@ export function clearToasts() {
  * @param {'success'|'info'|'danger'} [type]
  * @param {number} [duration]
  */
-export function showStatusToast(msg, type = 'info', duration = 4500) {
+export function showStatusToast(
+  msg: string,
+  type: 'success' | 'info' | 'danger' = 'info',
+  duration = 4500,
+) {
   clearToasts();
   showToast(msg, type, duration);
 }

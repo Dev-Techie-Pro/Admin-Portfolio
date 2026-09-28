@@ -90,7 +90,11 @@ export async function loadNotifications({ silent = false } = {}) {
   }
 }
 
-export async function addNotification(text, icon, options = {}) {
+export async function addNotification(
+  text: string,
+  icon?: string,
+  options: Record<string, unknown> = {},
+) {
   const title = String(text || '').trim();
   if (!title) return;
 

@@ -1,7 +1,7 @@
 import { eventBus } from './EventBus.js';
 import { storage } from './StorageService.js';
 import { StateStore } from './StateStore.js';
-import { $, $all } from '../utils/dom.js';
+import { $, $all, type DomQueryRoot } from '../utils/dom.js';
 import { showToast, showStatusToast } from '../modules/shell/toast.js';
 import { addNotification } from '../modules/shell/notifications.js';
 
@@ -96,11 +96,11 @@ export class Module {
     }
   }
 
-  $(selector, scope = document) {
+  $(selector: string, scope: DomQueryRoot = document) {
     return $(selector, scope);
   }
 
-  $all(selector, scope = document) {
+  $all(selector: string, scope: DomQueryRoot = document) {
     return $all(selector, scope);
   }
 
@@ -130,15 +130,19 @@ export class Module {
     eventBus.emit(event, payload);
   }
 
-  toast(msg, type = 'info', duration) {
+  toast(msg: string, type: 'success' | 'info' | 'danger' = 'info', duration?: number) {
     showToast(msg, type, duration);
   }
 
-  statusToast(msg, type = 'info', duration) {
+  statusToast(
+    msg: string,
+    type: 'success' | 'info' | 'danger' = 'info',
+    duration?: number,
+  ) {
     showStatusToast(msg, type, duration);
   }
 
-  notify(text, icon, options) {
+  notify(text: string, icon?: string, options?: Record<string, unknown>) {
     void addNotification(text, icon, options);
   }
 

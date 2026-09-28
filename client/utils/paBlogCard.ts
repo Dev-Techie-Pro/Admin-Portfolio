@@ -42,7 +42,32 @@ function renderActions(p, idAttr) {
     <button type="button" class="pa-action-btn pa-action-delete" title="Delete post" ${idAttr}="${id}" aria-label="Delete ${title}"><i class="ri-delete-bin-line"></i></button>`;
 }
 
-function renderMeta(p) {
+function formatEngagementShort(engagement) {
+  if (!engagement) return '';
+  const parts = [];
+  if (engagement.likes) parts.push(`${engagement.likes} likes`);
+  if (engagement.comments) parts.push(`${engagement.comments} comments`);
+  if (engagement.pending) parts.push(`${engagement.pending} pending`);
+  return parts.join(' · ');
+}
+
+function engagementMetaHtml(engagement) {
+  if (!engagement) return '';
+  const likes = engagement.likes ?? 0;
+  const comments = engagement.comments ?? 0;
+  const pending = engagement.pending ?? 0;
+  if (!likes && !comments && !pending) return '';
+  const pendingBadge = pending
+    ? `<span class="pa-blog-engagement-pending">${pending} pending</span>`
+    : '';
+  return `<div class="pa-proj-card__meta-item">
+      <i class="ri-thumb-up-line" aria-hidden="true"></i>
+      <span class="pa-proj-card__meta-label">Engagement</span>
+      <span class="pa-proj-card__meta-value">${likes} likes · ${comments} comments ${pendingBadge}</span>
+    </div>`;
+}
+
+function renderMeta(p, engagement) {
   const published = formatDate(p.publishedAt || p.createdAt);
   const slug = escapeHtml(p.slug || '—');
   const tagCount = Array.isArray(p.tags) ? p.tags.length : 0;
@@ -65,7 +90,8 @@ function renderMeta(p) {
       <i class="ri-article-line" aria-hidden="true"></i>
       <span class="pa-proj-card__meta-label">Status</span>
       <span class="pa-proj-card__meta-value">${escapeHtml(p.status || 'Draft')}</span>
-    </div>`;
+    </div>
+    ${engagementMetaHtml(engagement)}`;
 }
 
 export function renderPaBlogListRow(p, opts = {}) {
@@ -75,9 +101,12 @@ export function renderPaBlogListRow(p, opts = {}) {
     rowIndex,
     cardClass = '',
     idAttr = 'data-blog-id',
+    engagement = null,
   } = opts;
   const title = p.title || '';
   const category = meta.label || p.category || '—';
+  const engShort = formatEngagementShort(engagement);
+  const categoryCell = engShort ? `${category} — ${engShort}` : category;
   const created = formatDate(p.publishedAt || p.createdAt);
   const statusLabel = p.status || 'Draft';
   const variant = getBlogStatusClass(p.status) === 'published' ? 'active' : 'planning';
@@ -88,7 +117,7 @@ export function renderPaBlogListRow(p, opts = {}) {
   return `${renderListRowStart(cardClass)}
     ${renderListIndexCell(rowIndex)}
     ${renderListProjectCell(title, thumbInner)}
-    ${renderListTextCell(category)}
+    ${renderListTextCell(categoryCell)}
     ${renderListStatusCell(statusLabel, variant)}
     ${renderListDateCell(created)}
     ${renderListActionsCell(actions)}
@@ -103,6 +132,7 @@ export function renderPaBlogCard(p, opts = {}) {
     cardClass = '',
     animationDelay = 0,
     idAttr = 'data-blog-id',
+    engagement = null,
   } = opts;
 
   const id = p.id;
@@ -116,7 +146,7 @@ export function renderPaBlogCard(p, opts = {}) {
     : '';
   const statusBadge = `<span class="pa-proj-card__status pa-proj-card__status--${statusClass}"><span class="pa-proj-card__status-dot" aria-hidden="true"></span>${escapeHtml(statusLabel)}</span>`;
   const tagsHtml = blogTagsHtml(p.tags);
-  const metaHtml = renderMeta(p);
+  const metaHtml = renderMeta(p, engagement);
   const actionsHtml = renderActions(p, idAttr);
   const menuHtml = renderCardMenu(p, idAttr);
   const catKey = escapeHtml(normalizeCategoryKey(meta.catKey || p.category));

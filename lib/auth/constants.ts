@@ -12,7 +12,13 @@ export function getCreatableRoles(actorRole) {
 }
 
 export const AUTH_ROUTES = ['/login', '/forget-password'];
-export const PUBLIC_API_PREFIXES = ['/api/auth/', '/api/health/', '/api/appearance/public', '/api/cron/'];
+export const PUBLIC_API_PREFIXES = [
+  '/api/auth/',
+  '/api/health/',
+  '/api/appearance/public',
+  '/api/cron/',
+  '/api/public/',
+];
 
 /** Dashboard session lifetime (absolute from sign-in). */
 export const SESSION_LIFETIME_SECONDS = 24 * 60 * 60;

@@ -561,6 +561,9 @@ export class QuickAddModule extends Module {
       sortOrder: parseInt($id('qaBlogSortOrder')?.value, 10) || records.length + 1,
       metaTitle: '',
       metaDesc: '',
+      commentsEnabled: true,
+      likesEnabled: true,
+      commentsAutoApprove: false,
       createdAt: new Date().toISOString(),
     };
     showStatusToast('Saving changes…', 'info', 120000);

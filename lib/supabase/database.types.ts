@@ -147,6 +147,122 @@ export type Database = {
           },
         ]
       }
+      blog_post_comments: {
+        Row: {
+          author_email: string | null
+          author_name: string
+          blog_post_id: string
+          body: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          legacy_id: number | null
+          sender_ip: unknown
+          site_id: string
+          status: Database["public"]["Enums"]["blog_post_comment_status"]
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          author_email?: string | null
+          author_name: string
+          blog_post_id: string
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          legacy_id?: number | null
+          sender_ip?: unknown
+          site_id: string
+          status?: Database["public"]["Enums"]["blog_post_comment_status"]
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          author_email?: string | null
+          author_name?: string
+          blog_post_id?: string
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          legacy_id?: number | null
+          sender_ip?: unknown
+          site_id?: string
+          status?: Database["public"]["Enums"]["blog_post_comment_status"]
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_post_comments_blog_post_id_fkey"
+            columns: ["blog_post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_post_comments_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_stats"
+            referencedColumns: ["site_id"]
+          },
+          {
+            foreignKeyName: "blog_post_comments_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_post_likes: {
+        Row: {
+          blog_post_id: string
+          created_at: string
+          id: string
+          site_id: string
+          visitor_key: string
+        }
+        Insert: {
+          blog_post_id: string
+          created_at?: string
+          id?: string
+          site_id: string
+          visitor_key: string
+        }
+        Update: {
+          blog_post_id?: string
+          created_at?: string
+          id?: string
+          site_id?: string
+          visitor_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_post_likes_blog_post_id_fkey"
+            columns: ["blog_post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_post_likes_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_stats"
+            referencedColumns: ["site_id"]
+          },
+          {
+            foreignKeyName: "blog_post_likes_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_post_tags: {
         Row: {
           blog_post_id: string
@@ -179,6 +295,8 @@ export type Database = {
       blog_posts: {
         Row: {
           category_key: string
+          comments_auto_approve: boolean
+          comments_enabled: boolean
           content: string
           created_at: string
           deleted_at: string | null
@@ -188,6 +306,9 @@ export type Database = {
           id: string
           is_featured: boolean
           legacy_id: number | null
+          likes_enabled: boolean
+          meta_description: string | null
+          meta_title: string | null
           published_at: string | null
           site_id: string
           slug: string
@@ -199,6 +320,8 @@ export type Database = {
         }
         Insert: {
           category_key: string
+          comments_auto_approve?: boolean
+          comments_enabled?: boolean
           content: string
           created_at?: string
           deleted_at?: string | null
@@ -208,6 +331,9 @@ export type Database = {
           id?: string
           is_featured?: boolean
           legacy_id?: number | null
+          likes_enabled?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
           published_at?: string | null
           site_id: string
           slug: string
@@ -219,6 +345,8 @@ export type Database = {
         }
         Update: {
           category_key?: string
+          comments_auto_approve?: boolean
+          comments_enabled?: boolean
           content?: string
           created_at?: string
           deleted_at?: string | null
@@ -228,6 +356,9 @@ export type Database = {
           id?: string
           is_featured?: boolean
           legacy_id?: number | null
+          likes_enabled?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
           published_at?: string | null
           site_id?: string
           slug?: string
@@ -1744,6 +1875,7 @@ export type Database = {
       activity_type: "user_action" | "system_event" | "content_change" | "other"
       app_role: "super_admin" | "admin" | "editor" | "viewer"
       backup_status: "pending" | "completed" | "failed"
+      blog_post_comment_status: "pending" | "approved" | "spam" | "rejected"
       blog_post_status: "Draft" | "Published"
       contact_message_status: "new" | "read" | "replied" | "spam"
       default_view: "grid" | "list"
@@ -1913,6 +2045,7 @@ export const Constants = {
       activity_type: ["user_action", "system_event", "content_change", "other"],
       app_role: ["super_admin", "admin", "editor", "viewer"],
       backup_status: ["pending", "completed", "failed"],
+      blog_post_comment_status: ["pending", "approved", "spam", "rejected"],
       blog_post_status: ["Draft", "Published"],
       contact_message_status: ["new", "read", "replied", "spam"],
       default_view: ["grid", "list"],

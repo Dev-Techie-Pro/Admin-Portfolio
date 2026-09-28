@@ -186,13 +186,14 @@ function close() {
   closeModal();
   onSelectCb = null;
 }
-function open({
-  mode = "featured",
-  folder = "projects",
-  mediaFilter = "images",
-  onSelect,
-  returnFocus
-} = {}) {
+function open(opts = {}) {
+  const {
+    mode = "featured",
+    folder = "projects",
+    mediaFilter = "images",
+    onSelect,
+    returnFocus
+  } = opts;
   ensureModal();
   onSelectCb = onSelect;
   returnFocusEl = returnFocus || document.activeElement;

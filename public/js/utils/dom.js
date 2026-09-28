@@ -41,6 +41,10 @@ function $select(id) {
   const el = $id(id);
   return el instanceof HTMLSelectElement ? el : null;
 }
+function $img(id) {
+  const el = $id(id);
+  return el instanceof HTMLImageElement ? el : null;
+}
 function clearDomCache() {
   _queryCache.clear();
 }
@@ -60,6 +64,7 @@ export {
   $all,
   $field,
   $id,
+  $img,
   $input,
   $select,
   asFormField,
