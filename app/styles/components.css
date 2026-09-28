@@ -1829,7 +1829,7 @@ select.pa-filter-select:not(.pa-select-native):focus {
 }
 
 .pa-btn#qaPrimaryBtn{
-  padding: 1px;
+  padding: 1px 12px;
 }
 
 .pa-panel-body {
