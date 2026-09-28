@@ -3,12 +3,14 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 
-function loadScript(src, type) {
-  return new Promise((resolve, reject) => {
+function loadScript(src: string): Promise<void>;
+function loadScript(src: string, type: 'module'): Promise<void>;
+function loadScript(src: string, type?: 'module'): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
     const selector = type === 'module'
       ? `script[type="module"][src="${src}"]`
       : `script[src="${src}"]`;
-    const existing = document.querySelector(selector);
+    const existing = document.querySelector<HTMLScriptElement>(selector);
     if (existing) {
       if (existing.dataset.loaded === 'true') {
         resolve();
@@ -32,6 +34,7 @@ function loadScript(src, type) {
   });
 }
 
+
 async function bootLegacyApp() {
   if (typeof window.__paBootPortfolioApp !== 'function') {
     await loadScript('/js/main.js', 'module');
@@ -50,6 +53,7 @@ function teardownLegacyApp() {
  * Client-only boot hook for the legacy vanilla module system.
  * Re-boots on every Next.js route change so the dashboard loads data correctly.
  */
+
 export default function LegacyBoot({ authBody = false, standaloneBody = false, needsCanvasJs = false }) {
   const pathname = usePathname();
   const bootIdRef = useRef(0);
