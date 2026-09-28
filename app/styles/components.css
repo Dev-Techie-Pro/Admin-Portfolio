@@ -1828,6 +1828,10 @@ select.pa-filter-select:not(.pa-select-native):focus {
   font-size: var(--pa-fs-lg);
 }
 
+.pa-btn#qaPrimaryBtn{
+  padding: 1px;
+}
+
 .pa-panel-body {
   flex: 1 1;
   overflow-y: auto;
