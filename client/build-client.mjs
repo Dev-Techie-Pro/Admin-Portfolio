@@ -9,7 +9,20 @@ import path from 'node:path';
 
 const CLIENT_ROOT = path.resolve('client');
 const OUT_DIR = path.resolve('public/js');
+const CHUNKS_DIR = path.join(OUT_DIR, 'chunks');
 const MAIN_ENTRY = path.join(CLIENT_ROOT, 'main.ts');
+
+/** esbuild code-splitting uses content hashes; without cleanup, old chunks accumulate and can ship stale module code. */
+const cleanSplitChunksPlugin = {
+  name: 'clean-split-chunks',
+  setup(build) {
+    build.onStart(() => {
+      if (fs.existsSync(CHUNKS_DIR)) {
+        fs.rmSync(CHUNKS_DIR, { recursive: true, force: true });
+      }
+    });
+  },
+};
 
 const SHARED_BUILD = {
   format: 'esm',
@@ -57,6 +70,7 @@ async function buildAll() {
       bundle: true,
       splitting: true,
       chunkNames: 'chunks/[name]-[hash]',
+      plugins: [cleanSplitChunksPlugin],
     });
   }
 
@@ -88,6 +102,7 @@ if (process.argv.includes('--watch')) {
         bundle: true,
         splitting: true,
         chunkNames: 'chunks/[name]-[hash]',
+        plugins: [cleanSplitChunksPlugin],
       }),
     );
   }
