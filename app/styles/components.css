@@ -1546,7 +1546,7 @@ select.pa-filter-select:not(.pa-select-native):focus {
 
 .pa-qa-wizard-steps {
   border-right: 1px solid var(--pa-border);
-  padding: 10px;
+  padding: 10px 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -1732,7 +1732,7 @@ select.pa-filter-select:not(.pa-select-native):focus {
   display: flex;
   border-bottom: 1px solid var(--pa-border);
   flex-shrink: 0;
-  padding: 0 16px;
+  padding: 0 px;
   gap: var(--pa-gap-sm);
 }
 
@@ -1745,7 +1745,7 @@ select.pa-filter-select:not(.pa-select-native):focus {
   align-items: center;
   justify-content: center;
   gap: var(--pa-card-gap);
-  padding: 10px 16px;
+  padding: 10px;
   border: none;
   border-bottom: 2px solid transparent;
   background: none;
@@ -1776,7 +1776,7 @@ select.pa-filter-select:not(.pa-select-native):focus {
   align-items: center;
   justify-content: space-between;
   gap: var(--pa-card-gap);
-  padding: 10px 14px;
+  padding: 10px 0;
   border-top: 1px solid var(--pa-border);
   flex-shrink: 0;
   background: var(--pa-bg-raised);
