@@ -6,7 +6,7 @@ import { addChip, getChipValues, populateChips } from '../../utils/chips.js';
 import { requestDelete } from '../shell/confirm.js';
 import type { BlogModule } from './BlogModule.js';
 
-type WsEditorMode = 'visual' | 'text' | 'preview';
+type WsEditorMode = 'edit' | 'preview';
 type WsOpenMode = 'add' | 'edit' | 'preview';
 
 export class BlogPostWorkspace {
@@ -14,7 +14,7 @@ export class BlogPostWorkspace {
   private wired = false;
   private wsSlugTouched = false;
   private wsImageData: string | null = null;
-  private wsEditorMode: WsEditorMode = 'visual';
+  private wsEditorMode: WsEditorMode = 'edit';
   private wsOpenMode: WsOpenMode = 'edit';
   private closing = false;
   private closeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -50,8 +50,8 @@ export class BlogPostWorkspace {
       this.blog.on(btn, 'click', () => {
         const panel = btn.closest('[data-ws-panel]');
         if (!panel) return;
-        const collapsed = panel.classList.toggle('is-collapsed');
-        btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        const isOpen = panel.classList.toggle('is-collapsed');
+        btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
       });
     });
 
@@ -96,7 +96,7 @@ export class BlogPostWorkspace {
     this.resetForm();
     this.blog._populateCategorySelects();
     this.syncCategorySelect();
-    this.setEditorMode('visual');
+    this.setEditorMode('edit');
     this.show();
     $id('paBlogWsHeadTitleText')!.textContent = 'Add New Post';
     $id('paBlogWsHeadSubtitle')!.textContent = 'Create a new article for your portfolio';
@@ -104,19 +104,38 @@ export class BlogPostWorkspace {
     setTimeout(() => $id('blogWsTitle')?.focus(), 420);
   }
 
-  open(id: string | number, mode: WsOpenMode = 'edit') {
+  async open(id: string | number, mode: WsOpenMode = 'edit') {
     this.bind();
-    const record = this.blog.findById(id);
+    let record = this.blog.findById(id);
     if (!record) {
       this.blog.toast('Post not found', 'danger');
       return;
+    }
+    const contentMissing = record.content == null || String(record.content).trim() === '';
+    if (contentMissing) {
+      try {
+        const res = await fetch(`/api/blog-posts/${encodeURIComponent(String(id))}`, {
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' },
+        });
+        if (res.ok) {
+          const full = await res.json();
+          const records = [...this.blog.store.get('records')];
+          const idx = records.findIndex((p) => String(p.id) === String(id));
+          if (idx >= 0) records[idx] = { ...records[idx], ...full };
+          this.blog.store.set('records', records);
+          record = this.blog.findById(id) || full;
+        }
+      } catch {
+        /* keep list record */
+      }
     }
     this.wsOpenMode = mode === 'preview' ? 'preview' : 'edit';
     this.blog.currentEditId = id;
     this.blog._populateCategorySelects();
     this.syncCategorySelect();
     this.populateForm(record);
-    this.setEditorMode(mode === 'preview' ? 'preview' : 'visual');
+    this.setEditorMode(mode === 'preview' ? 'preview' : 'edit');
     this.show();
     $id('paBlogWsHeadTitleText')!.textContent = 'Edit Post';
     $id('paBlogWsHeadSubtitle')!.textContent = record.slug ? `/${record.slug}` : 'Update content and publishing settings';
@@ -245,7 +264,6 @@ export class BlogPostWorkspace {
   }
 
   setEditorMode(mode: WsEditorMode) {
-    this.syncVisualFromActiveEditor();
     this.wsEditorMode = mode;
 
     $all('#paBlogWsModeToggle .pa-view-btn').forEach((btn) => {
@@ -254,8 +272,6 @@ export class BlogPostWorkspace {
 
     const editorPane = $id('paBlogWsEditorPane');
     const previewPane = $id('paBlogWsPreviewPane');
-    const rteWrap = $id('blogWsRteWrap');
-    const htmlTa = $id('blogWsContentHtml') as HTMLTextAreaElement;
     const body = $id('blogWsContent');
 
     if (mode === 'preview') {
@@ -269,26 +285,8 @@ export class BlogPostWorkspace {
 
     if (previewPane) previewPane.hidden = true;
     if (editorPane) editorPane.hidden = false;
-
-    if (mode === 'text') {
-      if (rteWrap) rteWrap.hidden = true;
-      if (htmlTa) {
-        htmlTa.hidden = false;
-        htmlTa.value = getRteHtml(body);
-      }
-    } else {
-      if (rteWrap) rteWrap.hidden = false;
-      if (htmlTa) htmlTa.hidden = true;
-      if (body && htmlTa) setRteHtml(body, htmlTa.value);
-    }
-  }
-
-  private syncVisualFromActiveEditor() {
-    if (this.wsEditorMode === 'text') {
-      const body = $id('blogWsContent');
-      const htmlTa = $id('blogWsContentHtml') as HTMLTextAreaElement;
-      if (body && htmlTa) setRteHtml(body, htmlTa.value);
-    }
+    const rteWrap = $id('blogWsRteWrap');
+    if (rteWrap) rteWrap.hidden = false;
   }
 
   private updateTitleCount() {
@@ -338,7 +336,6 @@ export class BlogPostWorkspace {
   }
 
   async save() {
-    this.syncVisualFromActiveEditor();
     const f = this.blog.validateForm('ws');
     if (!f.valid) return;
 
@@ -348,8 +345,6 @@ export class BlogPostWorkspace {
       if (this.wsOpenMode === 'add') {
         const newPost = this.blog.buildNewRecord(f);
         newPost.id = this.blog.nextId++;
-        newPost.metaTitle = ($id('blogWsMetaTitle') as HTMLInputElement).value.trim();
-        newPost.metaDesc = ($id('blogWsMetaDesc') as HTMLTextAreaElement).value.trim();
         const records = [...this.blog.store.get('records'), newPost];
         this.blog.store.set('records', records);
         await this.blog.persist();
@@ -361,8 +356,6 @@ export class BlogPostWorkspace {
         const record = this.blog.findById(this.blog.currentEditId!);
         if (!record) return;
         this.blog.applyEditToRecord(record, f);
-        record.metaTitle = ($id('blogWsMetaTitle') as HTMLInputElement).value.trim();
-        record.metaDesc = ($id('blogWsMetaDesc') as HTMLTextAreaElement).value.trim();
         await this.blog.persist();
         this.blog.render();
         this.blog.toast('Blog post saved', 'success');

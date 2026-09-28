@@ -82,6 +82,7 @@ class BlogModule extends CrudCardModule {
     return cat ? { label: cat.label, catKey: cat.key } : { label: key || "Uncategorized", catKey: key };
   }
   async load() {
+    storage.invalidate("pa_blog_posts");
     const [records, categories] = await Promise.all([
       this.loadRecords(() => SEED_BLOG_POSTS),
       storage.get("pa_blog_categories", [])
@@ -168,7 +169,7 @@ class BlogModule extends CrudCardModule {
     if (this._pendingOpenId) {
       const id = this._pendingOpenId;
       this._pendingOpenId = null;
-      this.workspace.open(id, "edit");
+      void this.workspace.open(id, "edit");
     }
   }
   sortRecords(records) {
@@ -216,18 +217,11 @@ class BlogModule extends CrudCardModule {
     super.attachCardListeners();
     const grid = $id("paBlogGrid");
     if (!grid) return;
-    $all(".pa-action-view", grid).forEach((btn) => {
-      this.on(btn, "click", (e) => {
-        e.stopPropagation();
-        const id = btn.getAttribute("data-blog-id");
-        if (id) this.workspace.open(id, "preview");
-      });
-    });
     grid.querySelectorAll(".pa-proj-card__details-btn").forEach((btn) => {
       this.on(btn, "click", (e) => {
         e.stopPropagation();
         const id = btn.getAttribute("data-blog-id");
-        if (id) this.workspace.open(id, "edit");
+        if (id) void this.workspace.open(id, "edit");
       });
     });
   }
@@ -350,7 +344,7 @@ class BlogModule extends CrudCardModule {
     this.workspace.openAdd();
   }
   openEditPanel(id) {
-    this.workspace.open(id, "edit");
+    void this.workspace.open(id, "edit");
   }
   async deleteById(id) {
     await super.deleteById(id);
@@ -438,6 +432,8 @@ class BlogModule extends CrudCardModule {
       imageAlt: $id("blogWsImageAlt").value.trim(),
       publishedAt: publishedDate || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
       sortOrder: sortOrderRaw ? parseInt(sortOrderRaw, 10) : this.store.get("records").length + 1,
+      metaTitle: $id("blogWsMetaTitle").value.trim(),
+      metaDesc: $id("blogWsMetaDesc").value.trim(),
       createdAt: (/* @__PURE__ */ new Date()).toISOString()
     };
   }
@@ -456,6 +452,8 @@ class BlogModule extends CrudCardModule {
     record.publishedAt = publishedDate || record.publishedAt;
     const sortOrderRaw = $id("blogWsSortOrder").value;
     record.sortOrder = sortOrderRaw ? parseInt(sortOrderRaw, 10) : record.sortOrder;
+    record.metaTitle = $id("blogWsMetaTitle").value.trim();
+    record.metaDesc = $id("blogWsMetaDesc").value.trim();
   }
 }
 export {

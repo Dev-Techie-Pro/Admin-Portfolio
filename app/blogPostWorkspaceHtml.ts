@@ -11,8 +11,7 @@ export const BLOG_POST_WORKSPACE_HTML = `
     </div>
     <div class="pa-blog-ws-head-actions">
       <div class="pa-view-toggle pa-blog-ws-mode-toggle" role="group" aria-label="Editor mode" id="paBlogWsModeToggle">
-        <button type="button" class="pa-view-btn active" id="paBlogWsVisualBtn" data-ws-mode="visual" title="Visual editor"><i class="ri-edit-box-line"></i> Visual</button>
-        <button type="button" class="pa-view-btn" id="paBlogWsTextBtn" data-ws-mode="text" title="HTML source"><i class="ri-code-line"></i> Text</button>
+        <button type="button" class="pa-view-btn active" id="paBlogWsEditBtn" data-ws-mode="edit" title="Edit post"><i class="ri-edit-line"></i> Edit</button>
         <button type="button" class="pa-view-btn" id="paBlogWsPreviewBtn" data-ws-mode="preview" title="Preview"><i class="ri-eye-line"></i> Preview</button>
       </div>
       <button type="button" class="pa-btn pa-btn-cancel" id="paBlogWsDeleteBtn"><i class="ri-delete-bin-line"></i> Delete</button>
@@ -68,7 +67,7 @@ export const BLOG_POST_WORKSPACE_HTML = `
     </div>
 
     <aside class="pa-blog-ws-sidebar" aria-label="Post settings">
-      <section class="pa-blog-ws-panel" data-ws-panel>
+      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel>
         <button type="button" class="pa-blog-ws-panel-head" data-ws-panel-toggle aria-expanded="true">
           <span class="pa-blog-ws-panel-head-left"><i class="ri-upload-cloud-2-line"></i> Publish</span>
           <i class="ri-arrow-down-s-line pa-blog-ws-panel-chevron" aria-hidden="true"></i>
@@ -115,7 +114,7 @@ export const BLOG_POST_WORKSPACE_HTML = `
         </div>
       </section>
 
-      <section class="pa-blog-ws-panel" data-ws-panel>
+      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel>
         <button type="button" class="pa-blog-ws-panel-head" data-ws-panel-toggle aria-expanded="true">
           <span class="pa-blog-ws-panel-head-left"><i class="ri-text-snippet"></i> Excerpt &amp; tags</span>
           <i class="ri-arrow-down-s-line pa-blog-ws-panel-chevron" aria-hidden="true"></i>
@@ -138,7 +137,7 @@ export const BLOG_POST_WORKSPACE_HTML = `
         </div>
       </section>
 
-      <section class="pa-blog-ws-panel" data-ws-panel>
+      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel>
         <button type="button" class="pa-blog-ws-panel-head" data-ws-panel-toggle aria-expanded="true">
           <span class="pa-blog-ws-panel-head-left"><i class="ri-image-add-line"></i> Media</span>
           <i class="ri-arrow-down-s-line pa-blog-ws-panel-chevron" aria-hidden="true"></i>
@@ -167,7 +166,7 @@ export const BLOG_POST_WORKSPACE_HTML = `
         </div>
       </section>
 
-      <section class="pa-blog-ws-panel" data-ws-panel>
+      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel>
         <button type="button" class="pa-blog-ws-panel-head" data-ws-panel-toggle aria-expanded="true">
           <span class="pa-blog-ws-panel-head-left"><i class="ri-search-line"></i> SEO</span>
           <i class="ri-arrow-down-s-line pa-blog-ws-panel-chevron" aria-hidden="true"></i>

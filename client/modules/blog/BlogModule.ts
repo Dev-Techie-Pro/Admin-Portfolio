@@ -74,6 +74,7 @@ export class BlogModule extends CrudCardModule {
   }
 
   async load() {
+    storage.invalidate('pa_blog_posts');
     const [records, categories] = await Promise.all([
       this.loadRecords(() => SEED_BLOG_POSTS),
       storage.get('pa_blog_categories', []),
@@ -166,7 +167,7 @@ export class BlogModule extends CrudCardModule {
     if (this._pendingOpenId) {
       const id = this._pendingOpenId;
       this._pendingOpenId = null;
-      this.workspace.open(id, 'edit');
+      void this.workspace.open(id, 'edit');
     }
   }
 
@@ -228,18 +229,11 @@ export class BlogModule extends CrudCardModule {
     super.attachCardListeners();
     const grid = $id('paBlogGrid');
     if (!grid) return;
-    $all('.pa-action-view', grid).forEach((btn) => {
-      this.on(btn, 'click', (e) => {
-        e.stopPropagation();
-        const id = btn.getAttribute('data-blog-id');
-        if (id) this.workspace.open(id, 'preview');
-      });
-    });
     grid.querySelectorAll('.pa-proj-card__details-btn').forEach((btn) => {
       this.on(btn, 'click', (e) => {
         e.stopPropagation();
         const id = btn.getAttribute('data-blog-id');
-        if (id) this.workspace.open(id, 'edit');
+        if (id) void this.workspace.open(id, 'edit');
       });
     });
   }
@@ -362,7 +356,7 @@ export class BlogModule extends CrudCardModule {
   }
 
   openEditPanel(id) {
-    this.workspace.open(id, 'edit');
+    void this.workspace.open(id, 'edit');
   }
 
   async deleteById(id) {
@@ -449,6 +443,8 @@ export class BlogModule extends CrudCardModule {
       imageAlt: $id('blogWsImageAlt').value.trim(),
       publishedAt: publishedDate || new Date().toISOString().slice(0, 10),
       sortOrder: sortOrderRaw ? parseInt(sortOrderRaw, 10) : this.store.get('records').length + 1,
+      metaTitle: $id('blogWsMetaTitle').value.trim(),
+      metaDesc: $id('blogWsMetaDesc').value.trim(),
       createdAt: new Date().toISOString(),
     };
   }
@@ -468,5 +464,7 @@ export class BlogModule extends CrudCardModule {
     record.publishedAt = publishedDate || record.publishedAt;
     const sortOrderRaw = $id('blogWsSortOrder').value;
     record.sortOrder = sortOrderRaw ? parseInt(sortOrderRaw, 10) : record.sortOrder;
+    record.metaTitle = $id('blogWsMetaTitle').value.trim();
+    record.metaDesc = $id('blogWsMetaDesc').value.trim();
   }
 }

@@ -33,7 +33,7 @@ const PROJECT_GALLERY_COLUMNS = 'url, file_name, sort_order';
 const MEDIA_COLUMNS = 'legacy_id, file_name, url, alt_text, folder, size_bytes, mime_type, uploaded_at, usage_count, source';
 const TECHNOLOGY_COLUMNS = 'legacy_id, name, category_id, level_key, documentation_url, description, years_experience, is_featured, sort_order, created_at';
 const TESTIMONIAL_COLUMNS = 'legacy_id, client_name, client_role, company, quote, rating, avatar_url, avatar_alt, is_featured, created_at';
-const BLOG_POST_COLUMNS = 'legacy_id, title, slug, excerpt, category_key, status, is_featured, featured_image_url, featured_image_alt, published_at, sort_order, created_at';
+const BLOG_POST_COLUMNS = 'legacy_id, title, slug, excerpt, category_key, status, is_featured, featured_image_url, featured_image_alt, published_at, sort_order, meta_title, meta_description, created_at';
 const BLOG_POST_TAG_COLUMNS = 'tag, sort_order';
 const EXPERIENCE_COLUMNS = 'legacy_id, job_title, company, location, employment_type, start_date, end_date, is_current, description, sort_order, created_at';
 const CONTACT_MESSAGE_COLUMNS = 'id, legacy_id, sender_name, sender_email, subject, snippet, body, status, sender_ip, reply_body, replied_at, is_starred, created_at';
@@ -775,6 +775,8 @@ function blogFromDb(row, tags = []) {
     imageAlt: row.featured_image_alt || '',
     publishedAt: row.published_at,
     sortOrder: row.sort_order,
+    metaTitle: row.meta_title || '',
+    metaDesc: row.meta_description || '',
     createdAt: row.created_at,
   };
 }
@@ -850,6 +852,8 @@ async function saveBlogPostsLegacy(records) {
       featured_image_alt: p.imageAlt || null,
       published_at: p.publishedAt || null,
       sort_order: p.sortOrder ?? 0,
+      meta_title: p.metaTitle || null,
+      meta_description: p.metaDesc || null,
       created_at: p.createdAt || new Date().toISOString(),
     });
     if (error) throw error;

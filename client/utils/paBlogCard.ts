@@ -38,8 +38,7 @@ function renderCardMenu(p, idAttr) {
 function renderActions(p, idAttr) {
   const id = p.id;
   const title = escapeHtml(p.title);
-  return `<button type="button" class="pa-action-btn pa-action-view" title="View post" ${idAttr}="${id}" aria-label="View ${title}"><i class="ri-eye-line"></i></button>
-    <button type="button" class="pa-action-btn pa-action-edit" title="Edit post" ${idAttr}="${id}" aria-label="Edit ${title}"><i class="ri-pencil-line"></i></button>
+  return `<button type="button" class="pa-action-btn pa-action-edit" title="Edit post" ${idAttr}="${id}" aria-label="Edit ${title}"><i class="ri-pencil-line"></i></button>
     <button type="button" class="pa-action-btn pa-action-delete" title="Delete post" ${idAttr}="${id}" aria-label="Delete ${title}"><i class="ri-delete-bin-line"></i></button>`;
 }
 
@@ -83,8 +82,7 @@ export function renderPaBlogListRow(p, opts = {}) {
   const statusLabel = p.status || 'Draft';
   const variant = getBlogStatusClass(p.status) === 'published' ? 'active' : 'planning';
   const thumbInner = thumbHtml || '<i class="ri-article-line"></i>';
-  const actions = `${listActionBtn('pa-action-view', 'ri-eye-line', 'View post', idAttr, p.id, 'View')}
-    ${listActionBtn('pa-action-edit', 'ri-pencil-line', 'Edit post', idAttr, p.id, 'Edit')}
+  const actions = `${listActionBtn('pa-action-edit', 'ri-pencil-line', 'Edit post', idAttr, p.id, 'Edit')}
     ${listActionBtn('pa-action-delete', 'ri-delete-bin-line', 'Delete post', idAttr, p.id, 'Delete')}`;
 
   return `${renderListRowStart(cardClass)}

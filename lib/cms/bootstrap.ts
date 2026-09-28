@@ -27,7 +27,7 @@ const KEY_FETCHERS = {
   pa_technologies: getTechnologies,
   pa_media_library: getMedia,
   pa_testimonials: getTestimonials,
-  pa_blog_posts: () => getBlogPosts({ includeContent: false }),
+  pa_blog_posts: () => getBlogPosts({ includeContent: true }),
   pa_experience: getExperience,
   pa_contact_messages: () => getContactMessagesPage({ limit: CONTACT_PAGE_SIZE }),
   pa_recent_activities: getRecentActivitiesPayload,

@@ -80,8 +80,7 @@ function renderCardMenu(p, idAttr) {
 function renderActions(p, idAttr) {
   const id = p.id;
   const title = escapeHtml(p.title);
-  return `<button type="button" class="pa-action-btn pa-action-view" title="View post" ${idAttr}="${id}" aria-label="View ${title}"><i class="ri-eye-line"></i></button>
-    <button type="button" class="pa-action-btn pa-action-edit" title="Edit post" ${idAttr}="${id}" aria-label="Edit ${title}"><i class="ri-pencil-line"></i></button>
+  return `<button type="button" class="pa-action-btn pa-action-edit" title="Edit post" ${idAttr}="${id}" aria-label="Edit ${title}"><i class="ri-pencil-line"></i></button>
     <button type="button" class="pa-action-btn pa-action-delete" title="Delete post" ${idAttr}="${id}" aria-label="Delete ${title}"><i class="ri-delete-bin-line"></i></button>`;
 }
 function renderMeta(p) {
@@ -123,8 +122,7 @@ function renderPaBlogListRow(p, opts = {}) {
   const statusLabel = p.status || "Draft";
   const variant = getBlogStatusClass(p.status) === "published" ? "active" : "planning";
   const thumbInner = thumbHtml || '<i class="ri-article-line"></i>';
-  const actions = `${listActionBtn("pa-action-view", "ri-eye-line", "View post", idAttr, p.id, "View")}
-    ${listActionBtn("pa-action-edit", "ri-pencil-line", "Edit post", idAttr, p.id, "Edit")}
+  const actions = `${listActionBtn("pa-action-edit", "ri-pencil-line", "Edit post", idAttr, p.id, "Edit")}
     ${listActionBtn("pa-action-delete", "ri-delete-bin-line", "Delete post", idAttr, p.id, "Delete")}`;
   return `${renderListRowStart(cardClass)}
     ${renderListIndexCell(rowIndex)}
@@ -221,7 +219,7 @@ var BlogPostWorkspace = class {
     this.wired = false;
     this.wsSlugTouched = false;
     this.wsImageData = null;
-    this.wsEditorMode = "visual";
+    this.wsEditorMode = "edit";
     this.wsOpenMode = "edit";
     this.closing = false;
     this.closeTimer = null;
@@ -256,8 +254,8 @@ var BlogPostWorkspace = class {
       this.blog.on(btn, "click", () => {
         const panel = btn.closest("[data-ws-panel]");
         if (!panel) return;
-        const collapsed = panel.classList.toggle("is-collapsed");
-        btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        const isOpen = panel.classList.toggle("is-collapsed");
+        btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
       });
     });
     this.blog.on($id("blogWsTitle"), "input", (e) => {
@@ -299,26 +297,44 @@ var BlogPostWorkspace = class {
     this.resetForm();
     this.blog._populateCategorySelects();
     this.syncCategorySelect();
-    this.setEditorMode("visual");
+    this.setEditorMode("edit");
     this.show();
     $id("paBlogWsHeadTitleText").textContent = "Add New Post";
     $id("paBlogWsHeadSubtitle").textContent = "Create a new article for your portfolio";
     $id("paBlogWsDeleteBtn").setAttribute("hidden", "");
     setTimeout(() => $id("blogWsTitle")?.focus(), 420);
   }
-  open(id, mode = "edit") {
+  async open(id, mode = "edit") {
     this.bind();
-    const record = this.blog.findById(id);
+    let record = this.blog.findById(id);
     if (!record) {
       this.blog.toast("Post not found", "danger");
       return;
+    }
+    const contentMissing = record.content == null || String(record.content).trim() === "";
+    if (contentMissing) {
+      try {
+        const res = await fetch(`/api/blog-posts/${encodeURIComponent(String(id))}`, {
+          credentials: "same-origin",
+          headers: { Accept: "application/json" }
+        });
+        if (res.ok) {
+          const full = await res.json();
+          const records = [...this.blog.store.get("records")];
+          const idx = records.findIndex((p) => String(p.id) === String(id));
+          if (idx >= 0) records[idx] = { ...records[idx], ...full };
+          this.blog.store.set("records", records);
+          record = this.blog.findById(id) || full;
+        }
+      } catch {
+      }
     }
     this.wsOpenMode = mode === "preview" ? "preview" : "edit";
     this.blog.currentEditId = id;
     this.blog._populateCategorySelects();
     this.syncCategorySelect();
     this.populateForm(record);
-    this.setEditorMode(mode === "preview" ? "preview" : "visual");
+    this.setEditorMode(mode === "preview" ? "preview" : "edit");
     this.show();
     $id("paBlogWsHeadTitleText").textContent = "Edit Post";
     $id("paBlogWsHeadSubtitle").textContent = record.slug ? `/${record.slug}` : "Update content and publishing settings";
@@ -438,15 +454,12 @@ var BlogPostWorkspace = class {
     this.clearFieldErrors();
   }
   setEditorMode(mode) {
-    this.syncVisualFromActiveEditor();
     this.wsEditorMode = mode;
     $all("#paBlogWsModeToggle .pa-view-btn").forEach((btn) => {
       btn.classList.toggle("active", btn.getAttribute("data-ws-mode") === mode);
     });
     const editorPane = $id("paBlogWsEditorPane");
     const previewPane = $id("paBlogWsPreviewPane");
-    const rteWrap = $id("blogWsRteWrap");
-    const htmlTa = $id("blogWsContentHtml");
     const body = $id("blogWsContent");
     if (mode === "preview") {
       if (editorPane) editorPane.hidden = true;
@@ -458,24 +471,8 @@ var BlogPostWorkspace = class {
     }
     if (previewPane) previewPane.hidden = true;
     if (editorPane) editorPane.hidden = false;
-    if (mode === "text") {
-      if (rteWrap) rteWrap.hidden = true;
-      if (htmlTa) {
-        htmlTa.hidden = false;
-        htmlTa.value = getRteHtml(body);
-      }
-    } else {
-      if (rteWrap) rteWrap.hidden = false;
-      if (htmlTa) htmlTa.hidden = true;
-      if (body && htmlTa) setRteHtml(body, htmlTa.value);
-    }
-  }
-  syncVisualFromActiveEditor() {
-    if (this.wsEditorMode === "text") {
-      const body = $id("blogWsContent");
-      const htmlTa = $id("blogWsContentHtml");
-      if (body && htmlTa) setRteHtml(body, htmlTa.value);
-    }
+    const rteWrap = $id("blogWsRteWrap");
+    if (rteWrap) rteWrap.hidden = false;
   }
   updateTitleCount() {
     const el = $id("blogWsTitle");
@@ -516,7 +513,6 @@ var BlogPostWorkspace = class {
     await this.save();
   }
   async save() {
-    this.syncVisualFromActiveEditor();
     const f = this.blog.validateForm("ws");
     if (!f.valid) return;
     const btn = $id("paBlogWsSaveBtn");
@@ -525,8 +521,6 @@ var BlogPostWorkspace = class {
       if (this.wsOpenMode === "add") {
         const newPost = this.blog.buildNewRecord(f);
         newPost.id = this.blog.nextId++;
-        newPost.metaTitle = $id("blogWsMetaTitle").value.trim();
-        newPost.metaDesc = $id("blogWsMetaDesc").value.trim();
         const records = [...this.blog.store.get("records"), newPost];
         this.blog.store.set("records", records);
         await this.blog.persist();
@@ -538,8 +532,6 @@ var BlogPostWorkspace = class {
         const record = this.blog.findById(this.blog.currentEditId);
         if (!record) return;
         this.blog.applyEditToRecord(record, f);
-        record.metaTitle = $id("blogWsMetaTitle").value.trim();
-        record.metaDesc = $id("blogWsMetaDesc").value.trim();
         await this.blog.persist();
         this.blog.render();
         this.blog.toast("Blog post saved", "success");
@@ -631,6 +623,7 @@ var BlogModule = class extends CrudCardModule {
     return cat ? { label: cat.label, catKey: cat.key } : { label: key || "Uncategorized", catKey: key };
   }
   async load() {
+    storage.invalidate("pa_blog_posts");
     const [records, categories] = await Promise.all([
       this.loadRecords(() => SEED_BLOG_POSTS),
       storage.get("pa_blog_categories", [])
@@ -717,7 +710,7 @@ var BlogModule = class extends CrudCardModule {
     if (this._pendingOpenId) {
       const id = this._pendingOpenId;
       this._pendingOpenId = null;
-      this.workspace.open(id, "edit");
+      void this.workspace.open(id, "edit");
     }
   }
   sortRecords(records) {
@@ -765,18 +758,11 @@ var BlogModule = class extends CrudCardModule {
     super.attachCardListeners();
     const grid = $id("paBlogGrid");
     if (!grid) return;
-    $all(".pa-action-view", grid).forEach((btn) => {
-      this.on(btn, "click", (e) => {
-        e.stopPropagation();
-        const id = btn.getAttribute("data-blog-id");
-        if (id) this.workspace.open(id, "preview");
-      });
-    });
     grid.querySelectorAll(".pa-proj-card__details-btn").forEach((btn) => {
       this.on(btn, "click", (e) => {
         e.stopPropagation();
         const id = btn.getAttribute("data-blog-id");
-        if (id) this.workspace.open(id, "edit");
+        if (id) void this.workspace.open(id, "edit");
       });
     });
   }
@@ -899,7 +885,7 @@ var BlogModule = class extends CrudCardModule {
     this.workspace.openAdd();
   }
   openEditPanel(id) {
-    this.workspace.open(id, "edit");
+    void this.workspace.open(id, "edit");
   }
   async deleteById(id) {
     await super.deleteById(id);
@@ -987,6 +973,8 @@ var BlogModule = class extends CrudCardModule {
       imageAlt: $id("blogWsImageAlt").value.trim(),
       publishedAt: publishedDate || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
       sortOrder: sortOrderRaw ? parseInt(sortOrderRaw, 10) : this.store.get("records").length + 1,
+      metaTitle: $id("blogWsMetaTitle").value.trim(),
+      metaDesc: $id("blogWsMetaDesc").value.trim(),
       createdAt: (/* @__PURE__ */ new Date()).toISOString()
     };
   }
@@ -1005,6 +993,8 @@ var BlogModule = class extends CrudCardModule {
     record.publishedAt = publishedDate || record.publishedAt;
     const sortOrderRaw = $id("blogWsSortOrder").value;
     record.sortOrder = sortOrderRaw ? parseInt(sortOrderRaw, 10) : record.sortOrder;
+    record.metaTitle = $id("blogWsMetaTitle").value.trim();
+    record.metaDesc = $id("blogWsMetaDesc").value.trim();
   }
 };
 export {

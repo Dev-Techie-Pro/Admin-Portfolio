@@ -864,6 +864,7 @@ select.pa-filter-select:not(.pa-select-native):focus {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 350px;
 }
 
 .pa-lv-text {

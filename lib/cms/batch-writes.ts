@@ -69,6 +69,8 @@ export function blogPostsToBatchPayload(records, existingRows) {
     featured_image_alt: p.imageAlt || null,
     published_at: p.publishedAt || null,
     sort_order: p.sortOrder ?? 0,
+    meta_title: p.metaTitle || null,
+    meta_description: p.metaDesc || null,
     created_at: p.createdAt || new Date().toISOString(),
     tags: (p.tags || []).map((tag, i) => ({ tag, sort_order: i })),
   }));
