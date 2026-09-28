@@ -4,7 +4,7 @@ import { $id, escapeHtml } from '../../utils/dom.js';
 import { isValidUrl, isValidSlug, slugify } from '../../utils/strings.js';
 import { handleFileValidation } from '../../utils/files.js';
 import { uploadCmsFileWithPreview } from '../../utils/media-upload.js';
-import { setupRte } from '../../utils/rte.js';
+import { setupRte, getRteHtml } from '../../utils/rte.js';
 import { addChip, getChipValues } from '../../utils/chips.js';
 import { parseSortInput, sortByNewestFirst } from '../../utils/format.js';
 import { showStatusToast } from '../shell/toast.js';
@@ -71,10 +71,10 @@ export class QuickAddModule extends Module {
       storage.get('pa_category_meta', {}),
       storage.get('pa_blog_categories', []),
     ]);
-    this.nextIds.project = Math.max(0, ...(projects || []).map((p) => p.id)) + 1;
-    this.nextIds.testimonial = Math.max(0, ...(testi || []).map((t) => t.id)) + 1;
-    this.nextIds.experience = Math.max(0, ...(exp || []).map((e) => e.id)) + 1;
-    this.nextIds.blog = Math.max(0, ...(blog || []).map((b) => b.id)) + 1;
+    this.nextIds.project = Math.max(0, ...(projects || []).map((p) => Number(p.id) || 0)) + 1;
+    this.nextIds.testimonial = Math.max(0, ...(testi || []).map((t) => Number(t.id) || 0)) + 1;
+    this.nextIds.experience = Math.max(0, ...(exp || []).map((e) => Number(e.id) || 0)) + 1;
+    this.nextIds.blog = Math.max(0, ...(blog || []).map((b) => Number(b.id) || 0)) + 1;
     this.categoriesMap = categories && typeof categories === 'object' ? categories : {};
     this.blogCategories = Array.isArray(blogCategories) ? blogCategories : [];
     this.populateProjectCategories();
@@ -135,8 +135,8 @@ export class QuickAddModule extends Module {
     setupRte('qaBlogRteWrap', 'qaBlogContent');
   }
 
-  open(tab = 'project') {
-    void this.initIds();
+  async open(tab = 'project') {
+    await this.initIds();
     this.switchTab(tab);
     openPanel('paQuickAddPanel');
     setTimeout(() => {
@@ -512,27 +512,45 @@ export class QuickAddModule extends Module {
     if (!slug || !isValidSlug(slug)) { this.showErr('qaBlogSlug', true); ok = false; } else this.showErr('qaBlogSlug', false);
     if (!$id('qaBlogCategory')?.value) { this.showErr('qaBlogCategory', true); ok = false; } else this.showErr('qaBlogCategory', false);
     if (!$id('qaBlogExcerpt')?.value.trim()) { this.showErr('qaBlogExcerpt', true); ok = false; } else this.showErr('qaBlogExcerpt', false);
-    const content = $id('qaBlogContent')?.textContent.trim();
-    if (!content) { $id('qaBlogContentError')?.classList.add('visible'); ok = false; } else $id('qaBlogContentError')?.classList.remove('visible');
-    if (!ok) this.toast('Please fill in all required fields', 'danger');
+    const contentEl = $id('qaBlogContent');
+    const contentPlain = contentEl?.textContent.trim() || '';
+    if (!contentPlain) {
+      $id('qaBlogContentError')?.classList.add('visible');
+      $id('qaBlogRteWrap')?.classList.add('error');
+      ok = false;
+    } else {
+      $id('qaBlogContentError')?.classList.remove('visible');
+      $id('qaBlogRteWrap')?.classList.remove('error');
+    }
+    if (!ok) {
+      if (this.wizardStep.blog === 'publishing') {
+        this.wizardStep.blog = 'content';
+        this.updateWizardUi('blog');
+      }
+      this.toast('Please fill in all required fields', 'danger');
+    }
     return ok;
   }
 
   async submitBlog() {
     if (!this.validateBlogContent()) return false;
     const slug = $id('qaBlogSlug').value.trim();
+    storage.invalidate('pa_blog_posts');
     const records = await storage.get('pa_blog_posts', []);
     if (records.some((p) => p.slug === slug)) {
       this.toast(`Slug "${slug}" is already in use`, 'danger');
       return false;
     }
+    const contentEl = $id('qaBlogContent');
+    const nextId = Math.max(0, ...records.map((b) => Number(b.id) || 0)) + 1;
+    this.nextIds.blog = nextId + 1;
     const newPost = {
-      id: this.nextIds.blog++,
+      id: nextId,
       title: $id('qaBlogTitle').value.trim(),
       slug,
       category: $id('qaBlogCategory').value,
       excerpt: $id('qaBlogExcerpt').value.trim(),
-      content: $id('qaBlogContent').textContent.trim(),
+      content: contentEl ? getRteHtml(contentEl) : '',
       tags: getChipValues($id('qaBlogTagChips')),
       status: $id('qaBlogStatus')?.value || 'Draft',
       featured: $id('qaBlogFeatured')?.value === '1',
@@ -540,6 +558,8 @@ export class QuickAddModule extends Module {
       imageAlt: $id('qaBlogImageAlt')?.value.trim() || '',
       publishedAt: $id('qaBlogPublishedDate')?.value || new Date().toISOString().slice(0, 10),
       sortOrder: parseInt($id('qaBlogSortOrder')?.value, 10) || records.length + 1,
+      metaTitle: '',
+      metaDesc: '',
       createdAt: new Date().toISOString(),
     };
     showStatusToast('Saving changes…', 'info', 120000);

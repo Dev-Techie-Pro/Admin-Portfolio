@@ -1789,7 +1789,7 @@ function bindGlobalPanelChrome() {
 var quickAddModule = null;
 async function bindQuickAddButton(pageModule) {
   if (quickAddModule) return;
-  const { QuickAddModule } = await import("./chunks/QuickAddModule-3NIPVDOV.js");
+  const { QuickAddModule } = await import("./chunks/QuickAddModule-I7YVEA4J.js");
   quickAddModule = new QuickAddModule(pageModule);
   quickAddModule.bindEvents();
 }

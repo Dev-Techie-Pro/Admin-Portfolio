@@ -12885,7 +12885,8 @@ body.pa-media-modal-open {
 
 .pa-btn-icon {
   padding: 8px 10px;
-  min-width: 40px;
+  width: 45px;
+  height: 45px;
 }
 
 /* ——— Blog post inline workspace (list page overlay) ——— */
@@ -13134,6 +13135,9 @@ body.pa-media-modal-open {
   background: var(--pa-surface);
   padding: 22px 24px;
   min-height: 420px;
+}
+.pa-blog-ws-preview-pane .pa-rte-body{
+  max-height: 100%;
 }
 .pa-blog-ws-preview-inner {
   min-height: 360px;
