@@ -15,7 +15,7 @@ function allowedOrigins(): string[] {
 export function withPublicCors(request: Request, response: NextResponse) {
   const origin = request.headers.get('origin')?.replace(/\/$/, '');
   const allowed = allowedOrigins();
-  if (origin && (allowed.length === 0 || allowed.includes(origin))) {
+  if (origin && allowed.includes(origin)) {
     response.headers.set('Access-Control-Allow-Origin', origin);
     response.headers.set('Vary', 'Origin');
   } else if (allowed.length === 1) {
