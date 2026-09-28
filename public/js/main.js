@@ -17,7 +17,7 @@ import {
   previewUserAvatar,
   showNavFlyout,
   syncSidebarGroupNav
-} from "./chunks/chunk-SODTJ3IW.js";
+} from "./chunks/chunk-AH4EORLU.js";
 import {
   initPasswordToggles
 } from "./chunks/chunk-5SJ7MEVC.js";
@@ -36,6 +36,12 @@ import {
   uploadCmsFileWithPreview
 } from "./chunks/chunk-4HYJHSPC.js";
 import {
+  PAGE,
+  getCurrentPage,
+  getLoginPath,
+  getSettingsTabFromPath
+} from "./chunks/chunk-DUXXWVBL.js";
+import {
   activateTab,
   anyPanelOpen,
   closeAllCardMenus,
@@ -47,12 +53,6 @@ import {
   registerPanel,
   requestLogout
 } from "./chunks/chunk-OO3QQH4Y.js";
-import {
-  PAGE,
-  getCurrentPage,
-  getLoginPath,
-  getSettingsTabFromPath
-} from "./chunks/chunk-TQSZZCHM.js";
 import {
   APPEARANCE_DEFAULTS,
   ICON_PREVIEW_SIZES,
@@ -1726,44 +1726,41 @@ async function initAuthAppearance() {
 
 // client/main.ts
 var AUTH_PAGES = /* @__PURE__ */ new Set(["login", "forgot-password", "reset-password"]);
-var STANDALONE_PAGES = /* @__PURE__ */ new Set(["blogpost-view"]);
 var PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
 async function loadPageModuleClass(page) {
   switch (page) {
     case "dashboard":
-      return (await import("./chunks/DashboardModule-OVY2OHZZ.js")).DashboardModule;
+      return (await import("./chunks/DashboardModule-JYLHHMXW.js")).DashboardModule;
     case "projects":
-      return (await import("./chunks/ProjectsModule-APMFRZ4H.js")).ProjectsModule;
+      return (await import("./chunks/ProjectsModule-OMZN6RXM.js")).ProjectsModule;
     case "categories":
-      return (await import("./chunks/CategoriesModule-ZLR5W2ZG.js")).CategoriesModule;
+      return (await import("./chunks/CategoriesModule-V43PUIPF.js")).CategoriesModule;
     case "tags":
-      return (await import("./chunks/TagsModule-6DB7OORB.js")).TagsModule;
+      return (await import("./chunks/TagsModule-JDEOHDXN.js")).TagsModule;
     case "technologies":
-      return (await import("./chunks/TechnologiesModule-33FSKP6V.js")).TechnologiesModule;
+      return (await import("./chunks/TechnologiesModule-IWTAM23D.js")).TechnologiesModule;
     case "tool-categories":
-      return (await import("./chunks/ToolCategoriesModule-L2Q5RP64.js")).ToolCategoriesModule;
+      return (await import("./chunks/ToolCategoriesModule-7ADHV2IJ.js")).ToolCategoriesModule;
     case "blog-categories":
-      return (await import("./chunks/BlogCategoriesModule-IOOYDF2H.js")).BlogCategoriesModule;
+      return (await import("./chunks/BlogCategoriesModule-ATLIY5EW.js")).BlogCategoriesModule;
     case "tools":
-      return (await import("./chunks/ToolsModule-P363LG53.js")).ToolsModule;
+      return (await import("./chunks/ToolsModule-RUBMM5FV.js")).ToolsModule;
     case "media":
-      return (await import("./chunks/MediaModule-HUND4W7S.js")).MediaModule;
+      return (await import("./chunks/MediaModule-WYAGVYDT.js")).MediaModule;
     case "testimonials":
-      return (await import("./chunks/TestimonialsModule-R7TVAFLM.js")).TestimonialsModule;
+      return (await import("./chunks/TestimonialsModule-REXINT6C.js")).TestimonialsModule;
     case "blogposts":
-      return (await import("./chunks/BlogModule-NSJMYLSR.js")).BlogModule;
-    case "blogpost-view":
-      return (await import("./chunks/BlogPostViewModule-D4TTUECI.js")).BlogPostViewModule;
+      return (await import("./chunks/BlogModule-BJSRZRTH.js")).BlogModule;
     case "experience":
-      return (await import("./chunks/ExperienceModule-MDCFJCYV.js")).ExperienceModule;
+      return (await import("./chunks/ExperienceModule-TUNNPA3P.js")).ExperienceModule;
     case "contact-messages":
-      return (await import("./chunks/ContactMessagesModule-42FLSIZV.js")).ContactMessagesModule;
+      return (await import("./chunks/ContactMessagesModule-URCOYOIK.js")).ContactMessagesModule;
     case "users":
-      return (await import("./chunks/UsersModule-4LPHS7NA.js")).UsersModule;
+      return (await import("./chunks/UsersModule-RC2GRXYF.js")).UsersModule;
     case "recent-activities":
       return (await import("./chunks/RecentActivitiesModule-Y3LVXNMW.js")).RecentActivitiesModule;
     case "settings":
-      return (await import("./chunks/SettingsModule-PEPLH4VL.js")).SettingsModule;
+      return (await import("./chunks/SettingsModule-NYQ5MDHV.js")).SettingsModule;
     case "login":
       return (await import("./chunks/LoginModule-PS3RSOUI.js")).LoginModule;
     case "forgot-password":
@@ -1792,7 +1789,7 @@ function bindGlobalPanelChrome() {
 var quickAddModule = null;
 async function bindQuickAddButton(pageModule) {
   if (quickAddModule) return;
-  const { QuickAddModule } = await import("./chunks/QuickAddModule-JPNHZRYE.js");
+  const { QuickAddModule } = await import("./chunks/QuickAddModule-3NIPVDOV.js");
   quickAddModule = new QuickAddModule(pageModule);
   quickAddModule.bindEvents();
 }
@@ -1842,29 +1839,6 @@ async function bootAuthPage(ModuleClass, page) {
   activePageModule = pageModule;
   window.__paDebug = { pageModule, page };
 }
-async function bootStandalonePage(ModuleClass, page) {
-  bodyLoader.mount();
-  bodyLoader.begin("Loading post\u2026");
-  const prefetchKeys = PREFETCH_BY_PAGE[page];
-  if (prefetchKeys?.length) {
-    await storage.hydrateFromPersistentCache(prefetchKeys);
-    storage.prefetch(prefetchKeys);
-  }
-  clearDomCache();
-  initConfirmDialog();
-  const pageModule = new ModuleClass();
-  const bootstrapPending = storage.isBootstrapPending();
-  await initPageModule(pageModule);
-  activePageModule = pageModule;
-  window.__paDebug = { pageModule, page };
-  if (bootstrapPending) {
-    void storage.waitForBootstrap().then(() => {
-      if (activePageModule === pageModule && typeof pageModule.render === "function") {
-        pageModule.render();
-      }
-    });
-  }
-}
 async function bootAppPage(ModuleClass, page) {
   bodyLoader.mount();
   bodyLoader.begin("Loading your data\u2026");
@@ -1905,8 +1879,6 @@ async function runBoot() {
   try {
     if (AUTH_PAGES.has(page)) {
       await bootAuthPage(ModuleClass, page);
-    } else if (STANDALONE_PAGES.has(page)) {
-      await bootStandalonePage(ModuleClass, page);
     } else {
       await bootAppPage(ModuleClass, page);
     }

@@ -2,14 +2,13 @@ import { CrudCardModule } from '../../core/CrudCardModule.js';
 import { escapeHtml, $id, $all } from '../../utils/dom.js';
 import { storage } from '../../core/StorageService.js';
 import { syncPaSelect } from '../../utils/paSelect.js';
-import { slugify, isValidSlug } from '../../utils/strings.js';
+import { isValidSlug } from '../../utils/strings.js';
 import { handleFileValidation } from '../../utils/files.js';
 import { uploadCmsFileWithPreview } from '../../utils/media-upload.js';
-import { setupRte } from '../../utils/rte.js';
-import { addChip, getChipValues, populateChips } from '../../utils/chips.js';
-import { activateTab, openPanel } from '../../modules/shell/panels.js';
+import { getRteHtml } from '../../utils/rte.js';
+import { getChipValues } from '../../utils/chips.js';
 import { renderPaBlogCard, renderPaBlogListRow } from '../../utils/paBlogCard.js';
-import { navigateToBlogPostView } from './BlogPostViewModule.js';
+import { BlogPostWorkspace } from './BlogPostWorkspace.js';
 import { setStatTrend, setStatValue } from '../../utils/pageStats.js';
 import { sortByNewestFirst } from '../../utils/format.js';
 import * as mediaPicker from '../../utils/MediaPicker.js';
@@ -44,9 +43,9 @@ export class BlogModule extends CrudCardModule {
           };
         },
       },
-      addFocusId: 'blogAddTitle',
-      editFocusId: 'blogEditTitle',
-      tabGroup: null, 
+      addFocusId: 'blogWsTitle',
+      editFocusId: 'blogWsTitle',
+      tabGroup: null,
       bulkLabel: 'post',
       ids: {
         grid: 'paBlogGrid', resultCount: 'paBlogResultCount',
@@ -60,11 +59,9 @@ export class BlogModule extends CrudCardModule {
       },
       menuActions: { 'copy-slug': function copySlug(id) { this.copySlugUrl(id); } },
     });
-    this.addImageData = null;
-    this.editImageData = null;
-    this.addSlugTouched = false;
-    this.editSlugTouched = false;
+    this._pendingOpenId = null;
     this.store.set('blogTabFilter', 'all');
+    this.workspace = new BlogPostWorkspace(this);
   }
 
   seedData() { return []; }
@@ -94,6 +91,17 @@ export class BlogModule extends CrudCardModule {
     const maxId = Math.max(0, ...records.map((r) => Number(r.id) || 0));
     this.nextId = maxId + 1;
     this.store.set('records', records);
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const openId = params.get('open');
+      if (openId) {
+        this._pendingOpenId = openId;
+        params.delete('open');
+        const url = new URL(window.location.href);
+        url.searchParams.delete('open');
+        window.history.replaceState({}, '', url.pathname + url.search);
+      }
+    } catch { /* ignore */ }
   }
 
   render() {
@@ -116,15 +124,10 @@ export class BlogModule extends CrudCardModule {
     const sorted = sortByNewestFirst(this._blogCategories || []);
     const options = sorted.map((c) => `<option value="${escapeHtml(c.key)}">${escapeHtml(c.label)}</option>`).join('');
     const placeholder = '<option value="">Select category</option>';
-    const addSelect = $id('blogAddCategory');
-    const editSelect = $id('blogEditCategory');
-    if (addSelect) {
-      addSelect.innerHTML = placeholder + options;
-      syncPaSelect(addSelect);
-    }
-    if (editSelect) {
-      editSelect.innerHTML = placeholder + options;
-      syncPaSelect(editSelect);
+    const wsSelect = $id('blogWsCategory');
+    if (wsSelect) {
+      wsSelect.innerHTML = placeholder + options;
+      syncPaSelect(wsSelect);
     }
   }
 
@@ -160,6 +163,11 @@ export class BlogModule extends CrudCardModule {
 
   onAfterRender() {
     this.syncStatusTabs();
+    if (this._pendingOpenId) {
+      const id = this._pendingOpenId;
+      this._pendingOpenId = null;
+      this.workspace.open(id, 'edit');
+    }
   }
 
   sortRecords(records) { return sortByNewestFirst(records); }
@@ -224,16 +232,14 @@ export class BlogModule extends CrudCardModule {
       this.on(btn, 'click', (e) => {
         e.stopPropagation();
         const id = btn.getAttribute('data-blog-id');
-        if (id && !navigateToBlogPostView(id)) {
-          this.toast('Allow pop-ups to open the post in a new tab', 'info');
-        }
+        if (id) this.workspace.open(id, 'preview');
       });
     });
     grid.querySelectorAll('.pa-proj-card__details-btn').forEach((btn) => {
       this.on(btn, 'click', (e) => {
         e.stopPropagation();
         const id = btn.getAttribute('data-blog-id');
-        if (id) this.openEditPanel(id);
+        if (id) this.workspace.open(id, 'edit');
       });
     });
   }
@@ -281,8 +287,7 @@ export class BlogModule extends CrudCardModule {
         folder: 'blog',
         returnFocus: btn,
         onSelect: (item) => {
-          if (prefix === 'blogAdd') this.addImageData = item.url;
-          else this.editImageData = item.url;
+          if (prefix === 'blogWs') this.workspace.setWsImageData(item.url);
 
           const altEl = $id(`${prefix}ImageAlt`);
           if (altEl && item.alt && !altEl.value.trim()) altEl.value = item.alt;
@@ -301,7 +306,7 @@ export class BlogModule extends CrudCardModule {
     if (!dropzone || !fileInput || dropzone._wired) return;
     dropzone._wired = true;
     const setData = (dataUrl) => {
-      if (prefix === 'blogAdd') this.addImageData = dataUrl; else this.editImageData = dataUrl;
+      if (prefix === 'blogWs') this.workspace.setWsImageData(dataUrl);
       this.setFeaturedPreview(prefix, dataUrl);
     };
     this.on(dropzone, 'click', () => fileInput.click());
@@ -343,107 +348,42 @@ export class BlogModule extends CrudCardModule {
 
   bindEvents() {
     super.bindEvents();
+    this.workspace.bind();
     $all('#paBlogStatusTabs .pa-status-tab').forEach((tab) => {
       this.on(tab, 'click', () => {
         this.store.update({ blogTabFilter: tab.dataset.blogFilter || 'all', page: 1 });
         this.render();
       });
     });
-    this.setupImageDropzone('blogAdd');
-    this.setupImageDropzone('blogEdit');
-    this.setupMediaPicker('blogAdd');
-    this.setupMediaPicker('blogEdit');
-    setupRte('blogAddRteWrap', 'blogAddContent');
-    setupRte('blogEditRteWrap', 'blogEditContent');
-
-    this.on($id('blogAddTitle'), 'input', (e) => {
-      if (!this.addSlugTouched) $id('blogAddSlug').value = slugify(e.target.value);
-    });
-    this.on($id('blogAddSlug'), 'input', () => { this.addSlugTouched = true; });
-    this.on($id('blogEditTitle'), 'input', (e) => {
-      if (!this.editSlugTouched) $id('blogEditSlug').value = slugify(e.target.value);
-    });
-    this.on($id('blogEditSlug'), 'input', () => { this.editSlugTouched = true; });
-
-    this.on($id('blogAddTagInput'), 'keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ',') {
-        e.preventDefault();
-        addChip($id('blogAddTagChips'), e.target.value);
-        e.target.value = '';
-      }
-    });
-    this.on($id('blogEditTagInput'), 'keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ',') {
-        e.preventDefault();
-        addChip($id('blogEditTagChips'), e.target.value);
-        e.target.value = '';
-      }
-    });
   }
 
   openAddPanel() {
-    this.resetAddForm();
-    this._populateCategorySelects();
-    openPanel(this.config.ids.addPanel, [this.config.ids.editPanel]);
-    activateTab('blogAdd', 'content');
-    setTimeout(() => $id('blogAddTitle')?.focus(), 320);
+    this.workspace.openAdd();
   }
 
   openEditPanel(id) {
-    const record = this.findById(id);
-    if (!record) return;
-    this.currentEditId = id;
-    this._populateCategorySelects();
-    this.populateEditForm(record);
-    openPanel(this.config.ids.editPanel, [this.config.ids.addPanel]);
-    activateTab('blogEdit', 'content');
-    setTimeout(() => $id('blogEditTitle')?.focus(), 320);
+    this.workspace.open(id, 'edit');
+  }
+
+  async deleteById(id) {
+    await super.deleteById(id);
+    if (String(id) === String(this.currentEditId)) {
+      this.workspace.close();
+      this.currentEditId = null;
+    }
   }
 
   resetAddForm() {
-    ['blogAddTitle', 'blogAddSlug', 'blogAddCategory', 'blogAddExcerpt', 'blogAddImageAlt', 'blogAddSortOrder'].forEach((id) => { const el = $id(id); if (el) el.value = ''; });
-    $id('blogAddExcerptCount').textContent = '0';
-    $id('blogAddExcerptCount').parentElement.classList.remove('warn', 'max');
-    $id('blogAddContent').innerHTML = '';
-    $id('blogAddTagChips').innerHTML = '';
-    $id('blogAddTagInput').value = '';
-    $id('blogAddStatus').value = 'Draft';
-    $id('blogAddFeatured').value = '0';
-    $id('blogAddPublishedDate').value = new Date().toISOString().slice(0, 10);
-    this.addImageData = null;
-    this.addSlugTouched = false;
-    this.setFeaturedPreview('blogAdd', null);
-    ['Title', 'Slug', 'Category', 'Excerpt', 'Content'].forEach((f) => {
-      $id(`blogAdd${f}Error`)?.classList.remove('visible');
-      $id(f === 'Content' ? 'blogAddRteWrap' : `blogAdd${f}`)?.classList.remove('error');
-    });
+    this.workspace.resetForm();
   }
 
   populateEditForm(p) {
-    this.editSlugTouched = true;
-    $id('blogEditTitle').value = p.title;
-    $id('blogEditSlug').value = p.slug;
-    $id('blogEditCategory').value = p.category;
-    $id('blogEditExcerpt').value = p.excerpt;
-    $id('blogEditExcerptCount').textContent = p.excerpt.length;
-    $id('blogEditContent').innerHTML = escapeHtml(p.content || '');
-    populateChips($id('blogEditTagChips'), p.tags);
-    $id('blogEditImageAlt').value = p.imageAlt || '';
-    $id('blogEditStatus').value = p.status || 'Draft';
-    $id('blogEditFeatured').value = p.featured ? '1' : '0';
-    $id('blogEditPublishedDate').value = p.publishedAt || new Date().toISOString().slice(0, 10);
-    $id('blogEditSortOrder').value = p.sortOrder != null ? String(p.sortOrder) : '';
-    this.editImageData = p.imageUrl || null;
-    this.setFeaturedPreview('blogEdit', p.imageUrl || null, p.imageAlt);
-    ['Title', 'Slug', 'Category', 'Excerpt', 'Content'].forEach((f) => {
-      $id(`blogEdit${f}Error`)?.classList.remove('visible');
-      $id(f === 'Content' ? 'blogEditRteWrap' : `blogEdit${f}`)?.classList.remove('error');
-    });
+    this.workspace.populateForm(p);
   }
 
-  validateForm(prefix) {
+  validateForm(prefix = 'ws') {
     let valid = true;
-    const p = prefix === 'add' ? 'blogAdd' : 'blogEdit';
+    const p = 'blogWs';
 
     const title = $id(`${p}Title`).value.trim();
     this._toggleErr(`${p}Title`, !title);
@@ -461,7 +401,7 @@ export class BlogModule extends CrudCardModule {
       if (slugErr) { slugErr.classList.add('visible'); slugErr.querySelector('span').textContent = 'Slug must be lowercase letters, digits, or hyphens (e.g. "my-post-title")'; }
       valid = false;
     } else {
-      const editingId = p === 'blogEdit' ? this.currentEditId : null;
+      const editingId = this.currentEditId;
       const duplicate = this.store.get('records').find((post) => post.slug === slug && String(post.id) !== String(editingId));
       if (duplicate) {
         slugEl.classList.add('error');
@@ -482,14 +422,13 @@ export class BlogModule extends CrudCardModule {
     if (!excerpt) valid = false;
 
     const contentEl = $id(`${p}Content`);
-    const content = contentEl.textContent.trim();
-    $id(`${p}ContentError`)?.classList.toggle('visible', !content);
-    $id(`${p}RteWrap`)?.classList.toggle('error', !content);
-    if (!content) valid = false;
+    const contentPlain = contentEl.textContent.trim();
+    const content = getRteHtml(contentEl);
+    $id(`${p}ContentError`)?.classList.toggle('visible', !contentPlain);
+    $id(`${p}RteWrap`)?.classList.toggle('error', !contentPlain);
+    if (!contentPlain) valid = false;
 
     const tags = getChipValues($id(`${p}TagChips`));
-
-    if (!valid) activateTab(p, 'content');
 
     return { valid, title, slug, category, excerpt, content, tags };
   }
@@ -500,14 +439,14 @@ export class BlogModule extends CrudCardModule {
   }
 
   buildNewRecord(f) {
-    const publishedDate = $id('blogAddPublishedDate').value;
-    const sortOrderRaw = $id('blogAddSortOrder').value;
+    const publishedDate = $id('blogWsPublishedDate').value;
+    const sortOrderRaw = $id('blogWsSortOrder').value;
     return {
       title: f.title, slug: f.slug, category: f.category, excerpt: f.excerpt, content: f.content, tags: f.tags,
-      status: $id('blogAddStatus').value,
-      featured: $id('blogAddFeatured').value === '1',
-      imageUrl: this.addImageData || '',
-      imageAlt: $id('blogAddImageAlt').value.trim(),
+      status: $id('blogWsStatus').value,
+      featured: $id('blogWsFeatured').value === '1',
+      imageUrl: this.workspace.getWsImageData() || '',
+      imageAlt: $id('blogWsImageAlt').value.trim(),
       publishedAt: publishedDate || new Date().toISOString().slice(0, 10),
       sortOrder: sortOrderRaw ? parseInt(sortOrderRaw, 10) : this.store.get('records').length + 1,
       createdAt: new Date().toISOString(),
@@ -521,13 +460,13 @@ export class BlogModule extends CrudCardModule {
     record.excerpt = f.excerpt;
     record.content = f.content;
     record.tags = f.tags;
-    record.status = $id('blogEditStatus').value;
-    record.featured = $id('blogEditFeatured').value === '1';
-    record.imageUrl = this.editImageData || '';
-    record.imageAlt = $id('blogEditImageAlt').value.trim();
-    const publishedDate = $id('blogEditPublishedDate').value;
+    record.status = $id('blogWsStatus').value;
+    record.featured = $id('blogWsFeatured').value === '1';
+    record.imageUrl = this.workspace.getWsImageData() || '';
+    record.imageAlt = $id('blogWsImageAlt').value.trim();
+    const publishedDate = $id('blogWsPublishedDate').value;
     record.publishedAt = publishedDate || record.publishedAt;
-    const sortOrderRaw = $id('blogEditSortOrder').value;
+    const sortOrderRaw = $id('blogWsSortOrder').value;
     record.sortOrder = sortOrderRaw ? parseInt(sortOrderRaw, 10) : record.sortOrder;
   }
 }

@@ -6,6 +6,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
+  async redirects() {
+    return [
+      {
+        source: '/blog-post/view/:id',
+        destination: '/blog-post?open=:id',
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     const isProd = process.env.NODE_ENV === 'production';
     const staticCache = isProd

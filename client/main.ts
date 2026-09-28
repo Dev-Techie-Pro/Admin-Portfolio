@@ -38,10 +38,6 @@ import { initPasswordToggles } from './utils/password-toggle.js';
 
 const AUTH_PAGES = new Set(['login', 'forgot-password', 'reset-password']);
 
-const STANDALONE_PAGES = new Set(['blogpost-view']);
-
-
-
 /** Keys each page module reads during load() — synced via public/js/prefetch-config.js */
 
 const PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
@@ -109,10 +105,6 @@ async function loadPageModuleClass(page: string): Promise<PageModuleClass | null
     case 'blogposts':
 
       return (await import('./modules/blog/BlogModule.js')).BlogModule;
-
-    case 'blogpost-view':
-
-      return (await import('./modules/blog/BlogPostViewModule.js')).BlogPostViewModule;
 
     case 'experience':
 
@@ -320,36 +312,6 @@ async function bootAuthPage(ModuleClass: PageModuleClass, page: string) {
 
 
 
-async function bootStandalonePage(ModuleClass: PageModuleClass, page: string) {
-  bodyLoader.mount();
-  bodyLoader.begin('Loading post…');
-
-  const prefetchKeys = PREFETCH_BY_PAGE[page];
-  if (prefetchKeys?.length) {
-    await storage.hydrateFromPersistentCache(prefetchKeys);
-    storage.prefetch(prefetchKeys);
-  }
-
-  clearDomCache();
-  initConfirmDialog();
-
-  const pageModule = new ModuleClass();
-  const bootstrapPending = storage.isBootstrapPending();
-
-  await initPageModule(pageModule);
-
-  activePageModule = pageModule;
-  window.__paDebug = { pageModule, page };
-
-  if (bootstrapPending) {
-    void storage.waitForBootstrap().then(() => {
-      if (activePageModule === pageModule && typeof pageModule.render === 'function') {
-        pageModule.render();
-      }
-    });
-  }
-}
-
 async function bootAppPage(ModuleClass: PageModuleClass, page: string) {
 
   bodyLoader.mount();
@@ -447,10 +409,6 @@ async function runBoot() {
     if (AUTH_PAGES.has(page)) {
 
       await bootAuthPage(ModuleClass, page);
-
-    } else if (STANDALONE_PAGES.has(page)) {
-
-      await bootStandalonePage(ModuleClass, page);
 
     } else {
 

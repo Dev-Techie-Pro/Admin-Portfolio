@@ -14,8 +14,7 @@
     tools: ['pa_tools', 'pa_tool_categories'],
     media: ['pa_media_library'],
     testimonials: ['pa_testimonials'],
-    blogposts: ['pa_blog_posts'],
-    'blogpost-view': ['pa_blog_posts', 'pa_blog_categories'],
+    blogposts: ['pa_blog_posts', 'pa_blog_categories'],
     experience: ['pa_experience'],
     'contact-messages': ['pa_contact_messages'],
     'recent-activities': ['pa_recent_activities'],
@@ -51,7 +50,6 @@
     if (path.includes('/tools')) return 'tools';
     if (path.includes('/media-library')) return 'media';
     if (path.includes('/testimonials')) return 'testimonials';
-    if (path.includes('/blog-post/view')) return 'blogpost-view';
     if (path.includes('/blog-post')) return 'blogposts';
     if (path.includes('/experience')) return 'experience';
     if (path.includes('/contact-messages')) return 'contact-messages';

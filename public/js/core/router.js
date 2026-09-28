@@ -8,7 +8,6 @@ const ROUTES = [
   ["/tools", "tools"],
   ["/media-library", "media"],
   ["/testimonials", "testimonials"],
-  ["/blog-post/view", "blogpost-view"],
   ["/blog-post", "blogposts"],
   ["/experience", "experience"],
   ["/contact-messages", "contact-messages"],
@@ -72,13 +71,6 @@ function getCurrentPage(path = window.location.pathname) {
   }
   return "dashboard";
 }
-function getBlogPostIdFromPath(path = window.location.pathname) {
-  const match = path.match(/\/blog-post\/view\/([^/]+)\/?$/);
-  return match?.[1] ? decodeURIComponent(match[1]) : null;
-}
-function getBlogPostViewPath(id) {
-  return `/blog-post/view/${encodeURIComponent(String(id))}`;
-}
 const PAGE = getCurrentPage();
 function getLoginPath() {
   return "/login";
@@ -96,8 +88,6 @@ export {
   SETTINGS_PAGE_META,
   SETTINGS_TABS,
   getAuthPath,
-  getBlogPostIdFromPath,
-  getBlogPostViewPath,
   getCurrentPage,
   getLoginPath,
   getSettingsPageMeta,

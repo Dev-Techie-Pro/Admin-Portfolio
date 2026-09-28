@@ -8,7 +8,6 @@ const ROUTES = [
   ['/tools', 'tools'],
   ['/media-library', 'media'],
   ['/testimonials', 'testimonials'],
-  ['/blog-post/view', 'blogpost-view'],
   ['/blog-post', 'blogposts'],
   ['/experience', 'experience'],
   ['/contact-messages', 'contact-messages'],
@@ -83,17 +82,6 @@ export function getCurrentPage(path = window.location.pathname) {
     if (path.includes(needle)) return page;
   }
   return 'dashboard';
-}
-
-/** @param {string} [path] */
-export function getBlogPostIdFromPath(path = window.location.pathname) {
-  const match = path.match(/\/blog-post\/view\/([^/]+)\/?$/);
-  return match?.[1] ? decodeURIComponent(match[1]) : null;
-}
-
-/** @param {string | number} id */
-export function getBlogPostViewPath(id) {
-  return `/blog-post/view/${encodeURIComponent(String(id))}`;
 }
 
 /** @deprecated Use getCurrentPage() — this is fixed at first module load and stale after client navigation. */
