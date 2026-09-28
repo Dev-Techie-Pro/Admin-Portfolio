@@ -1022,11 +1022,19 @@ export class MediaModule extends Module {
     const uploadedNames = [];
     const newRecords = [];
     this.statusToast('Uploading to storage…', 'info', 120000);
+    let uploadSequence = 0;
     for (const sf of this.stagedFiles) {
-      const uploaded = await uploadCmsFile(sf.file, { folder });
+      uploadSequence += 1;
+      const uploaded = await uploadCmsFile(sf.file, {
+        folder,
+        page: 'media-library',
+        purpose: 'library-asset',
+        sequence: uploadSequence,
+      });
+      const displayName = uploaded.fileName || sf.name;
       newRecords.push({
         id: this.nextId++,
-        name: sf.name,
+        name: displayName,
         url: uploaded.url,
         alt: altBase,
         folder,
@@ -1035,7 +1043,7 @@ export class MediaModule extends Module {
         uploadedAt: new Date().toISOString(),
         usageCount: 0,
       });
-      uploadedNames.push(sf.name);
+      uploadedNames.push(displayName);
       if (sf.previewUrl) URL.revokeObjectURL(sf.previewUrl);
     }
     const prev = this.store.get('records');
@@ -1091,6 +1099,8 @@ export class MediaModule extends Module {
     if (this.editPendingImage?.file) {
       const uploaded = await uploadCmsFile(this.editPendingImage.file, {
         folder: m.folder || 'general',
+        page: 'media-library',
+        purpose: 'library-replace',
       });
       m.url = uploaded.url;
       m.size = uploaded.size;

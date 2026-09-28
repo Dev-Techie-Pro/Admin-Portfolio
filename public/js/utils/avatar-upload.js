@@ -16,7 +16,9 @@ async function uploadUserAvatar(file, opts = {}) {
   avatarBtn?.classList.add("is-uploading");
   try {
     const uploaded = await uploadCmsFileWithPreview(file, {
-      folder: "avatars"
+      folder: "avatars",
+      page: "shell",
+      purpose: "user-avatar"
     });
     const data = await authService.updateProfile({ avatarUrl: uploaded.url });
     const profile = data?.profile ?? data;

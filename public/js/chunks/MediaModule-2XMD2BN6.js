@@ -1,34 +1,297 @@
-import { Module } from "../../core/Module.js";
-import { $id, $all, escapeHtml } from "../../utils/dom.js";
-import { formatFileSize, formatDate } from "../../utils/format.js";
-import { appendCopySuffix } from "../../utils/strings.js";
-import { handleFileValidation } from "../../utils/files.js";
-import { uploadCmsFile } from "../../utils/media-upload.js";
-import { requestDelete, requestBulkAction } from "../../modules/shell/confirm.js";
-import { closeAllCardMenus, toggleCardMenu } from "../../modules/shell/cardMenu.js";
-import { renderPaMediaCard, renderPaMediaListRow, getMediaKind } from "../../utils/paMediaCard.js";
+import {
+  getMediaKind,
+  renderPaMediaCard,
+  renderPaMediaListRow
+} from "./chunk-PFA6WOBP.js";
+import {
+  handleFileValidation,
+  uploadCmsFile
+} from "./chunk-GLDJ7ZHV.js";
+import {
+  appendCopySuffix
+} from "./chunk-SCZE3YCL.js";
 import {
   applyListGridClasses,
+  formatDate,
+  formatFileSize,
   renderListTableShell,
   syncListPaginationChrome
-} from "../../utils/listDataTable.js";
-import { findMediaUsage } from "../../utils/mediaUsage.js";
+} from "./chunk-OFE3ZYWN.js";
 import {
-  openMediaPreviewModal,
-  openMediaHistoryModal,
-  bindMediaModalEvents
-} from "../../utils/mediaModals.js";
-import { openPanel, closePanels, registerPanel } from "../../modules/shell/panels.js";
-import { PAGE } from "../../core/router.js";
-import { storage } from "../../core/StorageService.js";
-const MEDIA_PROPAGATION_KEYS = [
+  PAGE
+} from "./chunk-DUXXWVBL.js";
+import {
+  closeAllCardMenus,
+  closePanels,
+  openPanel,
+  registerPanel,
+  requestBulkAction,
+  requestDelete,
+  toggleCardMenu
+} from "./chunk-XCHLLUQC.js";
+import {
+  Module,
+  storage
+} from "./chunk-3ZSRMJ72.js";
+import {
+  $all,
+  $id,
+  escapeHtml
+} from "./chunk-R5CPOL4O.js";
+
+// client/utils/mediaUsage.ts
+function pushMatch(matches, seen, entry) {
+  const key = `${entry.type}|${entry.label}|${entry.detail || ""}`;
+  if (seen.has(key)) return;
+  seen.add(key);
+  matches.push(entry);
+}
+function urlMatches(recordUrl, targetUrl) {
+  if (!recordUrl || !targetUrl) return false;
+  return recordUrl === targetUrl;
+}
+async function findMediaUsage(url) {
+  if (!url) return [];
+  const [projects, testimonials, blogPosts, contactMessages] = await Promise.all([
+    storage.get("pa_projects", []),
+    storage.get("pa_testimonials", []),
+    storage.get("pa_blog_posts", []),
+    storage.get("pa_contact_messages", [])
+  ]);
+  const matches = [];
+  const seen = /* @__PURE__ */ new Set();
+  if (Array.isArray(projects)) {
+    projects.forEach((p) => {
+      if (urlMatches(p.bannerImgUrl, url) || urlMatches(p.imageUrl, url)) {
+        pushMatch(matches, seen, {
+          type: "Project",
+          label: p.title || "Untitled project",
+          detail: "Featured image",
+          path: "/projects",
+          icon: "ri-apps-line"
+        });
+      }
+      if (Array.isArray(p.gallery)) {
+        p.gallery.forEach((g, i) => {
+          const gUrl = typeof g === "string" ? g : g?.url;
+          if (urlMatches(gUrl, url)) {
+            pushMatch(matches, seen, {
+              type: "Project",
+              label: p.title || "Untitled project",
+              detail: `Gallery image ${i + 1}`,
+              path: "/projects",
+              icon: "ri-gallery-line"
+            });
+          }
+        });
+      }
+    });
+  }
+  if (Array.isArray(testimonials)) {
+    testimonials.forEach((t) => {
+      if (urlMatches(t.imageUrl, url)) {
+        pushMatch(matches, seen, {
+          type: "Testimonial",
+          label: t.name || "Untitled testimonial",
+          detail: "Avatar image",
+          path: "/testimonials",
+          icon: "ri-chat-quote-line"
+        });
+      }
+    });
+  }
+  if (Array.isArray(blogPosts)) {
+    blogPosts.forEach((b) => {
+      if (urlMatches(b.imageUrl, url)) {
+        pushMatch(matches, seen, {
+          type: "Blog Post",
+          label: b.title || "Untitled post",
+          detail: "Cover image",
+          path: "/blog-post",
+          icon: "ri-article-line"
+        });
+      }
+    });
+  }
+  if (Array.isArray(contactMessages)) {
+    contactMessages.forEach((message) => {
+      const label = message.name || message.subject || "Contact message";
+      const replies = Array.isArray(message.replies) ? message.replies : [];
+      replies.forEach((reply, index) => {
+        if (!urlMatches(reply.attachmentUrl, url)) return;
+        pushMatch(matches, seen, {
+          type: "Contact Reply",
+          label,
+          detail: `Reply attachment ${index + 1}`,
+          path: "/contact-messages",
+          icon: "ri-mail-line"
+        });
+      });
+    });
+  }
+  return matches;
+}
+
+// client/utils/mediaModals.ts
+var FOLDER_LABELS = {
+  general: "General",
+  projects: "Project Screenshots",
+  avatars: "Avatars & Profile",
+  icons: "Icons & Logos",
+  blog: "Blog Posts",
+  testimonials: "Testimonials",
+  contact: "Contact Attachments"
+};
+var KIND_ICONS = {
+  image: "ri-image-line",
+  video: "ri-play-circle-line",
+  document: "ri-file-text-line",
+  other: "ri-file-zip-line"
+};
+function updateBodyLock() {
+  const open = $id("paMediaPreviewOverlay")?.classList.contains("visible") || $id("paMediaHistoryOverlay")?.classList.contains("visible");
+  document.body.classList.toggle("pa-media-modal-open", !!open);
+}
+function setVisible(overlay, visible) {
+  if (!overlay) return;
+  overlay.classList.toggle("visible", visible);
+  overlay.setAttribute("aria-hidden", visible ? "false" : "true");
+  updateBodyLock();
+}
+function closeMediaPreviewModal() {
+  setVisible($id("paMediaPreviewOverlay"), false);
+}
+function closeMediaHistoryModal() {
+  setVisible($id("paMediaHistoryOverlay"), false);
+}
+function closeAllMediaModals() {
+  closeMediaPreviewModal();
+  closeMediaHistoryModal();
+}
+function renderPreviewContent(item) {
+  const kind = getMediaKind(item);
+  if (kind === "image") {
+    return `<img class="pa-media-preview-img" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.alt || item.name)}" />`;
+  }
+  if (kind === "video") {
+    return `<video class="pa-media-preview-video" src="${escapeHtml(item.url)}" controls playsinline></video>`;
+  }
+  const icon = KIND_ICONS[kind] || "ri-file-line";
+  return `<div class="pa-media-preview-fallback">
+    <i class="${icon}"></i>
+    <p>Preview not available for this file type.</p>
+    <a class="pa-btn pa-btn-primary" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Open file</a>
+  </div>`;
+}
+function openMediaPreviewModal(item) {
+  const overlay = $id("paMediaPreviewOverlay");
+  const title = $id("paMediaPreviewTitle");
+  const sub = $id("paMediaPreviewSub");
+  const body = $id("paMediaPreviewBody");
+  const meta = $id("paMediaPreviewMeta");
+  if (!overlay || !body) return;
+  closeMediaHistoryModal();
+  const folderLabel = FOLDER_LABELS[item.folder] || item.folder || "General";
+  const kind = getMediaKind(item);
+  const typeLabel = (item.type || kind).replace("image/", "").replace("video/", "").toUpperCase() || kind.toUpperCase();
+  if (title) title.textContent = item.name || "Preview";
+  if (sub) sub.textContent = `${folderLabel} \xB7 ${typeLabel}`;
+  body.innerHTML = renderPreviewContent(item);
+  if (meta) {
+    meta.innerHTML = `
+      <span><i class="ri-calendar-line"></i> ${escapeHtml(formatDate(item.uploadedAt))}</span>
+      <span><i class="ri-database-2-line"></i> ${escapeHtml(formatFileSize(item.size, item.url))}</span>
+      ${item.alt ? `<span><i class="ri-text"></i> ${escapeHtml(item.alt)}</span>` : ""}`;
+  }
+  setVisible(overlay, true);
+  $id("paMediaPreviewClose")?.focus();
+}
+function openMediaHistoryModal(item, usageRefs = []) {
+  const overlay = $id("paMediaHistoryOverlay");
+  const title = $id("paMediaHistoryTitle");
+  const sub = $id("paMediaHistorySub");
+  const body = $id("paMediaHistoryBody");
+  if (!overlay || !body) return;
+  closeMediaPreviewModal();
+  const folderLabel = FOLDER_LABELS[item.folder] || item.folder || "General";
+  const usageCount = usageRefs.length;
+  if (title) title.textContent = "File History";
+  if (sub) sub.textContent = item.name || "Media file";
+  const usageHtml = usageCount > 0 ? usageRefs.map((ref) => `
+      <a class="pa-media-history-usage-item" href="${escapeHtml(ref.path)}">
+        <span class="pa-media-history-usage-icon"><i class="${escapeHtml(ref.icon)}"></i></span>
+        <span class="pa-media-history-usage-copy">
+          <span class="pa-media-history-usage-type">${escapeHtml(ref.type)}</span>
+          <span class="pa-media-history-usage-label">${escapeHtml(ref.label)}</span>
+          ${ref.detail ? `<span class="pa-media-history-usage-detail">${escapeHtml(ref.detail)}</span>` : ""}
+        </span>
+        <i class="ri-arrow-right-s-line pa-media-history-usage-arrow" aria-hidden="true"></i>
+      </a>`).join("") : `<div class="pa-media-history-empty"><i class="ri-links-line"></i><p>This file is not linked to any portfolio content yet.</p></div>`;
+  body.innerHTML = `
+    <div class="pa-media-history-section">
+      <div class="pa-media-history-section-title"><i class="ri-time-line"></i> Upload details</div>
+      <div class="pa-media-history-timeline">
+        <div class="pa-media-history-event">
+          <span class="pa-media-history-event-dot" aria-hidden="true"></span>
+          <div class="pa-media-history-event-copy">
+            <span class="pa-media-history-event-label">Uploaded</span>
+            <span class="pa-media-history-event-value">${escapeHtml(formatDate(item.uploadedAt))}</span>
+          </div>
+        </div>
+        <div class="pa-media-history-event">
+          <span class="pa-media-history-event-dot" aria-hidden="true"></span>
+          <div class="pa-media-history-event-copy">
+            <span class="pa-media-history-event-label">Folder</span>
+            <span class="pa-media-history-event-value">${escapeHtml(folderLabel)}</span>
+          </div>
+        </div>
+        <div class="pa-media-history-event">
+          <span class="pa-media-history-event-dot" aria-hidden="true"></span>
+          <div class="pa-media-history-event-copy">
+            <span class="pa-media-history-event-label">File size</span>
+            <span class="pa-media-history-event-value">${escapeHtml(formatFileSize(item.size, item.url))}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pa-media-history-section">
+      <div class="pa-media-history-section-title"><i class="ri-links-line"></i> Used in (${usageCount})</div>
+      <div class="pa-media-history-usage-list">${usageHtml}</div>
+    </div>`;
+  setVisible(overlay, true);
+  $id("paMediaHistoryClose")?.focus();
+}
+function bindMediaModalEvents(handlers = {}) {
+  const previewOverlay = $id("paMediaPreviewOverlay");
+  const historyOverlay = $id("paMediaHistoryOverlay");
+  $id("paMediaPreviewClose")?.addEventListener("click", () => closeMediaPreviewModal());
+  $id("paMediaHistoryClose")?.addEventListener("click", () => closeMediaHistoryModal());
+  previewOverlay?.addEventListener("click", (e) => {
+    if (e.target === previewOverlay) closeMediaPreviewModal();
+  });
+  historyOverlay?.addEventListener("click", (e) => {
+    if (e.target === historyOverlay) closeMediaHistoryModal();
+  });
+  if (handlers.onEscape) {
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if (!previewOverlay?.classList.contains("visible") && !historyOverlay?.classList.contains("visible")) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      closeAllMediaModals();
+    }, true);
+  }
+}
+
+// client/modules/media/MediaModule.ts
+var MEDIA_PROPAGATION_KEYS = [
   "pa_projects",
   "pa_blog_posts",
   "pa_testimonials",
   "pa_tools",
   "pa_contact_messages"
 ];
-const FOLDER_META = {
+var FOLDER_META = {
   general: { label: "General", icon: "ri-folder-line", color: "#9a9aa0", path: "/media-library" },
   projects: { label: "Project Screenshots", icon: "ri-apps-line", color: "#60a5fa", path: "/projects" },
   avatars: { label: "Avatars & Profile", icon: "ri-user-3-line", color: "#a78bfa", path: "/settings/profile" },
@@ -37,11 +300,11 @@ const FOLDER_META = {
   testimonials: { label: "Testimonials", icon: "ri-chat-quote-line", color: "#f472b6", path: "/testimonials" },
   contact: { label: "Contact Attachments", icon: "ri-mail-line", color: "#38bdf8", path: "/contact-messages" }
 };
-const SEED_MEDIA = [];
-const PAGE_SIZE = 12;
-const FOLDER_ORDER = ["projects", "blog", "contact", "testimonials", "avatars", "icons", "general"];
-const MEDIA_SYNC_COOLDOWN_MS = 5 * 60 * 1e3;
-const MEDIA_SYNC_STORAGE_KEY = "pa_media_library_last_sync";
+var SEED_MEDIA = [];
+var PAGE_SIZE = 12;
+var FOLDER_ORDER = ["projects", "blog", "contact", "testimonials", "avatars", "icons", "general"];
+var MEDIA_SYNC_COOLDOWN_MS = 5 * 60 * 1e3;
+var MEDIA_SYNC_STORAGE_KEY = "pa_media_library_last_sync";
 function readLastMediaSyncMs() {
   try {
     return Number(sessionStorage.getItem(MEDIA_SYNC_STORAGE_KEY) || 0);
@@ -91,7 +354,7 @@ function setStatTrend(elId, records, predicate) {
     el.innerHTML = `<i class="ri-subtract-line"></i> 0%`;
   }
 }
-class MediaModule extends Module {
+var MediaModule = class extends Module {
   constructor() {
     super({
       name: "Media",
@@ -1181,7 +1444,7 @@ class MediaModule extends Module {
       if (page === PAGE) this.openUploadPanel();
     });
   }
-}
+};
 export {
   FOLDER_META,
   MediaModule,

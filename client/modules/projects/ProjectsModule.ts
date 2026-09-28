@@ -690,6 +690,8 @@ export class ProjectsModule extends Module {
       try {
         const uploaded = await uploadCmsFileWithPreview(file, {
           folder: 'projects',
+          page: 'projects',
+          purpose: 'project-featured',
           optimize: { maxWidth: 1920, maxHeight: 1080, quality: 0.88 },
           onPreview: (previewUrl) => {
             const entry = { url: previewUrl, name: file.name };
@@ -757,11 +759,18 @@ export class ProjectsModule extends Module {
     this.on(uploadBox, 'click', () => fileInput.click());
     this.on(fileInput, 'change', async () => {
       const files = Array.from(fileInput.files || []);
+      const baseCount =
+        prefix === 'add' ? this.addGalleryImages.length : this.editGalleryImages.length;
+      let seq = baseCount;
       for (const file of files) {
         if (!handleFileValidation(file)) continue;
+        seq += 1;
         try {
           const uploaded = await uploadCmsFileWithPreview(file, {
             folder: 'projects',
+            page: 'projects',
+            purpose: 'project-gallery',
+            sequence: seq,
             optimize: { maxWidth: 1920, maxHeight: 1080, quality: 0.88 },
           });
           const entry = { url: uploaded.url, name: uploaded.fileName || file.name };

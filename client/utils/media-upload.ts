@@ -11,6 +11,12 @@ import {
   type ImageCompressOptions,
 } from './image-compress.js';
 import { showToast } from '../modules/shell/toast.js';
+import {
+  buildUploadFileName,
+  extensionForUploadMime,
+  type UploadPage,
+  type UploadPurpose,
+} from './upload-file-name.js';
 
 export class MediaUploadError extends Error {
   constructor(message) {
@@ -35,8 +41,35 @@ type UploadOptions = {
   mode?: 'image' | 'contact' | 'font';
   /** `false` skips compression; omit or pass options to tune (defaults from upload folder). */
   optimize?: OptimizeOptions;
+  /** When set with `purpose`, storage uses a generated name instead of the original file name. */
+  page?: UploadPage;
+  purpose?: UploadPurpose;
+  /** 1-based index for multi-file uploads (gallery, batch library upload). */
+  sequence?: number;
   fileName?: string;
 };
+
+function resolveContextualUploadName(
+  file: File,
+  options: UploadOptions,
+  folder: CmsUploadFolder,
+  mimeType: string,
+  reencoded: boolean,
+) {
+  if (options.fileName) return options.fileName;
+  if (options.page && options.purpose) {
+    const ext =
+      reencoded ? extensionForMime(mimeType) : extensionForUploadMime(mimeType) || undefined;
+    return buildUploadFileName(options.page, options.purpose, file.name, {
+      mediaFolder: folder,
+      sequence: options.sequence,
+      extension: ext,
+    });
+  }
+  if (!reencoded) return file.name;
+  const ext = extensionForMime(mimeType);
+  return file.name.replace(/\.[^.]+$/, '') + ext;
+}
 
 function resolveOptimizeForUpload(
   folder: CmsUploadFolder,
@@ -129,20 +162,30 @@ export async function uploadCmsFile(file: File, options: UploadOptions = {}) {
   const form = new FormData();
   form.append('folder', folder);
   form.append('mode', mode);
+  if (options.page) form.append('page', options.page);
+  if (options.purpose) form.append('purpose', options.purpose);
+  if (options.sequence != null && options.sequence > 0) {
+    form.append('sequence', String(options.sequence));
+  }
+  form.append('originalFileName', file.name);
 
   let uploadBlob: Blob = file;
   let uploadMime = file.type;
-  let uploadName = options.fileName || file.name;
+  const willReencode = isRasterUpload && optimize !== false;
 
   if (isRasterUpload) {
     const prepared = await prepareImageBlob(file, folder, optimize);
     uploadBlob = prepared.blob;
     uploadMime = prepared.mimeType;
-    if (optimize !== false) {
-      const ext = extensionForMime(uploadMime);
-      uploadName = (options.fileName || file.name).replace(/\.[^.]+$/, '') + ext;
-    }
   }
+
+  const uploadName = resolveContextualUploadName(
+    file,
+    options,
+    folder,
+    uploadMime,
+    willReencode,
+  );
 
   form.append('file', uploadBlob, uploadName);
 
@@ -183,6 +226,8 @@ export async function uploadContactAttachment(file: File) {
     return uploadCmsFile(file, {
       folder: 'contact',
       mode: 'contact',
+      page: 'contact-messages',
+      purpose: 'contact-reply-attachment',
       optimize: { preset: 'general', maxBytes: MAX_CONTACT_ATTACHMENT_BYTES },
     });
   }
@@ -191,9 +236,21 @@ export async function uploadContactAttachment(file: File) {
     showToast('Attachment exceeds the 5MB limit.', 'danger');
     throw new MediaUploadError('Attachment exceeds the 5MB limit.');
   }
-  return uploadCmsFile(file, { folder: 'contact', mode: 'contact', optimize: false });
+  return uploadCmsFile(file, {
+    folder: 'contact',
+    mode: 'contact',
+    page: 'contact-messages',
+    purpose: 'contact-reply-attachment',
+    optimize: false,
+  });
 }
 
 export async function uploadCustomFontFile(file: File) {
-  return uploadCmsFile(file, { folder: 'general', mode: 'font', optimize: false, fileName: file.name });
+  return uploadCmsFile(file, {
+    folder: 'general',
+    mode: 'font',
+    optimize: false,
+    page: 'customization',
+    purpose: 'custom-font',
+  });
 }

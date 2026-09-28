@@ -311,6 +311,8 @@ export class BlogModule extends CrudCardModule {
       try {
         const uploaded = await uploadCmsFileWithPreview(file, {
           folder: 'blog',
+          page: 'blog',
+          purpose: 'blog-featured',
           optimize: { maxWidth: 1600, maxHeight: 900, quality: 0.88 },
           onPreview: (previewUrl) => setData(previewUrl),
         });
@@ -328,6 +330,8 @@ export class BlogModule extends CrudCardModule {
       try {
         const uploaded = await uploadCmsFileWithPreview(file, {
           folder: 'blog',
+          page: 'blog',
+          purpose: 'blog-featured',
           optimize: { maxWidth: 1600, maxHeight: 900, quality: 0.88 },
           onPreview: (previewUrl) => setData(previewUrl),
         });

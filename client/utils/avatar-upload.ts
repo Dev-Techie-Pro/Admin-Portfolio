@@ -28,6 +28,8 @@ export async function uploadUserAvatar(file, opts = {}) {
   try {
     const uploaded = await uploadCmsFileWithPreview(file, {
       folder: 'avatars',
+      page: 'shell',
+      purpose: 'user-avatar',
     });
     const data = await authService.updateProfile({ avatarUrl: uploaded.url });
     const profile = data?.profile ?? data;

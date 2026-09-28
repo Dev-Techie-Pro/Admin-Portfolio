@@ -1,27 +1,295 @@
-import { Module } from "../../core/Module.js";
-import { $id, $all, escapeHtml } from "../../utils/dom.js";
-import { isValidUrl } from "../../utils/strings.js";
-import { handleFileValidation } from "../../utils/files.js";
-import { uploadCmsFileWithPreview } from "../../utils/media-upload.js";
-import { setupRte } from "../../utils/rte.js";
-import { storage } from "../../core/StorageService.js";
-import { addChip, getChipValues, populateChips } from "../../utils/chips.js";
-import { requestDelete } from "../../modules/shell/confirm.js";
-import { closeAllCardMenus, toggleCardMenu } from "../../modules/shell/cardMenu.js";
-import { openPanel, closePanels, activateTab, registerPanel } from "../../modules/shell/panels.js";
-import { PAGE } from "../../core/router.js";
-import { BulkSelectController } from "../../core/BulkSelectController.js";
-import { renderPaProjCard, renderPaProjListRow, getProjectBucket } from "../../utils/paProjCard.js";
 import {
-  applyListGridClasses,
+  addChip,
+  getChipValues,
+  populateChips,
+  setupRte
+} from "./chunk-T6OFP3H3.js";
+import {
+  open
+} from "./chunk-RPAZWWOR.js";
+import {
+  handleFileValidation,
+  uploadCmsFileWithPreview
+} from "./chunk-GLDJ7ZHV.js";
+import {
+  isValidUrl
+} from "./chunk-SCZE3YCL.js";
+import {
+  normalizeCategoryKey
+} from "./chunk-CP27TRUO.js";
+import {
+  arrangeForLayout,
+  renderGroupedCards
+} from "./chunk-N2BX3HKD.js";
+import {
+  BulkSelectController
+} from "./chunk-UWABUXI2.js";
+import {
   DEFAULT_LIST_COLUMNS,
+  applyListGridClasses,
+  closeListRow,
+  formatDate,
+  listActionBtn,
+  renderListActionsCell,
+  renderListDateCell,
+  renderListIndexCell,
+  renderListProjectCell,
+  renderListRowStart,
+  renderListStatusCell,
   renderListTableShell,
+  renderListTextCell,
+  sortByNewestFirst,
   syncListPaginationChrome
-} from "../../utils/listDataTable.js";
-import { sortByNewestFirst } from "../../utils/format.js";
-import { arrangeForLayout, renderGroupedCards } from "../../utils/groupLayout.js";
-import * as mediaPicker from "../../utils/MediaPicker.js";
-const CATEGORY_META_PROJECTS = {
+} from "./chunk-OFE3ZYWN.js";
+import {
+  PAGE
+} from "./chunk-DUXXWVBL.js";
+import {
+  activateTab,
+  closeAllCardMenus,
+  closePanels,
+  openPanel,
+  registerPanel,
+  requestDelete,
+  toggleCardMenu
+} from "./chunk-XCHLLUQC.js";
+import {
+  Module,
+  storage
+} from "./chunk-3ZSRMJ72.js";
+import {
+  $all,
+  $id,
+  escapeHtml
+} from "./chunk-R5CPOL4O.js";
+
+// client/utils/paProjCard.ts
+var TECH_COLORS = {
+  html: "orange",
+  css: "blue",
+  javascript: "yellow",
+  js: "yellow",
+  typescript: "blue",
+  ts: "blue",
+  react: "purple",
+  vue: "green",
+  angular: "red",
+  node: "green",
+  "node.js": "green",
+  next: "white",
+  "next.js": "white",
+  tailwind: "teal",
+  bootstrap: "purple",
+  sass: "pink",
+  scss: "pink",
+  python: "yellow",
+  django: "green",
+  php: "purple",
+  laravel: "red",
+  mysql: "blue",
+  postgresql: "blue",
+  mongodb: "green",
+  firebase: "yellow",
+  figma: "purple",
+  wordpress: "blue"
+};
+var TECH_COLOR_CYCLE = ["orange", "blue", "yellow", "purple", "teal", "green", "pink"];
+function getProjectBucket(status) {
+  const s = (status || "Completed").trim();
+  if (s === "Completed") return "published";
+  if (s === "On Hold" || s === "Cancelled") return "archived";
+  return "draft";
+}
+function getProjectStatusLabel(status) {
+  const bucket = getProjectBucket(status);
+  if (bucket === "published") return "Published";
+  if (bucket === "archived") return "Archived";
+  return "Draft";
+}
+function getProjectStatusClass(status) {
+  const bucket = getProjectBucket(status);
+  if (bucket === "published") return "published";
+  if (bucket === "archived") return "archived";
+  return "draft";
+}
+function techColorClass(tag, index) {
+  const key = (tag || "").trim().toLowerCase();
+  const color = TECH_COLORS[key] || TECH_COLOR_CYCLE[index % TECH_COLOR_CYCLE.length];
+  return `pa-proj-tech--${color}`;
+}
+var PROJECT_TAGS_VISIBLE = 3;
+function projectTechTagsHtml(tags, maxVisible = PROJECT_TAGS_VISIBLE) {
+  const list = Array.isArray(tags) ? tags.filter(Boolean) : [];
+  const visible = list.slice(0, maxVisible);
+  const hidden = list.slice(maxVisible);
+  let html = visible.map((t, i) => `<span class="pa-proj-tech ${techColorClass(t, i)}">${escapeHtml(t)}</span>`).join("");
+  if (hidden.length > 0) {
+    const moreTitle = escapeHtml(hidden.join(", "));
+    html += `<span class="pa-proj-tech pa-proj-tech--more" title="${moreTitle}">+${hidden.length}</span>`;
+  }
+  return html;
+}
+function projectUpdatedAt(p) {
+  return p.updatedAt || p.createdAt;
+}
+function renderCardMenu(p) {
+  const id = p.id;
+  return `<div class="pa-card-menu" data-id="${id}">
+    <div class="pa-card-menu-item" data-action="duplicate" data-id="${id}"><i class="ri-file-copy-line"></i> Duplicate</div>
+    <div class="pa-card-menu-item" data-action="copy-link" data-id="${id}"><i class="ri-link"></i> Copy live URL</div>
+  </div>`;
+}
+function renderActions(p) {
+  const id = p.id;
+  const title = escapeHtml(p.title);
+  return `<button type="button" class="pa-action-btn pa-action-view" title="View project" data-id="${id}" aria-label="View ${title}"><i class="ri-eye-line"></i></button>
+    <button type="button" class="pa-action-btn pa-action-edit" title="Edit project" data-id="${id}" aria-label="Edit ${title}"><i class="ri-pencil-line"></i></button>
+    <button type="button" class="pa-action-btn pa-action-duplicate" title="Duplicate project" data-id="${id}" aria-label="Duplicate ${title}"><i class="ri-file-copy-line"></i></button>
+    <button type="button" class="pa-action-btn pa-action-delete" title="Delete project" data-id="${id}" aria-label="Delete ${title}"><i class="ri-delete-bin-line"></i></button>`;
+}
+function renderMeta(p) {
+  const created = formatDate(p.createdAt);
+  const updated = formatDate(projectUpdatedAt(p));
+  return `<div class="pa-proj-card__meta-item">
+      <div class="pa-proj-card__meta-item-head">
+        <i class="ri-calendar-line" aria-hidden="true"></i>
+        <span class="pa-proj-card__meta-label">Created</span>
+      </div>
+      <span class="pa-proj-card__meta-value">${escapeHtml(created)}</span>
+    </div>
+    <div class="pa-proj-card__meta-item">
+      <div class="pa-proj-card__meta-item-head">
+        <i class="ri-time-line" aria-hidden="true"></i>
+        <span class="pa-proj-card__meta-label">Updated</span>
+      </div>
+      <span class="pa-proj-card__meta-value">${escapeHtml(updated)}</span>
+    </div>`;
+}
+function projectListStatus(p) {
+  const status = (p.status || "Completed").trim();
+  if (status === "Completed") return { label: "Completed", variant: "completed" };
+  if (status === "On Hold") return { label: "On Hold", variant: "hold" };
+  if (status === "In Progress") return { label: "Active", variant: "active" };
+  if (status === "Pending") return { label: "Planning", variant: "planning" };
+  if (status === "Cancelled") return { label: "On Hold", variant: "hold" };
+  const bucket = getProjectBucket(status);
+  if (bucket === "published") return { label: "Active", variant: "active" };
+  if (bucket === "archived") return { label: "Completed", variant: "completed" };
+  return { label: "Planning", variant: "planning" };
+}
+function projectListThumbHtml(p, thumbHtml) {
+  if (p.bannerImgUrl) {
+    return `<img class="pa-lv-img" src="${escapeHtml(p.bannerImgUrl)}" alt="" loading="lazy" />`;
+  }
+  return thumbHtml;
+}
+function renderPaProjListRow(p, opts = {}) {
+  const {
+    meta = { label: p.catKey, cls: "" },
+    thumbHtml = "",
+    rowIndex,
+    cardClass = ""
+  } = opts;
+  const title = p.title || "";
+  const category = meta.label || p.catKey || "\u2014";
+  const created = formatDate(p.createdAt);
+  const status = projectListStatus(p);
+  const thumbInner = projectListThumbHtml(p, thumbHtml);
+  const id = p.id;
+  const actions = `${listActionBtn("pa-action-view", "ri-eye-line", "View project", "data-id", id, "View")}
+    ${listActionBtn("pa-action-edit", "ri-pencil-line", "Edit project", "data-id", id, "Edit")}
+    ${listActionBtn("pa-action-duplicate", "ri-file-copy-line", "Duplicate project", "data-id", id, "Duplicate")}
+    ${listActionBtn("pa-action-delete", "ri-delete-bin-line", "Delete project", "data-id", id, "Delete")}`;
+  return `${renderListRowStart(cardClass)}
+    ${renderListIndexCell(rowIndex)}
+    ${renderListProjectCell(title, thumbInner)}
+    ${renderListTextCell(category)}
+    ${renderListStatusCell(status.label, status.variant)}
+    ${renderListDateCell(created)}
+    ${renderListActionsCell(actions)}
+  ${closeListRow()}`;
+}
+function renderPaProjCard(p, opts = {}) {
+  const {
+    meta = { label: p.catKey, cls: "" },
+    thumbHtml,
+    bulkCheckbox = "",
+    cardClass = "",
+    animationDelay = 0
+  } = opts;
+  const id = p.id;
+  const title = escapeHtml(p.title);
+  const category = escapeHtml(meta.label);
+  const desc = escapeHtml(p.desc || "");
+  const statusLabel = getProjectStatusLabel(p.status);
+  const statusClass = getProjectStatusClass(p.status);
+  const featuredBadge = p.featured ? '<span class="pa-proj-card__featured"><i class="ri-star-fill"></i> FEATURED</span>' : "";
+  const statusBadge = `<span class="pa-proj-card__status pa-proj-card__status--${statusClass}"><span class="pa-proj-card__status-dot" aria-hidden="true"></span>${escapeHtml(statusLabel)}</span>`;
+  const tagsHtml = projectTechTagsHtml(p.tags);
+  const metaHtml = renderMeta(p);
+  const actionsHtml = renderActions(p);
+  const menuHtml = renderCardMenu(p);
+  const catKey = escapeHtml(normalizeCategoryKey(p.catKey));
+  return `<div class="pa-card pa-proj-card${cardClass}" data-id="${id}" data-cat-key="${catKey}" style="animation-delay:${animationDelay}ms;">
+    ${bulkCheckbox}
+    <div class="pa-proj-card__grid">
+      <div class="pa-proj-card__thumb">
+        <div class="pa-proj-card__thumb-inner">${thumbHtml}</div>
+        ${featuredBadge}
+        ${statusBadge}
+      </div>
+      <div class="pa-proj-card__body">
+        <div class="pa-proj-card__head">
+          <div class="pa-proj-card__title-wrap">
+            <span class="pa-proj-card__type-icon" aria-hidden="true"><i class="ri-window-line"></i></span>
+            <div class="pa-proj-card__title-block">
+              <h3 class="pa-proj-card__title" title="${title}">${title}</h3>
+              <div class="pa-proj-card__category"><i class="ri-price-tag-3-line"></i> ${category}</div>
+            </div>
+          </div>
+          <div class="pa-proj-card__head-more">
+            <button type="button" class="pa-action-btn pa-action-more" data-id="${id}" title="More options" aria-label="More options for ${title}"><i class="ri-more-2-fill"></i></button>
+            ${menuHtml}
+          </div>
+        </div>
+        <p class="pa-proj-card__desc">${desc}</p>
+        <div class="pa-proj-card__tags">${tagsHtml}</div>
+        <div class="pa-proj-card__meta fr-2">${metaHtml}</div>
+        <div class="pa-proj-card__footer">
+          <div class="pa-proj-card__actions">${actionsHtml}</div>
+        </div>
+      </div>
+    </div>
+    <div class="pa-proj-card__list">
+      <div class="pa-proj-card__list-thumb">
+        <div class="pa-proj-card__thumb-inner">${thumbHtml}</div>
+        ${featuredBadge}
+      </div>
+      <div class="pa-proj-card__list-main">
+        <div class="pa-proj-card__list-top">
+          <div class="pa-proj-card__title-block">
+            <h3 class="pa-proj-card__title" title="${title}">${title}</h3>
+            <div class="pa-proj-card__category"><i class="ri-price-tag-3-line"></i> ${category}</div>
+          </div>
+          <div class="pa-proj-card__list-status-wrap">
+            ${statusBadge}
+            <div class="pa-proj-card__list-more">
+              <button type="button" class="pa-action-btn pa-action-more" data-id="${id}" title="More options" aria-label="More options for ${title}"><i class="ri-more-2-fill"></i></button>
+              ${menuHtml}
+            </div>
+          </div>
+        </div>
+        <p class="pa-proj-card__desc">${desc}</p>
+        <div class="pa-proj-card__tags">${tagsHtml}</div>
+      </div>
+      <div class="pa-proj-card__list-meta fr-2">${metaHtml}</div>
+      <div class="pa-proj-card__list-actions">${actionsHtml}</div>
+    </div>
+  </div>`;
+}
+
+// client/modules/projects/ProjectsModule.ts
+var CATEGORY_META_PROJECTS = {
   enterprise: { label: "Enterprise Platform", cls: "pa-cat-enterprise" },
   educational: { label: "Educational Platform", cls: "pa-cat-educational" },
   desktop: { label: "Desktop Application", cls: "pa-cat-desktop" },
@@ -31,7 +299,7 @@ const CATEGORY_META_PROJECTS = {
   web: { label: "Web Application", cls: "pa-cat-web" },
   nonprofit: { label: "Non Profit Organization", cls: "pa-cat-nonprofit" }
 };
-const SCENES = {
+var SCENES = {
   enterprise: { bg: "linear-gradient(135deg,#10202e 0%,#16314a 60%,#0c1722 100%)", accent: "#ff6600", chrome: "#1c2733" },
   educational: { bg: "linear-gradient(135deg,#1c1230 0%,#2d1b4d 55%,#160f26 100%)", accent: "#a78bfa", chrome: "#211a30" },
   desktop: { bg: "linear-gradient(135deg,#3a0f63 0%,#7b2ff7 50%,#1d0b38 100%)", accent: "#38bdf8", chrome: "#241338" },
@@ -42,7 +310,7 @@ const SCENES = {
   web: { bg: "linear-gradient(135deg,#0e1a3a 0%,#16275c 55%,#0a1226 100%)", accent: "#60a5fa", chrome: "#121d3a" },
   nonprofit: { bg: "linear-gradient(135deg,#16140d 0%,#241f12 55%,#0e0c08 100%)", accent: "#facc15", chrome: "#1c180f" }
 };
-const SEED_PROJECTS = [];
+var SEED_PROJECTS = [];
 function pickSceneForCategory(catKey) {
   if (catKey === "ecommerce") return Math.random() > 0.5 ? "ecommerce1" : "ecommerce2";
   return SCENES[catKey] ? catKey : "web";
@@ -64,7 +332,7 @@ function buildBrowserMockup(p) {
   }
   return `<div class="pa-thumb-frame" style="background:${scene.bg};">${buildDeviceScene(scene)}</div>`;
 }
-const PAGE_SIZE = 9;
+var PAGE_SIZE = 9;
 function countInMonth(records, monthOffset = 0) {
   const now = /* @__PURE__ */ new Date();
   const start = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
@@ -94,13 +362,13 @@ function setStatTrend(elId, records, predicate) {
     el.innerHTML = `<i class="ri-subtract-line"></i> 0%`;
   }
 }
-const ADD_STEPS = ["general", "media", "additional"];
-const ADD_STEP_LABELS = {
+var ADD_STEPS = ["general", "media", "additional"];
+var ADD_STEP_LABELS = {
   general: "Next: Media & Images \u2192",
   media: "Next: Additional Info \u2192",
   additional: "Add Project"
 };
-class ProjectsModule extends Module {
+var ProjectsModule = class extends Module {
   constructor() {
     super({
       name: "Projects",
@@ -699,7 +967,7 @@ class ProjectsModule extends Module {
     const btn = $id(btnId);
     if (!btn) return;
     this.on(btn, "click", () => {
-      mediaPicker.open({
+      open({
         mode: target,
         folder: "projects",
         returnFocus: btn,
@@ -1053,10 +1321,11 @@ class ProjectsModule extends Module {
       if (page === PAGE) this.openAddPanel();
     });
   }
-}
+};
+
 export {
   CATEGORY_META_PROJECTS,
-  ProjectsModule,
   SEED_PROJECTS,
-  pickSceneForCategory
+  pickSceneForCategory,
+  ProjectsModule
 };

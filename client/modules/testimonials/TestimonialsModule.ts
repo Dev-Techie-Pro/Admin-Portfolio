@@ -176,6 +176,8 @@ export class TestimonialsModule extends CrudCardModule {
     const uploadAvatar = async (file) => {
       const uploaded = await uploadCmsFileWithPreview(file, {
         folder: 'testimonials',
+        page: 'testimonials',
+        purpose: 'testimonial-avatar',
         optimize: { maxWidth: 512, maxHeight: 512, quality: 0.85 },
         onPreview: (previewUrl) => setData(previewUrl),
       });

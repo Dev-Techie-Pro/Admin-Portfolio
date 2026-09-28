@@ -10,11 +10,29 @@ import {
   extensionForMime
 } from "./image-compress.js";
 import { showToast } from "../modules/shell/toast.js";
+import {
+  buildUploadFileName,
+  extensionForUploadMime
+} from "./upload-file-name.js";
 class MediaUploadError extends Error {
   constructor(message) {
     super(message);
     this.name = "MediaUploadError";
   }
+}
+function resolveContextualUploadName(file, options, folder, mimeType, reencoded) {
+  if (options.fileName) return options.fileName;
+  if (options.page && options.purpose) {
+    const ext2 = reencoded ? extensionForMime(mimeType) : extensionForUploadMime(mimeType) || void 0;
+    return buildUploadFileName(options.page, options.purpose, file.name, {
+      mediaFolder: folder,
+      sequence: options.sequence,
+      extension: ext2
+    });
+  }
+  if (!reencoded) return file.name;
+  const ext = extensionForMime(mimeType);
+  return file.name.replace(/\.[^.]+$/, "") + ext;
 }
 function resolveOptimizeForUpload(folder, mode, optimize) {
   if (optimize === false || mode === "font") return false;
@@ -77,18 +95,27 @@ async function uploadCmsFile(file, options = {}) {
   const form = new FormData();
   form.append("folder", folder);
   form.append("mode", mode);
+  if (options.page) form.append("page", options.page);
+  if (options.purpose) form.append("purpose", options.purpose);
+  if (options.sequence != null && options.sequence > 0) {
+    form.append("sequence", String(options.sequence));
+  }
+  form.append("originalFileName", file.name);
   let uploadBlob = file;
   let uploadMime = file.type;
-  let uploadName = options.fileName || file.name;
+  const willReencode = isRasterUpload && optimize !== false;
   if (isRasterUpload) {
     const prepared = await prepareImageBlob(file, folder, optimize);
     uploadBlob = prepared.blob;
     uploadMime = prepared.mimeType;
-    if (optimize !== false) {
-      const ext = extensionForMime(uploadMime);
-      uploadName = (options.fileName || file.name).replace(/\.[^.]+$/, "") + ext;
-    }
   }
+  const uploadName = resolveContextualUploadName(
+    file,
+    options,
+    folder,
+    uploadMime,
+    willReencode
+  );
   form.append("file", uploadBlob, uploadName);
   const payload = await postUploadForm(form);
   if (!payload.url) throw new MediaUploadError("Upload did not return a URL.");
@@ -119,6 +146,8 @@ async function uploadContactAttachment(file) {
     return uploadCmsFile(file, {
       folder: "contact",
       mode: "contact",
+      page: "contact-messages",
+      purpose: "contact-reply-attachment",
       optimize: { preset: "general", maxBytes: MAX_CONTACT_ATTACHMENT_BYTES }
     });
   }
@@ -126,10 +155,22 @@ async function uploadContactAttachment(file) {
     showToast("Attachment exceeds the 5MB limit.", "danger");
     throw new MediaUploadError("Attachment exceeds the 5MB limit.");
   }
-  return uploadCmsFile(file, { folder: "contact", mode: "contact", optimize: false });
+  return uploadCmsFile(file, {
+    folder: "contact",
+    mode: "contact",
+    page: "contact-messages",
+    purpose: "contact-reply-attachment",
+    optimize: false
+  });
 }
 async function uploadCustomFontFile(file) {
-  return uploadCmsFile(file, { folder: "general", mode: "font", optimize: false, fileName: file.name });
+  return uploadCmsFile(file, {
+    folder: "general",
+    mode: "font",
+    optimize: false,
+    page: "customization",
+    purpose: "custom-font"
+  });
 }
 export {
   MediaUploadError,

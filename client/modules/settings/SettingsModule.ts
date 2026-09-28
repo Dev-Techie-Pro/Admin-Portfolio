@@ -998,6 +998,8 @@ export class SettingsModule extends Module {
     try {
       const uploaded = await uploadCmsFileWithPreview(file, {
         folder: 'avatars',
+        page: 'settings',
+        purpose: 'profile-avatar',
         optimize: { maxWidth: 512, maxHeight: 512, quality: 0.88 },
         onPreview: (previewUrl) => renderPreviewAvatar($id('previewAvatar'), previewUrl),
       });
@@ -1025,6 +1027,8 @@ export class SettingsModule extends Module {
     try {
       const uploaded = await uploadCmsFileWithPreview(file, {
         folder: 'avatars',
+        page: 'settings',
+        purpose: 'profile-cover',
         optimize: { maxWidth: 1200, maxHeight: 400, quality: 0.85 },
         onPreview: (previewUrl) => setCoverImage($id('coverImage'), previewUrl),
       });

@@ -46,14 +46,21 @@ function handleFileValidation(file) {
   }
   return true;
 }
-async function readValidFiles(fileList, { folder = "general" } = {}) {
+async function readValidFiles(fileList, { folder = "general", page, purpose, sequenceStart = 0 } = {}) {
   const { uploadCmsFile } = await import("./media-upload.js");
   const files = Array.from(fileList || []);
   const results = [];
+  let seq = sequenceStart;
   for (const file of files) {
     if (!handleFileValidation(file)) continue;
+    seq += 1;
     try {
-      const uploaded = await uploadCmsFile(file, { folder });
+      const uploaded = await uploadCmsFile(file, {
+        folder,
+        page: page || "media-library",
+        purpose: purpose || "library-asset",
+        sequence: seq
+      });
       results.push({
         url: uploaded.url,
         name: uploaded.fileName || file.name,

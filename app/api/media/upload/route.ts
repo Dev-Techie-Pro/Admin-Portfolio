@@ -4,6 +4,12 @@ import {
   assertAllowedUpload,
   uploadMediaBuffer,
 } from '@/lib/cms/media-storage';
+import {
+  buildUploadFileName,
+  extensionForUploadMime,
+  isUploadPage,
+  isUploadPurpose,
+} from '@/lib/cms/upload-file-name';
 
 export async function POST(request) {
   const auth = await guardEditor();
@@ -19,6 +25,9 @@ export async function POST(request) {
     const folder = String(form.get('folder') || 'general');
     const modeRaw = String(form.get('mode') || 'image').toLowerCase();
     const mode = modeRaw === 'contact' || modeRaw === 'font' ? modeRaw : 'image';
+    const pageRaw = String(form.get('page') || '').trim();
+    const purposeRaw = String(form.get('purpose') || '').trim();
+    const sequenceRaw = parseInt(String(form.get('sequence') || ''), 10);
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const { mime, folder: resolvedFolder } = assertAllowedUpload({
@@ -28,10 +37,20 @@ export async function POST(request) {
       mode,
     });
 
+    const originalFileName = String(form.get('originalFileName') || file.name || 'upload');
+    let fileName = file.name || originalFileName;
+    if (isUploadPage(pageRaw) && isUploadPurpose(purposeRaw)) {
+      fileName = buildUploadFileName(pageRaw, purposeRaw, originalFileName, {
+        mediaFolder: resolvedFolder,
+        sequence: Number.isFinite(sequenceRaw) && sequenceRaw > 0 ? sequenceRaw : undefined,
+        extension: extensionForUploadMime(mime) || undefined,
+      });
+    }
+
     const result = await uploadMediaBuffer({
       buffer,
       mimeType: mime,
-      fileName: file.name || 'upload',
+      fileName,
       folder: resolvedFolder,
     });
 

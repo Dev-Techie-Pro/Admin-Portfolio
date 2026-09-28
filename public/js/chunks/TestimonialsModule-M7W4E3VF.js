@@ -1,13 +1,36 @@
-import { CrudCardModule } from "../../core/CrudCardModule.js";
-import { escapeHtml, $id } from "../../utils/dom.js";
-import { formatDate, sortByNewestFirst } from "../../utils/format.js";
-import { handleFileValidation } from "../../utils/files.js";
-import { uploadCmsFileWithPreview } from "../../utils/media-upload.js";
-import { renderPaCatCard, renderPaCatListRow } from "../../utils/paCatCard.js";
-import { categoryKeyFromAccentHex } from "../../utils/categoryClassOptions.js";
-import { setStatTrend, setStatValue } from "../../utils/pageStats.js";
-const SEED_TESTIMONIALS = [];
-class TestimonialsModule extends CrudCardModule {
+import {
+  handleFileValidation,
+  uploadCmsFileWithPreview
+} from "./chunk-GLDJ7ZHV.js";
+import {
+  renderPaCatCard,
+  renderPaCatListRow
+} from "./chunk-MGJKOFLV.js";
+import {
+  categoryKeyFromAccentHex
+} from "./chunk-CP27TRUO.js";
+import {
+  CrudCardModule,
+  setStatTrend,
+  setStatValue
+} from "./chunk-XJMQ6YXT.js";
+import "./chunk-N2BX3HKD.js";
+import "./chunk-UWABUXI2.js";
+import {
+  formatDate,
+  sortByNewestFirst
+} from "./chunk-OFE3ZYWN.js";
+import "./chunk-DUXXWVBL.js";
+import "./chunk-XCHLLUQC.js";
+import "./chunk-3ZSRMJ72.js";
+import {
+  $id,
+  escapeHtml
+} from "./chunk-R5CPOL4O.js";
+
+// client/modules/testimonials/TestimonialsModule.ts
+var SEED_TESTIMONIALS = [];
+var TestimonialsModule = class extends CrudCardModule {
   constructor() {
     super({
       name: "Testimonials",
@@ -297,7 +320,7 @@ class TestimonialsModule extends CrudCardModule {
     record.imageAlt = $id("testiEditAlt").value.trim();
     record.featured = $id("testiEditFeatured").value === "1";
   }
-}
+};
 export {
   SEED_TESTIMONIALS,
   TestimonialsModule
