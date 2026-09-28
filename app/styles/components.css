@@ -2159,8 +2159,9 @@ select.pa-form-select:not(.pa-select-native) {
 }
 
 .pa-quick-add-panel .pa-rte-body {
-  min-height: 75px;
-  max-height: 140px;
+  min-height: 200px;
+  max-height: 200px;
+  overflow-y: scroll;
 }
 
 .pa-qa-media-layout {
