@@ -18,6 +18,7 @@ function isPublicPath(pathname) {
   return false;
 }
 
+
 function isAuthPage(pathname) {
   return AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }

@@ -86,6 +86,14 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+@media (max-width: 1024px) {
+  .pa-blog-ws-layout {
+    grid-template-columns: 1fr;
+  }
+  .pa-blog-ws-sidebar {
+    order: -1;
+  }
+}
 @media (max-width: 980px) {
   :root {
     --pa-panel-w: 380px;
@@ -1017,5 +1025,15 @@
   .pa-nav-submenu,
   .pa-nav-toggle i {
     transition: none !important;
+  }
+  .pa-blog-page-body > :not(.pa-blog-workspace),
+  .pa-blog-workspace,
+  .pa-blog-workspace.is-open .pa-blog-ws-head,
+  .pa-blog-workspace.is-open .pa-blog-ws-main,
+  .pa-blog-workspace.is-open .pa-blog-ws-sidebar .pa-blog-ws-panel {
+    transition: none !important;
+    animation: none !important;
+    filter: none !important;
+    transform: none !important;
   }
 }
