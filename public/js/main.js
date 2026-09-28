@@ -1731,9 +1731,9 @@ var PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
 async function loadPageModuleClass(page) {
   switch (page) {
     case "dashboard":
-      return (await import("./chunks/DashboardModule-C2ZQFERI.js")).DashboardModule;
+      return (await import("./chunks/DashboardModule-OVY2OHZZ.js")).DashboardModule;
     case "projects":
-      return (await import("./chunks/ProjectsModule-4CURKCXL.js")).ProjectsModule;
+      return (await import("./chunks/ProjectsModule-APMFRZ4H.js")).ProjectsModule;
     case "categories":
       return (await import("./chunks/CategoriesModule-ZLR5W2ZG.js")).CategoriesModule;
     case "tags":
@@ -1751,9 +1751,9 @@ async function loadPageModuleClass(page) {
     case "testimonials":
       return (await import("./chunks/TestimonialsModule-R7TVAFLM.js")).TestimonialsModule;
     case "blogposts":
-      return (await import("./chunks/BlogModule-636UVP6T.js")).BlogModule;
+      return (await import("./chunks/BlogModule-NSJMYLSR.js")).BlogModule;
     case "blogpost-view":
-      return (await import("./chunks/BlogPostViewModule-A5IDSCVB.js")).BlogPostViewModule;
+      return (await import("./chunks/BlogPostViewModule-D4TTUECI.js")).BlogPostViewModule;
     case "experience":
       return (await import("./chunks/ExperienceModule-MDCFJCYV.js")).ExperienceModule;
     case "contact-messages":
@@ -1792,7 +1792,7 @@ function bindGlobalPanelChrome() {
 var quickAddModule = null;
 async function bindQuickAddButton(pageModule) {
   if (quickAddModule) return;
-  const { QuickAddModule } = await import("./chunks/QuickAddModule-Y3ZEFWJO.js");
+  const { QuickAddModule } = await import("./chunks/QuickAddModule-JPNHZRYE.js");
   quickAddModule = new QuickAddModule(pageModule);
   quickAddModule.bindEvents();
 }

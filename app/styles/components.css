@@ -2278,6 +2278,33 @@ select.pa-form-select:not(.pa-select-native) {
   flex-wrap: wrap;
 }
 
+.pa-rte-fullscreen-wrap {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.pa-rte--fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 10060;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0;
+  background: var(--pa-bg-raised);
+  box-shadow: none;
+}
+
+.pa-rte--fullscreen .pa-rte-body {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+
+body.pa-rte-fullscreen-active {
+  overflow: hidden;
+}
+
 .pa-rte-btn {
   width: 25px;
   height: 25px;

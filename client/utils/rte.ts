@@ -78,12 +78,97 @@ function applyLink(body, url, savedRange) {
   }
 }
 
+type RteFullscreenRestore = { parent: Node; next: ChildNode | null };
+
+let rteFullscreenRestore: RteFullscreenRestore | null = null;
+let rteFullscreenEscapeBound = false;
+
+function syncRteFullscreenBodyLock() {
+  document.body.classList.toggle(
+    'pa-rte-fullscreen-active',
+    !!document.querySelector('.pa-rte--fullscreen'),
+  );
+}
+
+function setRteFullscreen(wrap: HTMLElement, body: HTMLElement, btn: HTMLElement, active: boolean) {
+  const icon = btn.querySelector('i');
+  if (active) {
+    if (!wrap.classList.contains('pa-rte--fullscreen')) {
+      rteFullscreenRestore = { parent: wrap.parentNode!, next: wrap.nextSibling };
+      document.body.appendChild(wrap);
+      wrap.classList.add('pa-rte--fullscreen');
+    }
+  } else if (wrap.classList.contains('pa-rte--fullscreen')) {
+    wrap.classList.remove('pa-rte--fullscreen');
+    if (rteFullscreenRestore?.parent) {
+      rteFullscreenRestore.parent.insertBefore(wrap, rteFullscreenRestore.next);
+    }
+    rteFullscreenRestore = null;
+  }
+  if (icon) {
+    icon.className = active ? 'ri-fullscreen-exit-line' : 'ri-fullscreen-line';
+  }
+  btn.title = active ? 'Exit full screen' : 'Full screen';
+  btn.setAttribute('aria-label', btn.title);
+  btn.setAttribute('aria-pressed', String(active));
+  syncRteFullscreenBodyLock();
+  if (active) body.focus();
+}
+
+function toggleRteFullscreen(wrap: HTMLElement, body: HTMLElement, btn: HTMLElement) {
+  const active = !wrap.classList.contains('pa-rte--fullscreen');
+  if (active) {
+    document.querySelectorAll('.pa-rte--fullscreen').forEach((other) => {
+      if (other === wrap) return;
+      const otherBtn = other.querySelector<HTMLElement>('.pa-rte-fullscreen-btn');
+      const otherBody = other.querySelector<HTMLElement>('.pa-rte-body');
+      if (otherBtn && otherBody) setRteFullscreen(other as HTMLElement, otherBody, otherBtn, false);
+    });
+  }
+  setRteFullscreen(wrap, body, btn, active);
+}
+
+function ensureRteFullscreenButton(wrap: HTMLElement, body: HTMLElement) {
+  const toolbar = wrap.querySelector('.pa-rte-toolbar');
+  if (!toolbar || toolbar.querySelector('.pa-rte-fullscreen-wrap')) return;
+
+  const group = document.createElement('div');
+  group.className = 'pa-rte-fullscreen-wrap';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'pa-rte-btn pa-rte-fullscreen-btn';
+  btn.title = 'Full screen';
+  btn.setAttribute('aria-label', 'Full screen');
+  btn.setAttribute('aria-pressed', 'false');
+  btn.innerHTML = '<i class="ri-fullscreen-line"></i>';
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    toggleRteFullscreen(wrap, body, btn);
+  });
+  group.appendChild(btn);
+  toolbar.appendChild(group);
+
+  if (!rteFullscreenEscapeBound) {
+    rteFullscreenEscapeBound = true;
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const full = document.querySelector<HTMLElement>('.pa-rte--fullscreen');
+      if (!full) return;
+      const fullBtn = full.querySelector<HTMLElement>('.pa-rte-fullscreen-btn');
+      const fullBody = full.querySelector<HTMLElement>('.pa-rte-body');
+      if (fullBtn && fullBody) setRteFullscreen(full, fullBody, fullBtn, false);
+    });
+  }
+}
+
 export function setupRte(wrapId, bodyId) {
   const wrap = document.getElementById(wrapId);
   const body = document.getElementById(bodyId);
   if (!wrap || !body) return;
 
-  wrap.querySelectorAll('.pa-rte-btn').forEach((btn) => {
+  ensureRteFullscreenButton(wrap, body);
+
+  wrap.querySelectorAll('.pa-rte-btn[data-cmd]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       body.focus();
