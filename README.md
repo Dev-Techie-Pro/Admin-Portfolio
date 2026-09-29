@@ -1,6 +1,10 @@
 # Portfolio Admin Dashboard
 
+**Package:** `admin-dashboard-nextjs` · **Version:** 1.1.0
+
 A full-stack **Portfolio Admin Dashboard** for managing portfolio website content, site settings, media, staff users, and activity. The app combines **Next.js 14 (App Router)** for routing, authentication, and API endpoints with a **TypeScript ES module** client (`client/` → compiled to `public/js/`) for the interactive dashboard UI. All CMS data is persisted in **Supabase** (PostgreSQL, Auth, and Storage).
+
+The same deployment also exposes **CORS-enabled public APIs** under `/api/public/blog/*` so a separate portfolio frontend can load likes, comments, and engagement for published posts while editors moderate comments inside the admin blog workspace.
 
 ---
 
@@ -31,7 +35,8 @@ A full-stack **Portfolio Admin Dashboard** for managing portfolio website conten
 ## Features
 
 - **Dashboard** — overview stats, ApexCharts charts, and quick-add wizards for common content types
-- **CMS modules** — projects, project tags, categories, blog categories, technologies, tools, tool categories, blog posts, experience, testimonials, and media library
+- **CMS modules** — projects, project tags, categories, blog categories, technologies, tools, tool categories, blog posts (rich editor workspace, SEO meta fields), experience, testimonials, and media library
+- **Blog engagement** — per-post likes and comments (public API + admin moderation), list-level engagement summaries, and toggles for comments/likes/auto-approve
 - **Contact messages** — inbox with threaded replies (SMTP), configurable column visibility, and status workflow
 - **User management** — staff user CRUD, role assignment, and credential reset emails (`/users`)
 - **Role access requests** — editors/viewers can request elevated access from administrators (email + in-app notifications)
@@ -55,7 +60,7 @@ A full-stack **Portfolio Admin Dashboard** for managing portfolio website conten
 | UI runtime     | [React](https://react.dev/)                                              | 18.3.x            |
 | Client modules | TypeScript ES modules (`client/` → `public/js/` via esbuild)             | ES2020            |
 | Client bundler | [esbuild](https://esbuild.github.io/) (code-split chunks under `/js/chunks/`) | ^0.28.x      |
-| Styling        | Custom CSS (`app/globals.css` → `app/styles/`)                           | —                 |
+| Styling        | Custom CSS (`app/globals.css` → `tokens`, `base`, `layout`, `components`, `responsive`) | —      |
 | Icons          | [Remix Icon](https://remixicon.com/) (`remixicon` npm package + glyph registry for picker) | 4.6.0 |
 | Fonts          | Outfit, Inter, JetBrains Mono + customization panel fonts (Google Fonts) | —                 |
 | Backend / DB   | [Supabase](https://supabase.com/) (PostgreSQL, Auth, Storage)            | —                 |
@@ -83,11 +88,14 @@ Browser
   │     ├─ modules/* — feature modules (Projects, Blog, Settings, …)
   │     ├─ boot-prefetch.ts — early API prefetch per route
   │     ├─ prefetch-config.ts — storage keys per page (mirrored in lib/cms/prefetch-config.ts)
-  │     └─ StorageService — fetch/save via REST API + /api/bootstrap
+  │     ├─ StorageService + PersistentCache — fetch/save via REST API + /api/bootstrap
+  │     └─ EventBus — lightweight cross-module events in the shell
   │
   └─ Next.js API routes (app/api/)
         ├─ lib/auth/guard.ts — staff / admin / editor role checks
         ├─ lib/cms/repository.tsx — Supabase data access
+        ├─ lib/cms/blog-engagement.ts — likes, comments, public + staff engagement
+        ├─ lib/api/public-cors.ts — CORS for companion portfolio origins
         ├─ lib/admin/* — SQL export, env config
         └─ lib/email/* — SMTP replies, credentials, role requests
               └─ PostgreSQL (supabase/migrations/)
@@ -115,8 +123,8 @@ Portfolio-Admin-main/
 │
 ├── app/                          # Next.js App Router (TypeScript)
 │   ├── layout.tsx                # Root layout, global CSS, boot scripts
-│   ├── globals.css               # Imports app/styles/*.css + remixicon
-│   ├── styles/                   # tokens, base, layout, components
+│   ├── globals.css               # remixicon + app/styles/*.css
+│   ├── styles/                   # tokens, base, layout, components, responsive
 │   ├── page.tsx                  # Dashboard home (/)
 │   ├── bodyHtml.ts               # Composed dashboard shell HTML
 │   ├── sidebarHtml.tsx           # Sidebar navigation markup
@@ -159,11 +167,11 @@ Portfolio-Admin-main/
 │
 ├── lib/
 │   ├── auth/                     # guards, profile, MFA, users, session lifetime
-│   ├── cms/                      # repository, bootstrap, batch writes, media sync
+│   ├── cms/                      # repository, bootstrap, batch writes, media sync, blog-engagement, dashboard-stats
 │   ├── admin/                    # SQL export, env config
 │   ├── email/                    # SMTP send helpers
 │   ├── settings/                 # Settings tab metadata (SSR)
-│   ├── api/                      # JSON helpers, shared GET wrappers
+│   ├── api/                      # JSON helpers, public CORS, withStaffGet caching
 │   ├── theme/                    # category color tokens
 │   └── supabase/                 # client, server, admin, middleware, database.types.ts
 │
@@ -177,7 +185,7 @@ Portfolio-Admin-main/
 │   └── images/                   # Favicons, manifest
 │
 ├── supabase/
-│   ├── migrations/               # PostgreSQL schema migrations (43 files)
+│   ├── migrations/               # PostgreSQL schema migrations (45 files)
 │   └── README.md                 # Detailed database documentation
 │
 ├── scripts/                      # Optional dev utilities (not runtime)
@@ -261,7 +269,9 @@ Open [http://localhost:3000/api/health/supabase](http://localhost:3000/api/healt
 | `NEXT_PUBLIC_SUPABASE_URL`      | Yes         | Supabase project URL (`https://<ref>.supabase.co`)              |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes         | Supabase anonymous (public) key                                 |
 | `SUPABASE_SERVICE_ROLE_KEY`     | Yes         | Service role key (server-side only; never expose to the client) |
-| `NEXT_PUBLIC_SITE_URL`          | Recommended | Public site URL (e.g. `http://localhost:3000` in dev)           |
+| `NEXT_PUBLIC_SITE_URL`          | Recommended | Public admin URL (e.g. `http://localhost:3000` in dev)          |
+| `PORTFOLIO_PUBLIC_ORIGINS`      | Recommended | Comma-separated origins allowed to call `/api/public/*` (no trailing slashes) |
+| `NEXT_PUBLIC_PORTFOLIO_URL`     | Optional    | Fallback single origin for public CORS if `PORTFOLIO_PUBLIC_ORIGINS` is unset |
 | `CRON_SECRET`                   | Optional    | Bearer token for `/api/cron/purge-activities` and `/api/cron/prune-sessions` |
 | `SESSION_PRUNE_KEEP_DAYS`       | Optional    | Days to retain ended `user_sessions` rows (default `90`)        |
 | `CMS_BATCH_WRITES`              | Optional    | Set to `false` to disable batched CMS PUT performance path       |
@@ -285,6 +295,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+# PORTFOLIO_PUBLIC_ORIGINS=https://your-portfolio.example
 ```
 
 > **Security:** Never commit `.env` or `.env.local`. These paths are listed in `.gitignore`.
@@ -296,14 +307,14 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 The PostgreSQL schema covers:
 
 - **Core** — `sites`, `profiles`, `site_settings`, `notification_preferences`, `security_settings`, `two_factor_backup_codes`, `login_activity`, `user_sessions`, `backup_snapshots`, `user_notifications`
-- **CMS** — `categories`, `projects`, `project_tags`, `project_gallery_images`, `technologies`, `tool_categories`, `tool_items`, `blog_categories`, `blog_posts`, `blog_post_tags`, `media_assets`, `testimonials`, `experience_entries`, `contact_messages`, `contact_message_replies`
+- **CMS** — `categories`, `projects`, `project_tags`, `project_gallery_images`, `technologies`, `tool_categories`, `tool_items`, `blog_categories`, `blog_posts` (incl. `meta_title`, `meta_description`, engagement flags), `blog_post_tags`, `blog_post_comments`, `blog_post_likes`, `media_assets`, `testimonials`, `experience_entries`, `contact_messages`, `contact_message_replies`
 - **Activity** — `recent_activities`
 - **Views** — `dashboard_stats` (with caching helpers in later migrations)
 - **Storage** — public `media` bucket (size/MIME limits enforced in app + migrations)
 
 Theme and UI customization live in `site_settings.appearance_settings` (JSON). Contact inbox column visibility is in `site_settings.contact_message_columns`. The legacy `integrations` table was removed in migration `20260925160000_drop_integrations_table.sql`.
 
-Migrations are in `supabase/migrations/` (**43 files**) and should be applied in filename order. For tables, RLS policies, roles, and RPCs, see [supabase/README.md](supabase/README.md).
+Migrations are in `supabase/migrations/` (**45 files**) and should be applied in filename order. For tables, RLS policies, roles, and RPCs, see [supabase/README.md](supabase/README.md).
 
 **npm database scripts:**
 
@@ -358,7 +369,8 @@ npm run start
 | `/tools`                  | `tools`             | Tools / stack items                     |
 | `/media-library`          | `media`             | Media asset management                  |
 | `/testimonials`           | `testimonials`      | Client testimonials                     |
-| `/blog-post`              | `blogposts`         | Blog post management                    |
+| `/blog-post`              | `blogposts`         | Blog post list + workspace (engagement tab when editing) |
+| `/blog-post/view/:id`     | —                   | Redirects to `/blog-post?open=:id` (`next.config.mjs`) |
 | `/experience`             | `experience`        | Work experience entries                 |
 | `/contact-messages`       | `contact-messages`  | Inbound contact form messages           |
 | `/users`                  | `users`             | Staff user management (admin)           |
@@ -373,7 +385,7 @@ npm run start
 | `/forget-password`        | `forgot-password`   | Password reset request (public)         |
 | `/reset-password`         | `reset-password`    | Password reset form (public)            |
 
-Route-to-module mapping is defined in `client/core/router.ts` (compiled to `public/js/core/router.js`). Settings tab paths for Next.js metadata and static params are in `lib/settings/page-meta.ts`. Each CMS page module extends the base `Module` class in `client/core/Module.ts`.
+Route-to-module mapping is defined in `client/core/router.ts` (compiled to `public/js/core/router.js`). **Settings tabs** exposed in the UI and Next.js static params are `general`, `profile`, `security`, `notifications`, and `system` (`lib/settings/page-meta.ts` and `app/sidebarHtml.tsx`). Each CMS page module extends the base `Module` class in `client/core/Module.ts`.
 
 ---
 
@@ -393,11 +405,14 @@ Staff CMS routes require an authenticated user with role `super_admin`, `admin`,
 | `/api/tool-categories`        | GET, PUT               | Tool categories                    |
 | `/api/tools`                  | GET, PUT               | Tools                              |
 | `/api/media`                  | GET, PUT, POST, DELETE | Media assets (metadata / library)  |
+| `/api/media/item`             | PATCH, DELETE          | Update or delete one media item by legacy id (no full-library PUT) |
 | `/api/media/upload`           | POST                   | Upload file to Supabase Storage    |
 | `/api/media/sync`             | POST                   | Reconcile media usage counts       |
 | `/api/testimonials`           | GET, PUT               | Testimonials                       |
 | `/api/blog-posts`             | GET, PUT               | Blog posts                         |
 | `/api/blog-posts/[id]`        | GET                    | Single blog post                   |
+| `/api/blog-posts/engagement`  | GET                    | Like/comment counts by legacy post id (`?ids=`) |
+| `/api/blog-posts/[id]/engagement` | GET, PATCH, DELETE | Staff engagement detail; moderate or delete comments |
 | `/api/experience`             | GET, PUT               | Experience entries                 |
 | `/api/contact-messages`       | GET, PUT, DELETE       | Contact messages                   |
 | `/api/contact-messages/reply` | POST, PUT, DELETE      | Send, edit, or delete SMTP replies |
@@ -449,6 +464,16 @@ Staff CMS routes require an authenticated user with role `super_admin`, `admin`,
 | `/api/cron/purge-activities`        | GET               | Scheduled activity cleanup         |
 | `/api/cron/prune-sessions`          | GET               | Prune old `user_sessions` rows     |
 | `/api/health/supabase`              | GET               | Database connectivity check        |
+
+### Public portfolio (CORS)
+
+These routes are unauthenticated. They require a permitted `Origin` (see `PORTFOLIO_PUBLIC_ORIGINS` / `lib/api/public-cors.ts`). In development, `localhost` origins are allowed automatically.
+
+| Endpoint                                   | Methods | Purpose                                      |
+| ------------------------------------------ | ------- | -------------------------------------------- |
+| `/api/public/blog/[slug]/engagement`       | GET     | Published post engagement (`?visitorKey=`)   |
+| `/api/public/blog/[slug]/likes`            | POST    | Toggle like for a visitor key                |
+| `/api/public/blog/[slug]/comments`         | POST    | Submit a comment (may be pending moderation) |
 
 Client-side storage keys map to these routes in `client/core/StorageService.ts` (`REMOTE_ROUTES`). Per-route prefetch keys are in `client/prefetch-config.ts` (keep in sync with `lib/cms/prefetch-config.ts`).
 
@@ -533,11 +558,12 @@ This is a standard Next.js 14 application. Deploy to any Node-compatible host (e
 
 1. Set all [environment variables](#environment-variables) in the hosting provider.
 2. Ensure Supabase migrations are applied to your production project (`npm run db:push`).
-3. Set `NEXT_PUBLIC_SITE_URL` to your production URL.
-4. Configure `CRON_SECRET` and schedule:
+3. Set `NEXT_PUBLIC_SITE_URL` to your production admin URL.
+4. Set `PORTFOLIO_PUBLIC_ORIGINS` (or `NEXT_PUBLIC_PORTFOLIO_URL` / `EMAIL_PORTFOLIO_URL`) so your live portfolio site can call `/api/public/blog/*`.
+5. Configure `CRON_SECRET` and schedule:
    - `/api/cron/purge-activities` for activity retention
    - `/api/cron/prune-sessions` for old session rows (optional `SESSION_PRUNE_KEEP_DAYS`)
-5. Build and start:
+6. Build and start:
 
 ```bash
 npm run build

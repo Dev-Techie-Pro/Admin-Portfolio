@@ -27,7 +27,7 @@ import {
   closeAllCardMenus,
   requestConfirm,
   toggleCardMenu
-} from "./chunk-FKU7VLLX.js";
+} from "./chunk-F6FHRV7X.js";
 import {
   Module,
   addNotification,
@@ -35,7 +35,7 @@ import {
   loadNotifications,
   requestBrowserNotificationPermission,
   storage
-} from "./chunk-TASL3XVM.js";
+} from "./chunk-M734VJHD.js";
 import {
   $field,
   $id,

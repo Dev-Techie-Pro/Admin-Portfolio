@@ -183,7 +183,7 @@ class BlogModule extends CrudCardModule {
   syncStatusTabs() {
     const filter = this.store.get("blogTabFilter") || "all";
     $all("#paBlogStatusTabs .pa-status-tab").forEach((tab) => {
-      const active = tab.dataset.blogFilter === filter;
+      const active = tab.getAttribute("data-blog-filter") === filter;
       tab.classList.toggle("active", active);
       tab.setAttribute("aria-selected", active ? "true" : "false");
     });
@@ -385,7 +385,8 @@ class BlogModule extends CrudCardModule {
     this.workspace.bind();
     $all("#paBlogStatusTabs .pa-status-tab").forEach((tab) => {
       this.on(tab, "click", () => {
-        this.store.update({ blogTabFilter: tab.dataset.blogFilter || "all", page: 1 });
+        const blogFilter = tab.getAttribute("data-blog-filter") || "all";
+        this.store.update({ blogTabFilter: blogFilter, page: 1 });
         this.render();
       });
     });

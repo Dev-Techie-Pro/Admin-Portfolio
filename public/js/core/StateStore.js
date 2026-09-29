@@ -10,14 +10,15 @@ class StateStore {
     this._raw = { ...initialState };
     this.state = new Proxy(this._raw, {
       set: (target, key, value) => {
+        if (typeof key !== "string") return true;
         if (target[key] === value) return true;
-        const prev = target[key];
         target[key] = value;
         this._dirtyKeys.add(key);
-        this._scheduleNotify(prev);
+        this._scheduleNotify();
         return true;
       },
       deleteProperty: (target, key) => {
+        if (typeof key !== "string") return true;
         if (!(key in target)) return true;
         delete target[key];
         this._dirtyKeys.add(key);

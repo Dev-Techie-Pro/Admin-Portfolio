@@ -4,7 +4,7 @@ import {
 } from "./chunk-A5DY2KK7.js";
 import {
   BulkSelectController
-} from "./chunk-FIFD2WV7.js";
+} from "./chunk-HPQHV5SH.js";
 import {
   DEFAULT_LIST_COLUMNS,
   applyListGridClasses,
@@ -23,13 +23,15 @@ import {
   registerPanel,
   requestDelete,
   toggleCardMenu
-} from "./chunk-FKU7VLLX.js";
+} from "./chunk-F6FHRV7X.js";
 import {
   Module
-} from "./chunk-TASL3XVM.js";
+} from "./chunk-M734VJHD.js";
 import {
   $all,
-  $id
+  $field,
+  $id,
+  $input
 } from "./chunk-S5QBHCBR.js";
 
 // client/core/CrudCardModule.ts
@@ -53,7 +55,7 @@ var CrudCardModule = class extends Module {
       initialState: {
         records: [],
         searchQuery: "",
-        filters: { ...config.defaultFilters || {} },
+        filters: config.defaultFilters ? { ...config.defaultFilters } : {},
         layoutMode: "flat",
         page: 1,
         viewMode: "grid"
@@ -105,7 +107,6 @@ var CrudCardModule = class extends Module {
   populateEditForm(_record) {
     throw new Error(`${this.name}: populateEditForm() not implemented`);
   }
-  /** @returns {{valid:boolean, [field:string]: any}} */
   validateForm(_prefix) {
     throw new Error(`${this.name}: validateForm() not implemented`);
   }
@@ -164,7 +165,7 @@ var CrudCardModule = class extends Module {
         if (record) requestDelete(record[this.config.idField], this.config.deleteType, this.getDeleteName(record), this.getDeleteExtraInfo(record));
       });
     }
-    const searchInput = $id("paSearchInput");
+    const searchInput = $input("paSearchInput");
     if (searchInput) {
       this.on(searchInput, "input", () => {
         this.store.set("searchQuery", searchInput.value);
@@ -181,7 +182,7 @@ var CrudCardModule = class extends Module {
       this.render();
     });
     (this.config.filterSelectIds || []).forEach((filterId) => {
-      const el = $id(filterId.id);
+      const el = $field(filterId.id);
       if (!el) return;
       this.on(el, "change", () => {
         this.store.update({ filters: { ...this.store.get("filters"), [filterId.key]: el.value }, page: 1 });
@@ -227,7 +228,8 @@ var CrudCardModule = class extends Module {
     if (listBtn) {
       listBtn.classList.toggle("active", mode === "list");
     }
-    document.querySelectorAll(".pa-view-btn[data-view]").forEach((btn) => {
+    $all(".pa-view-btn[data-view]").forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
       const view = btn.dataset.view;
       if (view === "grid") {
         btn.classList.toggle("active", mode === "grid");
@@ -246,7 +248,8 @@ var CrudCardModule = class extends Module {
     if (listBtn) {
       listBtn.classList.toggle("active", mode === "list");
     }
-    document.querySelectorAll(".pa-view-btn[data-view]").forEach((btn) => {
+    $all(".pa-view-btn[data-view]").forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
       const view = btn.dataset.view;
       if (view === "grid") {
         btn.classList.toggle("active", mode === "grid");
@@ -258,13 +261,22 @@ var CrudCardModule = class extends Module {
   }
   layoutSelect() {
     const id = this.config.layout?.selectId;
-    return id ? $id(id) : null;
+    return id ? $field(id) : null;
+  }
+  groupedLayoutConfig() {
+    const layout = this.config.layout;
+    if (!layout || this.store.get("layoutMode") !== "grouped") return null;
+    return layout;
   }
   isGroupedLayout() {
-    return !!this.config.layout && this.store.get("layoutMode") === "grouped";
+    return this.groupedLayoutConfig() != null;
   }
   groupInfo(record) {
-    return this.config.layout.getGroupInfo.call(this, record);
+    const layout = this.config.layout;
+    if (!layout) {
+      throw new Error(`${this.name}: groupInfo() requires config.layout`);
+    }
+    return layout.getGroupInfo.call(this, record);
   }
   syncLayoutSelect() {
     const el = this.layoutSelect();
@@ -272,10 +284,12 @@ var CrudCardModule = class extends Module {
   }
   getFiltered() {
     const { records, searchQuery, filters, layoutMode } = this.store._raw;
-    let results = this.sortRecords(records.slice());
+    const list = Array.isArray(records) ? records : [];
+    let results = this.sortRecords(list.slice());
     results = results.filter((r) => this.matchesFilters(r, filters));
-    if (searchQuery && searchQuery.trim()) {
-      results = results.filter((r) => this.matchesSearch(r, searchQuery));
+    const query = typeof searchQuery === "string" ? searchQuery : "";
+    if (query.trim()) {
+      results = results.filter((r) => this.matchesSearch(r, query));
     }
     if (this.config.layout) {
       results = arrangeForLayout(results, layoutMode, (record) => this.groupInfo(record));
@@ -301,7 +315,8 @@ var CrudCardModule = class extends Module {
     return renderListTableShell(columns, rows);
   }
   syncListViewChrome(isList) {
-    const pag = $id(this.config.ids.paginationBtns)?.closest(".pa-pagination");
+    const pagEl = $id(this.config.ids?.paginationBtns)?.closest(".pa-pagination");
+    const pag = pagEl instanceof HTMLElement ? pagEl : null;
     syncListPaginationChrome(isList, pag);
   }
   render() {
@@ -326,18 +341,20 @@ var CrudCardModule = class extends Module {
         this.on($id(ids.emptyAddBtn), "click", () => this.openAddPanel());
       } else if (isList && this.config.listTable) {
         grid.innerHTML = this.renderListTable(pageItems, start);
-      } else if (this.isGroupedLayout()) {
-        const { singular, plural } = this.config.layout;
-        grid.innerHTML = renderGroupedCards(
-          pageItems,
-          all,
-          (record) => this.groupInfo(record),
-          (record, i) => this.renderCard(record, i),
-          singular,
-          plural
-        );
       } else {
-        grid.innerHTML = pageItems.map((r, i) => this.renderCard(r, i)).join("");
+        const groupedLayout = this.groupedLayoutConfig();
+        if (groupedLayout) {
+          grid.innerHTML = renderGroupedCards(
+            pageItems,
+            all,
+            (record) => this.groupInfo(record),
+            (record, i) => this.renderCard(record, i),
+            groupedLayout.singular,
+            groupedLayout.plural
+          );
+        } else {
+          grid.innerHTML = pageItems.map((r, i) => this.renderCard(r, i)).join("");
+        }
       }
     }
     this.syncListViewChrome(isList && !!grid && pageItems.length > 0 && !!this.config.listTable);
@@ -381,8 +398,9 @@ var CrudCardModule = class extends Module {
     const endN = Math.min(page * pageSize, totalItems);
     info.textContent = `Showing ${startN} to ${endN} of ${totalItems}`;
     btnsWrap.querySelectorAll(".pa-page-btn").forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
       btn.addEventListener("click", () => {
-        this.store.set("page", parseInt(btn.dataset.page, 10));
+        this.store.set("page", parseInt(btn.dataset.page ?? "", 10));
         this.render();
         $id(ids.bodyScroll)?.scrollTo({ top: 0, behavior: "smooth" });
       });
@@ -405,17 +423,20 @@ var CrudCardModule = class extends Module {
   resetFilters() {
     this.store.batch(() => {
       this.store.set("searchQuery", "");
-      this.store.set("filters", { ...this.config.defaultFilters || {} });
+      this.store.set(
+        "filters",
+        this.config.defaultFilters ? { ...this.config.defaultFilters } : {}
+      );
       this.store.set("layoutMode", "flat");
       this.store.set("page", 1);
     });
-    const searchInput = $id("paSearchInput");
+    const searchInput = $input("paSearchInput");
     if (searchInput) {
       searchInput.value = "";
       $id("paSearchWrap")?.classList.remove("has-value");
     }
     (this.config.filterSelectIds || []).forEach((f) => {
-      const el = $id(f.id);
+      const el = $field(f.id);
       if (el) el.value = "all";
     });
     const layoutEl = this.layoutSelect();
@@ -427,9 +448,11 @@ var CrudCardModule = class extends Module {
     if (!grid) return;
     const idAttr = this.config.cardIdAttr || "data-id";
     $all(".pa-action-edit", grid).forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
       btn.addEventListener("click", () => this.openEditPanel(btn.getAttribute(idAttr) ?? btn.dataset.id));
     });
     $all(".pa-action-delete", grid).forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
       btn.addEventListener("click", () => {
         const id = btn.getAttribute(idAttr) ?? btn.dataset.id;
         const record = this.findById(id);
@@ -437,6 +460,7 @@ var CrudCardModule = class extends Module {
       });
     });
     $all(".pa-action-more", grid).forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
         const host = btn.closest(".pa-lv-more-wrap, .pa-cat-card__footer-more, .pa-cat-card__list-actions, .pa-card-actions");
@@ -445,6 +469,7 @@ var CrudCardModule = class extends Module {
       });
     });
     $all(".pa-card-menu-item", grid).forEach((item) => {
+      if (!(item instanceof HTMLElement)) return;
       item.addEventListener("click", (e) => {
         e.stopPropagation();
         const id = item.getAttribute(idAttr) ?? item.dataset.id;
