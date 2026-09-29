@@ -1,8 +1,9 @@
-import { BODY_HTML } from './bodyHtml';
+import { BODY_HTML, SETTINGS_SHELL_SUFFIX_START } from './bodyHtml';
 import { getSettingsPageMeta, resolveSettingsTab } from '@/lib/settings/page-meta';
 import { SYSTEM_SECTION_TOOLBAR_HTML } from './systemSectionToolbarHtml';
 
-const TAB_ORDER = [
+/** Settings routes with a `data-content` panel in BODY_HTML. */
+const SETTINGS_ROUTE_TABS = [
   'general',
   'profile',
   'security',
@@ -12,6 +13,11 @@ const TAB_ORDER = [
   'system',
 ];
 
+/** Non-route shell panels after settings (see SETTINGS_BODY_HTML_SUFFIX). */
+const SHELL_SUFFIX_PANELS = ['typography'];
+
+const PANEL_ORDER = [...SETTINGS_ROUTE_TABS, ...SHELL_SUFFIX_PANELS];
+
 function findPanelStart(html: string, tab: string): number {
   const marker = `data-content="${tab}"`;
   const idx = html.indexOf(marker);
@@ -19,17 +25,33 @@ function findPanelStart(html: string, tab: string): number {
   return html.lastIndexOf('<div class="pa-tab-panel', idx);
 }
 
+function findShellSuffixStart(html: string): number {
+  let bound = html.length;
+  for (const marker of SHELL_SUFFIX_PANELS) {
+    const start = findPanelStart(html, marker);
+    if (start !== -1) bound = Math.min(bound, start);
+  }
+  if (html === BODY_HTML) {
+    bound = Math.min(bound, SETTINGS_SHELL_SUFFIX_START);
+  }
+  return bound;
+}
+
 function findPanelEnd(html: string, tab: string): number {
   const start = findPanelStart(html, tab);
   if (start === -1) return -1;
 
-  const tabIndex = TAB_ORDER.indexOf(tab);
+  const tabIndex = PANEL_ORDER.indexOf(tab);
   let end = html.length;
-  for (let i = tabIndex + 1; i < TAB_ORDER.length; i += 1) {
-    const nextStart = findPanelStart(html, TAB_ORDER[i]);
+  for (let i = tabIndex + 1; i < PANEL_ORDER.length; i += 1) {
+    const nextStart = findPanelStart(html, PANEL_ORDER[i]);
     if (nextStart !== -1 && nextStart > start) {
       end = Math.min(end, nextStart);
     }
+  }
+  const suffixStart = findShellSuffixStart(html);
+  if (suffixStart > start) {
+    end = Math.min(end, suffixStart);
   }
   return end;
 }
@@ -51,14 +73,11 @@ function getShellBeforePanels(html: string): string {
   return start === -1 ? html : html.slice(0, start);
 }
 
+/** Shell HTML after settings route panels (`SETTINGS_BODY_HTML_SUFFIX`, etc.). */
 function getShellAfterPanels(html: string): string {
-  const systemEnd = findPanelEnd(html, 'system');
-  const systemStart = findPanelStart(html, 'system');
-  if (systemStart !== -1 && systemEnd !== -1) {
-    return html.slice(systemEnd);
-  }
-  const notifEnd = findPanelEnd(html, 'notifications');
-  return notifEnd !== -1 ? html.slice(notifEnd) : '';
+  const suffixStart = findShellSuffixStart(html);
+  if (suffixStart === -1 || suffixStart >= html.length) return '';
+  return html.slice(suffixStart);
 }
 
 const SETTINGS_HEADER_ACTIONS_SLOT = '<div class="pa-header-page-right" id="settingsPageHeaderActions"></div>';
