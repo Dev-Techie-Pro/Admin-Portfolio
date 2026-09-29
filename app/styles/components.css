@@ -1897,6 +1897,108 @@ select.pa-filter-select:not(.pa-select-native):focus {
   margin-top: 5px;
 }
 
+/* System → Environment field guidance */
+.pa-env-form.pa-settings-grid > .pa-env-intro {
+  grid-column: 1 / -1;
+}
+
+.pa-env-form .pa-env-intro-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: var(--pa-fs-sm);
+  color: var(--pa-text-mute);
+  line-height: 1.55;
+}
+
+.pa-env-form .pa-env-intro-list li {
+  margin-top: 0.35rem;
+}
+
+.pa-env-card-intro code {
+  font-size: 0.92em;
+}
+
+.pa-env-form-group {
+  padding-bottom: 1.1rem;
+  margin-bottom: 1.1rem;
+  border-bottom: 1px solid var(--pa-border-soft);
+}
+
+.pa-env-form-group:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.pa-env-field-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.pa-env-field-title {
+  font-size: var(--pa-fs-md);
+  font-weight: var(--pa-fw-md);
+  color: var(--pa-text);
+}
+
+.pa-env-field-key {
+  font-size: 11px;
+  font-weight: var(--pa-fw-sm);
+  color: var(--pa-text-faint);
+  background: var(--pa-bg-input);
+  border: 1px solid var(--pa-border-soft);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.pa-env-field-help {
+  font-size: var(--pa-fs-sm);
+  color: var(--pa-text-mute);
+  line-height: 1.55;
+  margin-bottom: 0.65rem;
+}
+
+.pa-env-field-desc {
+  margin: 0 0 0.4rem;
+}
+
+.pa-env-field-details {
+  margin: 0.35rem 0 0.5rem;
+  padding-left: 1.15rem;
+}
+
+.pa-env-field-details li {
+  margin-top: 0.3rem;
+}
+
+.pa-env-field-details code,
+.pa-env-field-desc code {
+  font-size: 0.9em;
+}
+
+.pa-env-field-default {
+  margin: 0.35rem 0 0;
+  font-size: var(--pa-fs-sm);
+  color: var(--pa-text-faint);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.pa-env-field-default i {
+  color: var(--pa-orange);
+  margin-top: 2px;
+}
+
+.pa-env-field-default span {
+  font-weight: var(--pa-fw-md);
+  color: var(--pa-text-mute);
+}
+
 input.pa-form-input,
 select.pa-form-select:not(.pa-select-native),
 select.pa-form-input:not(.pa-select-native),
