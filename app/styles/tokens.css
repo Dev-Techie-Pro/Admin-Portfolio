@@ -108,6 +108,14 @@
   --pa-gap-sm:   5px;
   --pa-card-gap: 10px;
 
+  /* Blog post workspace — looser than default card rhythm */
+  --pa-blog-ws-head-gap: 14px 20px;
+  --pa-blog-ws-section-gap: 12px;
+  --pa-blog-ws-layout-gap: 20px;
+  --pa-blog-ws-main-gap: 16px;
+  --pa-blog-ws-engagement-stats-gap: 10px 14px;
+  --pa-blog-ws-comment-actions-gap: 6px;
+
   --pa-icon-nav:    var(--pa-fs-md);
   --pa-icon-action: var(--pa-fs-lg);
   --pa-icon-stat:   var(--pa-fs-xl);

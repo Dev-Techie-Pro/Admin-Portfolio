@@ -12,7 +12,7 @@
  *
  * @example
  *   const state = new StateStore({ items: [], query: '', page: 1 });
- *   state.subscribe((next, prev, changedKeys) => renderGrid(next));
+ *   state.subscribe((next, changedKeys) => renderGrid(next));
  *   state.set('query', 'traveler');       // triggers one notification
  *   state.batch(() => {                    // triggers exactly one notification
  *     state.set('items', [...]);
