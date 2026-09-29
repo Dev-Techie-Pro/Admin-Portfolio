@@ -110,13 +110,32 @@ export class SettingsModule extends Module {
       { value: 'ur', label: 'Urdu (UR)' },
     ]);
 
-    const otherCard = panel.querySelector('.pa-card-settings.mt-10');
+    const otherCard = panel.querySelector('#generalSettingsCard')?.parentElement?.querySelector('.pa-card-settings.mt-10')
+      || panel.querySelector('.pa-card-settings.mt-10');
     if (otherCard && !otherCard.querySelector('[data-save="other"]')) {
       const saveWrap = document.createElement('div');
       saveWrap.className = 'pa-settings-actions';
       saveWrap.innerHTML = '<button type="button" class="pa-btn pa-btn-primary" data-save="other"><i class="ri-save-line"></i> Save Other Settings</button>';
       otherCard.appendChild(saveWrap);
     }
+
+    const notifCard = [...panel.querySelectorAll('.pa-card-settings')].find((card) =>
+      card.querySelector('.pa-card-title')?.textContent?.includes('Notification Preferences'),
+    );
+    if (notifCard) {
+      const generalNotifIds = [
+        'notifChannelEmail',
+        'notifEmailProjectUpdates',
+        'notifEmailNewMessages',
+        'notifEmailSystemAlerts',
+      ];
+      notifCard.querySelectorAll('.pa-toggle-wrap input[type="checkbox"]').forEach((input, index) => {
+        const checkbox = asHtmlInput(input);
+        if (checkbox && generalNotifIds[index]) checkbox.id = generalNotifIds[index];
+      });
+    }
+
+    setupAllPasswordToggles(panel);
 
     panel.dataset.generalWired = 'true';
   }
@@ -775,16 +794,19 @@ export class SettingsModule extends Module {
 
     this.system.bindEvents();
 
-    document.querySelectorAll<HTMLInputElement>('.pa-tab-panel[data-content]:not([data-content="notifications"]) .pa-toggle-switch input[type="checkbox"]').forEach((checkbox) => {
-      this.on(checkbox, 'change', (e) => {
-        const label = checkbox.closest('.pa-toggle-wrap')?.querySelector('.pa-toggle-label');
-        const target = e.target as HTMLInputElement;
-        const state = target.checked ? 'enabled' : 'disabled';
-        if (label) {
-          showToast(`${label.textContent} ${state}`, 'info');
-        }
+    const generalPanel = document.querySelector('.pa-tab-panel[data-content="general"]');
+    if (generalPanel) {
+      generalPanel.querySelectorAll<HTMLInputElement>('.pa-toggle-switch input[type="checkbox"]').forEach((checkbox) => {
+        this.on(checkbox, 'change', (e) => {
+          const label = checkbox.closest('.pa-toggle-wrap')?.querySelector('.pa-toggle-label');
+          const target = e.target as HTMLInputElement;
+          const state = target.checked ? 'enabled' : 'disabled';
+          if (label) {
+            showToast(`${label.textContent} ${state}`, 'info');
+          }
+        });
       });
-    });
+    }
 
   }
 
@@ -805,11 +827,22 @@ export class SettingsModule extends Module {
     const resolved = SETTINGS_TABS.includes(tab) ? tab : 'general';
 
     this.store.set('activeTab', resolved);
-    activateTab('settings', resolved);
+    const settingsPanels = document.querySelectorAll('.pa-tab-panel[data-panel="settings"]');
+    if (settingsPanels.length > 1) {
+      activateTab('settings', resolved);
+    } else if (settingsPanels.length === 1) {
+      settingsPanels[0].classList.add('active');
+    }
     this.updateSettingsPageHeader(resolved);
     syncSettingsNavTab(resolved);
     if (resolved === 'general') {
+      this.wireGeneralFormFields();
       void this.reloadSiteSettings();
+      if (this.store.get('notificationPreferences')) {
+        this.hydrateNotificationPreferences();
+      } else {
+        void this.loadNotificationPreferences();
+      }
     }
     if (resolved === 'security') {
       void this.loadLoginActivity();
@@ -1098,9 +1131,15 @@ export class SettingsModule extends Module {
   }
 
   async updatePassword() {
-    const current = $field('secCurrentPassword')?.value || '';
-    const newPass = $field('secNewPassword')?.value || '';
-    const confirm = $field('secConfirmPassword')?.value || '';
+    const current = $field('secCurrentPassword')?.value
+      || $field('currentPassword')?.value
+      || '';
+    const newPass = $field('secNewPassword')?.value
+      || $field('newPassword')?.value
+      || '';
+    const confirm = $field('secConfirmPassword')?.value
+      || $field('confirmPassword')?.value
+      || '';
 
     if (!current) {
       showToast('Please enter your current password', 'danger');
@@ -1119,7 +1158,9 @@ export class SettingsModule extends Module {
     }
 
     const updateBtn = asHtmlButton($id('updatePasswordBtn'));
+    const saveSecurityBtn = asHtmlButton(document.querySelector('[data-save="security"]'));
     if (updateBtn) updateBtn.disabled = true;
+    if (saveSecurityBtn) saveSecurityBtn.disabled = true;
 
     try {
       await authService.changePassword(current, newPass);
@@ -1128,7 +1169,10 @@ export class SettingsModule extends Module {
         category: 'system_alerts',
         linkPath: '/settings/security',
       });
-      ['secCurrentPassword', 'secNewPassword', 'secConfirmPassword'].forEach((id) => {
+      [
+        'secCurrentPassword', 'secNewPassword', 'secConfirmPassword',
+        'currentPassword', 'newPassword', 'confirmPassword',
+      ].forEach((id) => {
         const el = $field(id);
         if (el) el.value = '';
       });
@@ -1136,6 +1180,7 @@ export class SettingsModule extends Module {
       showToast(err.message || 'Could not update password.', 'danger');
     } finally {
       if (updateBtn) updateBtn.disabled = false;
+      if (saveSecurityBtn) saveSecurityBtn.disabled = false;
     }
   }
 

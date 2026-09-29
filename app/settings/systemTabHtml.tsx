@@ -1,5 +1,10 @@
+import { buildSystemEnvFormHtml } from './buildSystemEnvFormHtml';
+
+const SYSTEM_ENV_FORM_HTML = buildSystemEnvFormHtml();
+
 export const SYSTEM_TAB_HTML = `
             <div class="pa-tab-panel" data-panel="settings" data-content="system">
+                <div class="pa-tab-panel active" data-panel="system-section" data-content="database">
                 <section class="pa-bkp-section" id="systemBackupSection">
                     <div class="pa-bkp-layout">
                         <div class="pa-info-box mb-16 pa-bkp-layout-status" id="systemBackupStatus" hidden></div>
@@ -163,126 +168,10 @@ export const SYSTEM_TAB_HTML = `
                         </aside>
                     </div>
                 </section>
+                </div>
 
+                <div class="pa-tab-panel" data-panel="system-section" data-content="env">
                 <div class="pa-info-box mt-10 mb-16" id="systemEnvMeta">Loading environment settings…</div>
-
-                <form id="systemEnvForm" class="pa-settings-grid" novalidate>
-                    <div>
-                        <div class="pa-card-settings" id="systemEnvSupabaseCard">
-                            <div class="pa-card-title"><i class="ri-database-2-line"></i> Supabase Configuration</div>
-                            <div class="pa-text-mute fs-sm mb-16">Connection credentials for your Supabase project. Saved to <code>.env.local</code>.</div>
-                            <div class="grid fr-2">
-                                <div class="pa-form-group">
-                                    <label class="pa-form-label" for="envNextPublicSupabaseUrl">NEXT_PUBLIC_SUPABASE_URL</label>
-                                    <input class="pa-form-input" type="url" id="envNextPublicSupabaseUrl" name="NEXT_PUBLIC_SUPABASE_URL" autocomplete="off" />
-                                </div>
-                                <div class="pa-form-group">
-                                    <label class="pa-form-label" for="envNextPublicSiteUrl">NEXT_PUBLIC_SITE_URL</label>
-                                    <input class="pa-form-input" type="url" id="envNextPublicSiteUrl" name="NEXT_PUBLIC_SITE_URL" autocomplete="off" />
-                                </div>
-                            </div>
-                            <div class="grid fr-2">
-                                <div class="pa-form-group">
-                                    <label class="pa-form-label" for="envNextPublicSupabaseAnonKey">NEXT_PUBLIC_SUPABASE_ANON_KEY</label>
-                                    <div class="pa-password-wrap">
-                                        <input class="pa-form-input" type="password" id="envNextPublicSupabaseAnonKey" name="NEXT_PUBLIC_SUPABASE_ANON_KEY" autocomplete="off" placeholder="Leave blank to keep current value" />
-                                        <button type="button" class="pa-password-toggle" aria-label="Show value"><i class="ri-eye-line"></i></button>
-                                    </div>
-                                </div>
-                                <div class="pa-form-group">
-                                    <label class="pa-form-label" for="envSupabaseServiceRoleKey">SUPABASE_SERVICE_ROLE_KEY</label>
-                                    <div class="pa-password-wrap">
-                                        <input class="pa-form-input" type="password" id="envSupabaseServiceRoleKey" name="SUPABASE_SERVICE_ROLE_KEY" autocomplete="off" placeholder="Leave blank to keep current value" />
-                                        <button type="button" class="pa-password-toggle" aria-label="Show value"><i class="ri-eye-line"></i></button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="pa-card-settings mt-10" id="systemEnvSecurityCard">
-                            <div class="pa-card-title"><i class="ri-shield-keyhole-line"></i> Security &amp; Cron</div>
-                            <div class="pa-text-mute fs-sm mb-16">Optional secrets for scheduled tasks and protected endpoints.</div>
-                            <div class="pa-form-group mb-0">
-                                <label class="pa-form-label" for="envCronSecret">CRON_SECRET</label>
-                                <div class="pa-password-wrap">
-                                    <input class="pa-form-input" type="password" id="envCronSecret" name="CRON_SECRET" autocomplete="off" placeholder="Leave blank to keep current value" />
-                                    <button type="button" class="pa-password-toggle" aria-label="Show value"><i class="ri-eye-line"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="pa-settings-right-grid">
-                        <div class="pa-card-settings" id="systemEnvSmtpCard">
-                            <div class="pa-card-title"><i class="ri-mail-settings-line"></i> SMTP Email</div>
-                            <div class="pa-text-mute fs-sm mb-16">Outgoing mail settings for contact replies and credential emails.</div>
-                            <div class="grid fr-2">
-                                <div class="pa-form-group">
-                                    <label class="pa-form-label" for="envSmtpHost">SMTP_HOST</label>
-                                    <input class="pa-form-input" type="text" id="envSmtpHost" name="SMTP_HOST" autocomplete="off" />
-                                </div>
-                                <div class="pa-form-group">
-                                    <label class="pa-form-label" for="envSmtpPort">SMTP_PORT</label>
-                                    <input class="pa-form-input" type="number" id="envSmtpPort" name="SMTP_PORT" min="1" max="65535" autocomplete="off" />
-                                </div>
-                            </div>
-                            <div class="grid fr-2">
-                                <div class="pa-form-group">
-                                    <label class="pa-form-label" for="envSmtpUser">SMTP_USER</label>
-                                    <input class="pa-form-input" type="email" id="envSmtpUser" name="SMTP_USER" autocomplete="off" />
-                                </div>
-                                <div class="pa-form-group">
-                                    <label class="pa-form-label" for="envSmtpPass">SMTP_PASS</label>
-                                    <div class="pa-password-wrap">
-                                        <input class="pa-form-input" type="password" id="envSmtpPass" name="SMTP_PASS" autocomplete="off" placeholder="Leave blank to keep current value" />
-                                        <button type="button" class="pa-password-toggle" aria-label="Show value"><i class="ri-eye-line"></i></button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="pa-form-group mb-0">
-                                <label class="pa-form-label" for="envSmtpFrom">SMTP_FROM</label>
-                                <input class="pa-form-input" type="email" id="envSmtpFrom" name="SMTP_FROM" autocomplete="off" />
-                            </div>
-                        </div>
-
-                        <div class="pa-card-settings" id="systemEnvBrandingCard">
-                            <div class="pa-card-title"><i class="ri-palette-line"></i> Email Branding</div>
-                            <div class="pa-text-mute fs-sm mb-16">Optional branding shown in automated reply emails.</div>
-                            <div class="grid fr-2">
-                                <div class="pa-form-group">
-                                    <label class="pa-form-label" for="envEmailBrandName">EMAIL_BRAND_NAME</label>
-                                    <input class="pa-form-input" type="text" id="envEmailBrandName" name="EMAIL_BRAND_NAME" autocomplete="off" />
-                                </div>
-                                <div class="pa-form-group">
-                                    <label class="pa-form-label" for="envEmailBrandRole">EMAIL_BRAND_ROLE</label>
-                                    <input class="pa-form-input" type="text" id="envEmailBrandRole" name="EMAIL_BRAND_ROLE" autocomplete="off" />
-                                </div>
-                            </div>
-                            <div class="grid fr-2">
-                                <div class="pa-form-group">
-                                    <label class="pa-form-label" for="envEmailPortfolioLabel">EMAIL_PORTFOLIO_LABEL</label>
-                                    <input class="pa-form-input" type="text" id="envEmailPortfolioLabel" name="EMAIL_PORTFOLIO_LABEL" autocomplete="off" />
-                                </div>
-                                <div class="pa-form-group">
-                                    <label class="pa-form-label" for="envEmailPortfolioUrl">EMAIL_PORTFOLIO_URL</label>
-                                    <input class="pa-form-input" type="url" id="envEmailPortfolioUrl" name="EMAIL_PORTFOLIO_URL" autocomplete="off" />
-                                </div>
-                            </div>
-                            <div class="grid fr-2">
-                                <div class="pa-form-group">
-                                    <label class="pa-form-label" for="envEmailGithubUrl">EMAIL_GITHUB_URL</label>
-                                    <input class="pa-form-input" type="url" id="envEmailGithubUrl" name="EMAIL_GITHUB_URL" autocomplete="off" />
-                                </div>
-                                <div class="pa-form-group">
-                                    <label class="pa-form-label" for="envEmailLinkedinUrl">EMAIL_LINKEDIN_URL</label>
-                                    <input class="pa-form-input" type="url" id="envEmailLinkedinUrl" name="EMAIL_LINKEDIN_URL" autocomplete="off" />
-                                </div>
-                            </div>
-                            <div class="pa-settings-actions mt-16">
-                                <button class="pa-btn pa-btn-primary" type="submit" id="systemEnvSaveBtn"><i class="ri-save-line"></i> Save Environment</button>
-                                <button class="pa-btn pa-btn-secondary flex-0-auto" type="button" id="systemEnvReloadBtn"><i class="ri-refresh-line"></i> Reload</button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
+                ${SYSTEM_ENV_FORM_HTML}
+                </div>
             </div>`;

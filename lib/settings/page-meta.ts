@@ -1,4 +1,12 @@
-export const SETTINGS_TABS = ['general', 'profile', 'security', 'notifications', 'system'];
+export const SETTINGS_TABS = [
+  'general',
+  'profile',
+  'security',
+  'notifications',
+  'integrations',
+  'logs',
+  'system',
+];
 
 export const SETTINGS_PAGE_META = {
   general: {
@@ -16,6 +24,14 @@ export const SETTINGS_PAGE_META = {
   notifications: {
     title: 'Notifications',
     subtitle: 'Email alerts, channels, and quiet hours',
+  },
+  integrations: {
+    title: 'Integrations',
+    subtitle: 'Connect third-party services and API credentials',
+  },
+  logs: {
+    title: 'Activity Logs',
+    subtitle: 'Audit trail, traffic events, and system messages',
   },
   system: {
     title: 'System',

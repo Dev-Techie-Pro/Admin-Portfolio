@@ -1,5 +1,9 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { SESSION_LIFETIME_MS } from './constants';
+import {
+  loginActivityRetentionCutoffIso,
+  schedulePurgeExpiredLoginActivity,
+} from './login-activity-retention';
 import { getRequestClientMeta, formatStoredActivityLocation, isLoopbackIp, normalizeIpAddress } from './request-meta';
 
 function normalizeStoredIp(ip) {
@@ -129,14 +133,19 @@ export async function recordLoginActivity({
     });
   }
 
+  schedulePurgeExpiredLoginActivity();
+
   return activityFromDb(data);
 }
 
 export async function getLoginActivity(userId, { limit = 25 } = {}) {
+  schedulePurgeExpiredLoginActivity();
+
   const { data, error } = await admin()
     .from('login_activity')
     .select('*')
     .eq('user_id', userId)
+    .gte('created_at', loginActivityRetentionCutoffIso())
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -146,9 +155,12 @@ export async function getLoginActivity(userId, { limit = 25 } = {}) {
 
 /** All staff login events — admin / super_admin only. */
 export async function getAllLoginActivity({ limit = 50 } = {}) {
+  schedulePurgeExpiredLoginActivity();
+
   const { data, error } = await admin()
     .from('login_activity')
     .select('*, profiles(full_name, username, email)')
+    .gte('created_at', loginActivityRetentionCutoffIso())
     .order('created_at', { ascending: false })
     .limit(limit);
 

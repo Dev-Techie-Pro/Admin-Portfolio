@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { purgeExpiredLoginActivity } from '@/lib/auth/login-activity-retention';
 
 /**
- * Scheduled purge for stale user_sessions rows.
+ * Scheduled purge for stale user_sessions and login_activity rows.
  * Set CRON_SECRET in env and call with: Authorization: Bearer <CRON_SECRET>
  */
 export async function GET(request) {
@@ -19,7 +20,14 @@ export async function GET(request) {
       p_keep_days: keepDays,
     });
     if (error) throw error;
-    return NextResponse.json({ ok: true, deleted: data ?? 0 });
+
+    const loginActivity = await purgeExpiredLoginActivity();
+
+    return NextResponse.json({
+      ok: true,
+      sessionsDeleted: data ?? 0,
+      loginActivity,
+    });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

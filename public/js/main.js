@@ -5,7 +5,7 @@ import {
   notifyCredentialsEmailStatus,
   populateStaffRoleSelect,
   showUserCredentialsPanel
-} from "./chunks/chunk-CCALAJ3S.js";
+} from "./chunks/chunk-JB6JN25P.js";
 import {
   applyRoleBasedAccess,
   applyUserDisplay,
@@ -52,7 +52,7 @@ import {
   openPanel,
   registerPanel,
   requestLogout
-} from "./chunks/chunk-F6FHRV7X.js";
+} from "./chunks/chunk-6K6OJMPO.js";
 import {
   APPEARANCE_DEFAULTS,
   ICON_PREVIEW_SIZES,
@@ -1732,37 +1732,37 @@ var PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
 async function loadPageModuleClass(page) {
   switch (page) {
     case "dashboard":
-      return (await import("./chunks/DashboardModule-SVX2H4WU.js")).DashboardModule;
+      return (await import("./chunks/DashboardModule-QW6AHUZA.js")).DashboardModule;
     case "projects":
-      return (await import("./chunks/ProjectsModule-H34TSLNW.js")).ProjectsModule;
+      return (await import("./chunks/ProjectsModule-R3RYWIR4.js")).ProjectsModule;
     case "categories":
-      return (await import("./chunks/CategoriesModule-RSQB23XG.js")).CategoriesModule;
+      return (await import("./chunks/CategoriesModule-SA2DS5DC.js")).CategoriesModule;
     case "tags":
-      return (await import("./chunks/TagsModule-HK5DE6IO.js")).TagsModule;
+      return (await import("./chunks/TagsModule-YXBVC6KP.js")).TagsModule;
     case "technologies":
-      return (await import("./chunks/TechnologiesModule-GL72ZJU6.js")).TechnologiesModule;
+      return (await import("./chunks/TechnologiesModule-75MFTA75.js")).TechnologiesModule;
     case "tool-categories":
-      return (await import("./chunks/ToolCategoriesModule-P3F5ATQR.js")).ToolCategoriesModule;
+      return (await import("./chunks/ToolCategoriesModule-J5FTQNLX.js")).ToolCategoriesModule;
     case "blog-categories":
-      return (await import("./chunks/BlogCategoriesModule-GSVLDEBK.js")).BlogCategoriesModule;
+      return (await import("./chunks/BlogCategoriesModule-XEWMP4ZA.js")).BlogCategoriesModule;
     case "tools":
-      return (await import("./chunks/ToolsModule-QBOMJQMI.js")).ToolsModule;
+      return (await import("./chunks/ToolsModule-3NEAVIW4.js")).ToolsModule;
     case "media":
-      return (await import("./chunks/MediaModule-JSNKAC7D.js")).MediaModule;
+      return (await import("./chunks/MediaModule-Y2QJCGOY.js")).MediaModule;
     case "testimonials":
-      return (await import("./chunks/TestimonialsModule-4SP45KYT.js")).TestimonialsModule;
+      return (await import("./chunks/TestimonialsModule-YBTCLFKJ.js")).TestimonialsModule;
     case "blogposts":
-      return (await import("./chunks/BlogModule-OHX4OC6S.js")).BlogModule;
+      return (await import("./chunks/BlogModule-SUAWD24Z.js")).BlogModule;
     case "experience":
-      return (await import("./chunks/ExperienceModule-JQPXFUPC.js")).ExperienceModule;
+      return (await import("./chunks/ExperienceModule-AJJC6HZV.js")).ExperienceModule;
     case "contact-messages":
-      return (await import("./chunks/ContactMessagesModule-DSZSFMHG.js")).ContactMessagesModule;
+      return (await import("./chunks/ContactMessagesModule-4AKVPOFV.js")).ContactMessagesModule;
     case "users":
-      return (await import("./chunks/UsersModule-FMTOVTCC.js")).UsersModule;
+      return (await import("./chunks/UsersModule-L2J2ZI63.js")).UsersModule;
     case "recent-activities":
-      return (await import("./chunks/RecentActivitiesModule-UK7BX2ZO.js")).RecentActivitiesModule;
+      return (await import("./chunks/RecentActivitiesModule-Q4Z6YQRV.js")).RecentActivitiesModule;
     case "settings":
-      return (await import("./chunks/SettingsModule-3GY33AVQ.js")).SettingsModule;
+      return (await import("./chunks/SettingsModule-SD4JTSWP.js")).SettingsModule;
     case "login":
       return (await import("./chunks/LoginModule-FCS2VOFB.js")).LoginModule;
     case "forgot-password":
@@ -1791,7 +1791,7 @@ function bindGlobalPanelChrome() {
 var quickAddModule = null;
 async function bindQuickAddButton(pageModule) {
   if (quickAddModule) return;
-  const { QuickAddModule } = await import("./chunks/QuickAddModule-XJUUUNOG.js");
+  const { QuickAddModule } = await import("./chunks/QuickAddModule-PJH62XKV.js");
   quickAddModule = new QuickAddModule(pageModule);
   quickAddModule.bindEvents();
 }

@@ -4,7 +4,7 @@ import {
 } from "./chunk-A5DY2KK7.js";
 import {
   BulkSelectController
-} from "./chunk-HPQHV5SH.js";
+} from "./chunk-Y5TRWV24.js";
 import {
   DEFAULT_LIST_COLUMNS,
   applyListGridClasses,
@@ -23,7 +23,7 @@ import {
   registerPanel,
   requestDelete,
   toggleCardMenu
-} from "./chunk-F6FHRV7X.js";
+} from "./chunk-6K6OJMPO.js";
 import {
   Module
 } from "./chunk-M734VJHD.js";

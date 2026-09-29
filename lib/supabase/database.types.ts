@@ -1836,6 +1836,14 @@ export type Database = {
           table_name: string
         }[]
       }
+      pa_prune_login_activity: {
+        Args: { p_keep_days?: number }
+        Returns: number
+      }
+      pa_prune_login_activity_user_cap: {
+        Args: { p_max_per_user?: number }
+        Returns: number
+      }
       pa_prune_user_sessions: {
         Args: { p_keep_days?: number }
         Returns: number

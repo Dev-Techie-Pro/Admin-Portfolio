@@ -3,31 +3,31 @@ import { showToast, showStatusToast } from "../shell/toast.js";
 import { requestConfirm } from "../shell/confirm.js";
 import { closeAllCardMenus, toggleCardMenu } from "../shell/cardMenu.js";
 import { setupAllPasswordToggles } from "../../utils/password-toggle.js";
+import { activateTab } from "../shell/panels.js";
 const UNCHANGED_SECRET = "__UNCHANGED__";
 const SECRET_FIELDS = /* @__PURE__ */ new Set([
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-  "SUPABASE_SERVICE_ROLE_KEY",
   "CRON_SECRET",
   "SMTP_PASS"
 ]);
-const ENV_FIELD_MAP = {
-  NEXT_PUBLIC_SUPABASE_URL: "envNextPublicSupabaseUrl",
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: "envNextPublicSupabaseAnonKey",
-  SUPABASE_SERVICE_ROLE_KEY: "envSupabaseServiceRoleKey",
-  NEXT_PUBLIC_SITE_URL: "envNextPublicSiteUrl",
-  CRON_SECRET: "envCronSecret",
-  SMTP_HOST: "envSmtpHost",
-  SMTP_PORT: "envSmtpPort",
-  SMTP_USER: "envSmtpUser",
-  SMTP_PASS: "envSmtpPass",
-  SMTP_FROM: "envSmtpFrom",
-  EMAIL_BRAND_NAME: "envEmailBrandName",
-  EMAIL_BRAND_ROLE: "envEmailBrandRole",
-  EMAIL_PORTFOLIO_LABEL: "envEmailPortfolioLabel",
-  EMAIL_PORTFOLIO_URL: "envEmailPortfolioUrl",
-  EMAIL_GITHUB_URL: "envEmailGithubUrl",
-  EMAIL_LINKEDIN_URL: "envEmailLinkedinUrl"
-};
+const ENV_FORM_KEYS = [
+  "CRON_SECRET",
+  "SESSION_PRUNE_KEEP_DAYS",
+  "LOGIN_ACTIVITY_RETENTION_DAYS",
+  "LOGIN_ACTIVITY_PER_USER_CAP",
+  "CMS_BATCH_WRITES",
+  "MEDIA_FULL_RECONCILE",
+  "SMTP_HOST",
+  "SMTP_PORT",
+  "SMTP_USER",
+  "SMTP_PASS",
+  "SMTP_FROM",
+  "EMAIL_BRAND_NAME",
+  "EMAIL_BRAND_ROLE",
+  "EMAIL_PORTFOLIO_LABEL",
+  "EMAIL_PORTFOLIO_URL",
+  "EMAIL_GITHUB_URL",
+  "EMAIL_LINKEDIN_URL"
+];
 const TABLE_META = {
   sites: { desc: "Site configuration records", category: "system", icon: "ri-global-line", tone: "tone-blue" },
   profiles: { desc: "User profile data", category: "auth", icon: "ri-user-line", tone: "tone-green" },
@@ -150,6 +150,12 @@ class SystemManager {
   bindEvents() {
     if (this._bound) return;
     this._bound = true;
+    document.querySelectorAll('.pa-view-btn[data-panel="system-section"]').forEach((btn) => {
+      this.on(btn, "click", () => {
+        const tab = btn.dataset.tab;
+        if (tab) activateTab("system-section", tab);
+      });
+    });
     const refreshBtn = $id("systemBackupRefreshBtn");
     if (refreshBtn) this.on(refreshBtn, "click", () => {
       void this.loadTables();
@@ -402,6 +408,7 @@ class SystemManager {
       return;
     }
     this.bindEvents();
+    activateTab("system-section", "database");
     this.syncViewMode();
     this.populateCategoryFilter();
     await Promise.all([
@@ -961,9 +968,14 @@ class SystemManager {
       this.setExportRunning(false);
     }
   }
+  getEnvFormField(key) {
+    const form = $id("systemEnvForm");
+    if (!form) return null;
+    return form.querySelector(`[name="${key}"]`);
+  }
   hydrateEnvironmentForm(values = {}) {
-    for (const [key, fieldId] of Object.entries(ENV_FIELD_MAP)) {
-      const el = $id(fieldId);
+    for (const key of ENV_FORM_KEYS) {
+      const el = this.getEnvFormField(key);
       if (!el) continue;
       const value = values[key] ?? "";
       if (SECRET_FIELDS.has(key)) {
@@ -976,8 +988,8 @@ class SystemManager {
   }
   collectEnvironmentUpdates() {
     const updates = {};
-    for (const [key, fieldId] of Object.entries(ENV_FIELD_MAP)) {
-      const el = $id(fieldId);
+    for (const key of ENV_FORM_KEYS) {
+      const el = this.getEnvFormField(key);
       if (!el) continue;
       const value = el.value.trim();
       if (SECRET_FIELDS.has(key)) {

@@ -27,7 +27,7 @@ import {
   closeAllCardMenus,
   requestConfirm,
   toggleCardMenu
-} from "./chunk-F6FHRV7X.js";
+} from "./chunk-6K6OJMPO.js";
 import {
   Module,
   addNotification,
@@ -462,29 +462,28 @@ var SecurityManager = class {
 // client/modules/settings/SystemManager.ts
 var UNCHANGED_SECRET = "__UNCHANGED__";
 var SECRET_FIELDS = /* @__PURE__ */ new Set([
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-  "SUPABASE_SERVICE_ROLE_KEY",
   "CRON_SECRET",
   "SMTP_PASS"
 ]);
-var ENV_FIELD_MAP = {
-  NEXT_PUBLIC_SUPABASE_URL: "envNextPublicSupabaseUrl",
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: "envNextPublicSupabaseAnonKey",
-  SUPABASE_SERVICE_ROLE_KEY: "envSupabaseServiceRoleKey",
-  NEXT_PUBLIC_SITE_URL: "envNextPublicSiteUrl",
-  CRON_SECRET: "envCronSecret",
-  SMTP_HOST: "envSmtpHost",
-  SMTP_PORT: "envSmtpPort",
-  SMTP_USER: "envSmtpUser",
-  SMTP_PASS: "envSmtpPass",
-  SMTP_FROM: "envSmtpFrom",
-  EMAIL_BRAND_NAME: "envEmailBrandName",
-  EMAIL_BRAND_ROLE: "envEmailBrandRole",
-  EMAIL_PORTFOLIO_LABEL: "envEmailPortfolioLabel",
-  EMAIL_PORTFOLIO_URL: "envEmailPortfolioUrl",
-  EMAIL_GITHUB_URL: "envEmailGithubUrl",
-  EMAIL_LINKEDIN_URL: "envEmailLinkedinUrl"
-};
+var ENV_FORM_KEYS = [
+  "CRON_SECRET",
+  "SESSION_PRUNE_KEEP_DAYS",
+  "LOGIN_ACTIVITY_RETENTION_DAYS",
+  "LOGIN_ACTIVITY_PER_USER_CAP",
+  "CMS_BATCH_WRITES",
+  "MEDIA_FULL_RECONCILE",
+  "SMTP_HOST",
+  "SMTP_PORT",
+  "SMTP_USER",
+  "SMTP_PASS",
+  "SMTP_FROM",
+  "EMAIL_BRAND_NAME",
+  "EMAIL_BRAND_ROLE",
+  "EMAIL_PORTFOLIO_LABEL",
+  "EMAIL_PORTFOLIO_URL",
+  "EMAIL_GITHUB_URL",
+  "EMAIL_LINKEDIN_URL"
+];
 var TABLE_META = {
   sites: { desc: "Site configuration records", category: "system", icon: "ri-global-line", tone: "tone-blue" },
   profiles: { desc: "User profile data", category: "auth", icon: "ri-user-line", tone: "tone-green" },
@@ -607,6 +606,12 @@ var SystemManager = class {
   bindEvents() {
     if (this._bound) return;
     this._bound = true;
+    document.querySelectorAll('.pa-view-btn[data-panel="system-section"]').forEach((btn) => {
+      this.on(btn, "click", () => {
+        const tab = btn.dataset.tab;
+        if (tab) activateTab("system-section", tab);
+      });
+    });
     const refreshBtn = $id("systemBackupRefreshBtn");
     if (refreshBtn) this.on(refreshBtn, "click", () => {
       void this.loadTables();
@@ -859,6 +864,7 @@ var SystemManager = class {
       return;
     }
     this.bindEvents();
+    activateTab("system-section", "database");
     this.syncViewMode();
     this.populateCategoryFilter();
     await Promise.all([
@@ -1418,9 +1424,14 @@ var SystemManager = class {
       this.setExportRunning(false);
     }
   }
+  getEnvFormField(key) {
+    const form = $id("systemEnvForm");
+    if (!form) return null;
+    return form.querySelector(`[name="${key}"]`);
+  }
   hydrateEnvironmentForm(values = {}) {
-    for (const [key, fieldId] of Object.entries(ENV_FIELD_MAP)) {
-      const el = $id(fieldId);
+    for (const key of ENV_FORM_KEYS) {
+      const el = this.getEnvFormField(key);
       if (!el) continue;
       const value = values[key] ?? "";
       if (SECRET_FIELDS.has(key)) {
@@ -1433,8 +1444,8 @@ var SystemManager = class {
   }
   collectEnvironmentUpdates() {
     const updates = {};
-    for (const [key, fieldId] of Object.entries(ENV_FIELD_MAP)) {
-      const el = $id(fieldId);
+    for (const key of ENV_FORM_KEYS) {
+      const el = this.getEnvFormField(key);
       if (!el) continue;
       const value = el.value.trim();
       if (SECRET_FIELDS.has(key)) {
@@ -1669,13 +1680,29 @@ var SettingsModule = class extends Module {
       { value: "ar", label: "Arabic (AR)" },
       { value: "ur", label: "Urdu (UR)" }
     ]);
-    const otherCard = panel.querySelector(".pa-card-settings.mt-10");
+    const otherCard = panel.querySelector("#generalSettingsCard")?.parentElement?.querySelector(".pa-card-settings.mt-10") || panel.querySelector(".pa-card-settings.mt-10");
     if (otherCard && !otherCard.querySelector('[data-save="other"]')) {
       const saveWrap = document.createElement("div");
       saveWrap.className = "pa-settings-actions";
       saveWrap.innerHTML = '<button type="button" class="pa-btn pa-btn-primary" data-save="other"><i class="ri-save-line"></i> Save Other Settings</button>';
       otherCard.appendChild(saveWrap);
     }
+    const notifCard = [...panel.querySelectorAll(".pa-card-settings")].find(
+      (card) => card.querySelector(".pa-card-title")?.textContent?.includes("Notification Preferences")
+    );
+    if (notifCard) {
+      const generalNotifIds = [
+        "notifChannelEmail",
+        "notifEmailProjectUpdates",
+        "notifEmailNewMessages",
+        "notifEmailSystemAlerts"
+      ];
+      notifCard.querySelectorAll('.pa-toggle-wrap input[type="checkbox"]').forEach((input, index) => {
+        const checkbox = asHtmlInput(input);
+        if (checkbox && generalNotifIds[index]) checkbox.id = generalNotifIds[index];
+      });
+    }
+    setupAllPasswordToggles(panel);
     panel.dataset.generalWired = "true";
   }
   setSelectValue(id, value, fallback = "") {
@@ -2262,16 +2289,19 @@ var SettingsModule = class extends Module {
       });
     }
     this.system.bindEvents();
-    document.querySelectorAll('.pa-tab-panel[data-content]:not([data-content="notifications"]) .pa-toggle-switch input[type="checkbox"]').forEach((checkbox) => {
-      this.on(checkbox, "change", (e) => {
-        const label = checkbox.closest(".pa-toggle-wrap")?.querySelector(".pa-toggle-label");
-        const target = e.target;
-        const state = target.checked ? "enabled" : "disabled";
-        if (label) {
-          showToast(`${label.textContent} ${state}`, "info");
-        }
+    const generalPanel = document.querySelector('.pa-tab-panel[data-content="general"]');
+    if (generalPanel) {
+      generalPanel.querySelectorAll('.pa-toggle-switch input[type="checkbox"]').forEach((checkbox) => {
+        this.on(checkbox, "change", (e) => {
+          const label = checkbox.closest(".pa-toggle-wrap")?.querySelector(".pa-toggle-label");
+          const target = e.target;
+          const state = target.checked ? "enabled" : "disabled";
+          if (label) {
+            showToast(`${label.textContent} ${state}`, "info");
+          }
+        });
       });
-    });
+    }
   }
   updateSettingsPageHeader(tab) {
     const meta = getSettingsPageMeta(tab);
@@ -2286,11 +2316,22 @@ var SettingsModule = class extends Module {
   applySettingsPage(tab) {
     const resolved = SETTINGS_TABS.includes(tab) ? tab : "general";
     this.store.set("activeTab", resolved);
-    activateTab("settings", resolved);
+    const settingsPanels = document.querySelectorAll('.pa-tab-panel[data-panel="settings"]');
+    if (settingsPanels.length > 1) {
+      activateTab("settings", resolved);
+    } else if (settingsPanels.length === 1) {
+      settingsPanels[0].classList.add("active");
+    }
     this.updateSettingsPageHeader(resolved);
     syncSettingsNavTab(resolved);
     if (resolved === "general") {
+      this.wireGeneralFormFields();
       void this.reloadSiteSettings();
+      if (this.store.get("notificationPreferences")) {
+        this.hydrateNotificationPreferences();
+      } else {
+        void this.loadNotificationPreferences();
+      }
     }
     if (resolved === "security") {
       void this.loadLoginActivity();
@@ -2550,9 +2591,9 @@ var SettingsModule = class extends Module {
     return null;
   }
   async updatePassword() {
-    const current = $field("secCurrentPassword")?.value || "";
-    const newPass = $field("secNewPassword")?.value || "";
-    const confirm2 = $field("secConfirmPassword")?.value || "";
+    const current = $field("secCurrentPassword")?.value || $field("currentPassword")?.value || "";
+    const newPass = $field("secNewPassword")?.value || $field("newPassword")?.value || "";
+    const confirm2 = $field("secConfirmPassword")?.value || $field("confirmPassword")?.value || "";
     if (!current) {
       showToast("Please enter your current password", "danger");
       return;
@@ -2567,7 +2608,9 @@ var SettingsModule = class extends Module {
       return;
     }
     const updateBtn = asHtmlButton($id("updatePasswordBtn"));
+    const saveSecurityBtn = asHtmlButton(document.querySelector('[data-save="security"]'));
     if (updateBtn) updateBtn.disabled = true;
+    if (saveSecurityBtn) saveSecurityBtn.disabled = true;
     try {
       await authService.changePassword(current, newPass);
       showToast("Password updated successfully!", "success");
@@ -2575,7 +2618,14 @@ var SettingsModule = class extends Module {
         category: "system_alerts",
         linkPath: "/settings/security"
       });
-      ["secCurrentPassword", "secNewPassword", "secConfirmPassword"].forEach((id) => {
+      [
+        "secCurrentPassword",
+        "secNewPassword",
+        "secConfirmPassword",
+        "currentPassword",
+        "newPassword",
+        "confirmPassword"
+      ].forEach((id) => {
         const el = $field(id);
         if (el) el.value = "";
       });
@@ -2583,6 +2633,7 @@ var SettingsModule = class extends Module {
       showToast(err.message || "Could not update password.", "danger");
     } finally {
       if (updateBtn) updateBtn.disabled = false;
+      if (saveSecurityBtn) saveSecurityBtn.disabled = false;
     }
   }
   async saveNotificationPreferences({ quietOnly = false } = {}) {

@@ -38,8 +38,14 @@ export function setButtonLoading(btnId, loading) {
 }
 
 export function activateTab(panel, tab) {
-  document.querySelectorAll(`.pa-panel-tab[data-panel="${panel}"]`).forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.tab === tab);
+  document.querySelectorAll(
+    `.pa-panel-tab[data-panel="${panel}"], .pa-view-btn[data-panel="${panel}"]`,
+  ).forEach((btn) => {
+    const isActive = btn.dataset.tab === tab;
+    btn.classList.toggle('active', isActive);
+    if (btn.getAttribute('role') === 'tab') {
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    }
   });
   document.querySelectorAll(`.pa-qa-top-tab[data-panel="${panel}"], .pa-qa-bottom-tab[data-panel="${panel}"]`).forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.tab === tab);

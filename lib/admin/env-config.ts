@@ -3,27 +3,125 @@ import path from 'path';
 
 export const UNCHANGED_SECRET = '__UNCHANGED__';
 
+/** @typedef {{ key: string; label: string; required?: boolean; secret?: boolean; type: string; hint?: string; options?: { value: string; label: string }[]; fullWidth?: boolean }} EnvFieldDef */
+
 export const UI_ENV_DEFINITIONS = [
-  { key: 'NEXT_PUBLIC_SUPABASE_URL', label: 'Supabase URL', required: true, secret: false, type: 'url' },
-  { key: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', label: 'Supabase Anon Key', required: true, secret: true, type: 'text' },
-  { key: 'SUPABASE_SERVICE_ROLE_KEY', label: 'Supabase Service Role Key', required: true, secret: true, type: 'text' },
-  { key: 'NEXT_PUBLIC_SITE_URL', label: 'Site URL', required: true, secret: false, type: 'url' },
-  { key: 'CRON_SECRET', label: 'Cron Secret', required: false, secret: true, type: 'text' },
-  { key: 'SMTP_HOST', label: 'SMTP Host', required: false, secret: false, type: 'text' },
-  { key: 'SMTP_PORT', label: 'SMTP Port', required: false, secret: false, type: 'number' },
-  { key: 'SMTP_USER', label: 'SMTP User', required: false, secret: false, type: 'email' },
-  { key: 'SMTP_PASS', label: 'SMTP Password', required: false, secret: true, type: 'password' },
-  { key: 'SMTP_FROM', label: 'SMTP From Address', required: false, secret: false, type: 'email' },
-  { key: 'EMAIL_BRAND_NAME', label: 'Email Brand Name', required: false, secret: false, type: 'text' },
-  { key: 'EMAIL_BRAND_ROLE', label: 'Email Brand Role', required: false, secret: false, type: 'text' },
-  { key: 'EMAIL_PORTFOLIO_LABEL', label: 'Email Portfolio Label', required: false, secret: false, type: 'text' },
-  { key: 'EMAIL_PORTFOLIO_URL', label: 'Email Portfolio URL', required: false, secret: false, type: 'url' },
-  { key: 'EMAIL_GITHUB_URL', label: 'Email GitHub URL', required: false, secret: false, type: 'url' },
-  { key: 'EMAIL_LINKEDIN_URL', label: 'Email LinkedIn URL', required: false, secret: false, type: 'url' },
+  { key: 'CRON_SECRET', label: 'CRON_SECRET', required: false, secret: true, type: 'text' },
+  {
+    key: 'SESSION_PRUNE_KEEP_DAYS',
+    label: 'SESSION_PRUNE_KEEP_DAYS',
+    required: false,
+    secret: false,
+    type: 'number',
+    hint: 'Days to retain ended user_sessions (default 90).',
+  },
+  {
+    key: 'LOGIN_ACTIVITY_RETENTION_DAYS',
+    label: 'LOGIN_ACTIVITY_RETENTION_DAYS',
+    required: false,
+    secret: false,
+    type: 'number',
+    hint: 'Login activity retention for Settings → Security (default 90).',
+  },
+  {
+    key: 'LOGIN_ACTIVITY_PER_USER_CAP',
+    label: 'LOGIN_ACTIVITY_PER_USER_CAP',
+    required: false,
+    secret: false,
+    type: 'number',
+    hint: 'Max login_activity rows per user (default 100).',
+  },
+  {
+    key: 'CMS_BATCH_WRITES',
+    label: 'CMS_BATCH_WRITES',
+    required: false,
+    secret: false,
+    type: 'select',
+    hint: 'Batch CMS writes (default on). Set to false to disable.',
+    options: [
+      { value: '', label: 'Default (batch writes on)' },
+      { value: 'false', label: 'false — disable batch writes' },
+    ],
+  },
+  {
+    key: 'MEDIA_FULL_RECONCILE',
+    label: 'MEDIA_FULL_RECONCILE',
+    required: false,
+    secret: false,
+    type: 'select',
+    hint: 'Full media library reconcile (default scoped).',
+    options: [
+      { value: '', label: 'Default (scoped reconcile)' },
+      { value: 'true', label: 'true — full reconcile' },
+    ],
+  },
+  { key: 'SMTP_HOST', label: 'SMTP_HOST', required: false, secret: false, type: 'text' },
+  { key: 'SMTP_PORT', label: 'SMTP_PORT', required: false, secret: false, type: 'number' },
+  { key: 'SMTP_USER', label: 'SMTP_USER', required: false, secret: false, type: 'email' },
+  { key: 'SMTP_PASS', label: 'SMTP_PASS', required: false, secret: true, type: 'password' },
+  { key: 'SMTP_FROM', label: 'SMTP_FROM', required: false, secret: false, type: 'email' },
+  { key: 'EMAIL_BRAND_NAME', label: 'EMAIL_BRAND_NAME', required: false, secret: false, type: 'text' },
+  { key: 'EMAIL_BRAND_ROLE', label: 'EMAIL_BRAND_ROLE', required: false, secret: false, type: 'text' },
+  { key: 'EMAIL_PORTFOLIO_LABEL', label: 'EMAIL_PORTFOLIO_LABEL', required: false, secret: false, type: 'text' },
+  { key: 'EMAIL_PORTFOLIO_URL', label: 'EMAIL_PORTFOLIO_URL', required: false, secret: false, type: 'url' },
+  { key: 'EMAIL_GITHUB_URL', label: 'EMAIL_GITHUB_URL', required: false, secret: false, type: 'url' },
+  { key: 'EMAIL_LINKEDIN_URL', label: 'EMAIL_LINKEDIN_URL', required: false, secret: false, type: 'url' },
 ];
 
-const UI_ENV_KEYS = UI_ENV_DEFINITIONS.map((item) => item.key);
+export const UI_ENV_GROUPS = [
+  {
+    id: 'security',
+    title: 'Security & Cron',
+    icon: 'ri-shield-keyhole-line',
+    description: 'Cron protection, session pruning, and login activity retention.',
+    column: 'left',
+    keys: [
+      'CRON_SECRET',
+      'SESSION_PRUNE_KEEP_DAYS',
+      'LOGIN_ACTIVITY_RETENTION_DAYS',
+      'LOGIN_ACTIVITY_PER_USER_CAP',
+    ],
+  },
+  {
+    id: 'performance',
+    title: 'Performance',
+    icon: 'ri-speed-line',
+    description: 'Optional rollbacks for batch writes and media sync behavior.',
+    column: 'left',
+    keys: ['CMS_BATCH_WRITES', 'MEDIA_FULL_RECONCILE'],
+  },
+  {
+    id: 'smtp',
+    title: 'SMTP Email',
+    icon: 'ri-mail-settings-line',
+    description: 'Outgoing mail for contact replies and credential emails.',
+    column: 'right',
+    keys: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'],
+  },
+  {
+    id: 'branding',
+    title: 'Email Branding',
+    icon: 'ri-palette-line',
+    description: 'Optional branding shown in automated reply emails.',
+    column: 'right',
+    keys: [
+      'EMAIL_BRAND_NAME',
+      'EMAIL_BRAND_ROLE',
+      'EMAIL_PORTFOLIO_LABEL',
+      'EMAIL_PORTFOLIO_URL',
+      'EMAIL_GITHUB_URL',
+      'EMAIL_LINKEDIN_URL',
+    ],
+  },
+];
+
+const DEF_BY_KEY = new Map(UI_ENV_DEFINITIONS.map((def) => [def.key, def]));
+export const UI_ENV_KEYS = UI_ENV_DEFINITIONS.map((item) => item.key);
 const SECRET_KEYS = new Set(UI_ENV_DEFINITIONS.filter((item) => item.secret).map((item) => item.key));
+
+export function getEnvFieldDefinition(key) {
+  return DEF_BY_KEY.get(key);
+}
 
 function localEnvPath() {
   return path.join(process.cwd(), '.env.local');
@@ -105,6 +203,8 @@ export async function getEnvConfig() {
     source: path.basename(filePath),
     writable: await canWriteEnvFile(),
     targetFile: '.env.local',
+    groups: UI_ENV_GROUPS,
+    definitions: UI_ENV_DEFINITIONS,
   };
 }
 
@@ -126,6 +226,14 @@ function isValidUrl(value) {
 
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function validatePositiveInt(value, label, { min = 1, max = 36500 } = {}) {
+  const num = Number.parseInt(String(value).trim(), 10);
+  if (!Number.isInteger(num) || num < min || num > max) {
+    return `${label} must be an integer between ${min} and ${max}.`;
+  }
+  return null;
 }
 
 export function validateEnvUpdates(updates = {}) {
@@ -150,12 +258,20 @@ export function validateEnvUpdates(updates = {}) {
     }
     if (def.type === 'number') {
       const port = Number(trimmed);
-      if (!Number.isInteger(port) || port < 1 || port > 65535) {
-        errors.push(`${def.label} must be a number between 1 and 65535.`);
+      if (def.key === 'SMTP_PORT') {
+        if (!Number.isInteger(port) || port < 1 || port > 65535) {
+          errors.push(`${def.label} must be a number between 1 and 65535.`);
+        }
+      } else {
+        const err = validatePositiveInt(trimmed, def.label);
+        if (err) errors.push(err);
       }
     }
-    if (def.key === 'NEXT_PUBLIC_SUPABASE_URL' && !trimmed.includes('supabase.co')) {
-      errors.push('Supabase URL should point to your *.supabase.co project.');
+    if (def.type === 'select' && def.options?.length) {
+      const allowed = new Set(def.options.map((o) => o.value));
+      if (!allowed.has(trimmed)) {
+        errors.push(`${def.label} has an invalid value.`);
+      }
     }
   }
 

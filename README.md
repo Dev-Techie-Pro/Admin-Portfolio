@@ -274,6 +274,8 @@ Open [http://localhost:3000/api/health/supabase](http://localhost:3000/api/healt
 | `NEXT_PUBLIC_PORTFOLIO_URL`     | Optional    | Fallback single origin for public CORS if `PORTFOLIO_PUBLIC_ORIGINS` is unset |
 | `CRON_SECRET`                   | Optional    | Bearer token for `/api/cron/purge-activities` and `/api/cron/prune-sessions` |
 | `SESSION_PRUNE_KEEP_DAYS`       | Optional    | Days to retain ended `user_sessions` rows (default `90`)        |
+| `LOGIN_ACTIVITY_RETENTION_DAYS` | Optional    | Days to retain `login_activity` rows (Settings → Security; default `90`) |
+| `LOGIN_ACTIVITY_PER_USER_CAP`   | Optional    | Max `login_activity` rows kept per user after purge (default `100`) |
 | `CMS_BATCH_WRITES`              | Optional    | Set to `false` to disable batched CMS PUT performance path       |
 | `MEDIA_FULL_RECONCILE`          | Optional    | Set to `true` for full media usage reconcile (default scoped)   |
 | `SMTP_HOST`                     | Optional    | SMTP host for contact replies, credentials, and role requests   |
@@ -462,7 +464,7 @@ Staff CMS routes require an authenticated user with role `super_admin`, `admin`,
 | `/api/admin/database-backup`        | GET, POST, DELETE | SQL export + snapshot audit        |
 | `/api/admin/environment`            | GET, PUT          | Runtime env config (admin)         |
 | `/api/cron/purge-activities`        | GET               | Scheduled activity cleanup         |
-| `/api/cron/prune-sessions`          | GET               | Prune old `user_sessions` rows     |
+| `/api/cron/prune-sessions`          | GET               | Prune old `user_sessions` and `login_activity` rows |
 | `/api/health/supabase`              | GET               | Database connectivity check        |
 
 ### Public portfolio (CORS)
@@ -562,7 +564,7 @@ This is a standard Next.js 14 application. Deploy to any Node-compatible host (e
 4. Set `PORTFOLIO_PUBLIC_ORIGINS` (or `NEXT_PUBLIC_PORTFOLIO_URL` / `EMAIL_PORTFOLIO_URL`) so your live portfolio site can call `/api/public/blog/*`.
 5. Configure `CRON_SECRET` and schedule:
    - `/api/cron/purge-activities` for activity retention
-   - `/api/cron/prune-sessions` for old session rows (optional `SESSION_PRUNE_KEEP_DAYS`)
+   - `/api/cron/prune-sessions` for old session and login-activity rows (optional `SESSION_PRUNE_KEEP_DAYS`, `LOGIN_ACTIVITY_RETENTION_DAYS`, `LOGIN_ACTIVITY_PER_USER_CAP`)
 6. Build and start:
 
 ```bash

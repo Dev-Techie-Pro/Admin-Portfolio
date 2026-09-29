@@ -13,6 +13,7 @@ All schema changes live in `supabase/migrations/` (35 timestamped SQL files). Ap
 | `20260906120002_site_settings_extras.sql` | `site_settings.appearance_settings` JSON, contact column prefs, profile fields |
 | `20260907120000_tools.sql` | `tool_categories`, `tool_items` |
 | `20260908120000_login_activity.sql` | `login_activity` event log |
+| `20261001120000_login_activity_retention.sql` | `login_activity` retention RPCs + optional pg_cron |
 | `20260908140000_media_assets_url_hash.sql` | Media URL deduplication |
 | `20260908150000_media_assets_source.sql` | Media source tracking |
 | `20260910120000_recent_activities.sql` | `recent_activities` audit log |
@@ -118,6 +119,9 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 | Function | Purpose |
 |----------|---------|
+| `pa_prune_login_activity(days)` | Delete `login_activity` rows older than retention window |
+| `pa_prune_login_activity_user_cap(n)` | Keep only the newest *n* `login_activity` rows per user |
+| `pa_prune_user_sessions(days)` | Delete ended `user_sessions` older than retention window |
 | `pa_admin_public_tables()` | List public tables for SQL export UI |
 | `pa_admin_public_table_stats()` | Row counts and on-disk size per table |
 | `pa_admin_foreign_key_edges()` | FK graph for ordered SQL dumps |

@@ -17,7 +17,7 @@ import {
   CrudCardModule,
   setStatTrend,
   setStatValue
-} from "./chunk-ZSCYTLA2.js";
+} from "./chunk-OYHOIUHM.js";
 import {
   formatDate,
   listActionBtn,
