@@ -7733,7 +7733,7 @@ body.pa-auth-body {
   max-width: 420px;
   background: var(--pa-bg-card);
   border: 1px solid var(--pa-border);
-  border-radius: var(--pa-radius-sm);
+  border-radius: var(--pa-radius);
   padding: 32px 34px 28px;
 }
 
@@ -7842,7 +7842,7 @@ body.pa-auth-body {
   height: 18px;
   flex-shrink: 0;
   border: 1px solid var(--pa-border-hover);
-  border-radius: var(--pa-radius-sm);
+  border-radius: var(--pa-radius);
   background: var(--pa-bg-input);
   display: flex;
   align-items: center;
@@ -7873,7 +7873,7 @@ body.pa-auth-body {
   margin-top: 8px;
   padding: 10px 14px;
   background: var(--pa-bg-input);
-  border-radius: var(--pa-radius-sm);
+  border-radius: var(--pa-radius);
   border: 1px solid var(--pa-border-soft);
 }
 
@@ -7915,7 +7915,7 @@ body.pa-auth-body {
 .pa-password-strength .pa-strength-bar {
   flex: 1 1;
   height: 4px;
-  border-radius: var(--pa-radius-xs);
+  border-radius: var(--pa-radius);
   background: var(--pa-border-soft);
   transition: background 0.3s;
 }
@@ -7967,7 +7967,7 @@ body.pa-auth-body {
   padding: 10px 16px;
   background: var(--pa-orange-dim);
   border: 1px solid rgba(var(--pa-orange-rgb), 0.15);
-  border-radius: var(--pa-radius-sm);
+  border-radius: var(--pa-radius);
   margin-bottom: 20px;
   display: flex;
   align-items: flex-start;
@@ -8041,7 +8041,7 @@ body.pa-auth-body {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--pa-radius-sm);
+  border-radius: var(--pa-radius);
   transition:
     color 0.2s,
     background 0.2s;
@@ -8091,7 +8091,7 @@ body.pa-auth-body {
 
 .pa-column-visibility-dropdown .pa-btn-sm {
   padding: 6px 12px;
-  border-radius: var(--pa-radius-sm);
+  border-radius: var(--pa-radius);
   font-size: var(--pa-fs-sm);
   font-weight: var(--pa-fw-md);
   cursor: pointer;
@@ -12987,7 +12987,7 @@ body.pa-media-modal-open {
   color: var(--pa-text);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--pa-gap-sm);
   line-height: 1.25;
 }
 .pa-blog-ws-title i {
@@ -13009,7 +13009,7 @@ body.pa-media-modal-open {
 .pa-blog-ws-mode-toggle .pa-view-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--pa-gap-sm);
   font-size: 12px;
   padding: 7px 12px;
 }
@@ -13164,7 +13164,7 @@ body.pa-media-modal-open {
 .pa-blog-ws-panel-head-left {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--pa-gap-sm);
 }
 .pa-blog-ws-panel-head-left i {
   color: var(--pa-orange);
