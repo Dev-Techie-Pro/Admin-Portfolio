@@ -264,6 +264,10 @@ Open [http://localhost:3000/api/health/supabase](http://localhost:3000/api/healt
 
 ## Environment Variables
 
+### Deployment (host env only)
+
+Set these in `.env.local` or your hosting provider (Vercel, etc.). They are **not** edited from the admin UI.
+
 | Variable                        | Required    | Description                                                     |
 | ------------------------------- | ----------- | --------------------------------------------------------------- |
 | `NEXT_PUBLIC_SUPABASE_URL`      | Yes         | Supabase project URL (`https://<ref>.supabase.co`)              |
@@ -273,32 +277,10 @@ Open [http://localhost:3000/api/health/supabase](http://localhost:3000/api/healt
 | `PORTFOLIO_PUBLIC_ORIGINS`      | Recommended | Comma-separated origins allowed to call `/api/public/*` (no trailing slashes) |
 | `NEXT_PUBLIC_PORTFOLIO_URL`     | Optional    | Fallback single origin for public CORS if `PORTFOLIO_PUBLIC_ORIGINS` is unset |
 | `CRON_SECRET`                   | Optional    | Bearer token for `/api/cron/purge-activities` and `/api/cron/prune-sessions` |
-| `SESSION_PRUNE_KEEP_DAYS`       | Optional    | Days to retain ended `user_sessions` rows (default `90`)        |
-| `LOGIN_ACTIVITY_RETENTION_DAYS` | Optional    | Days to retain `login_activity` rows (Settings → Security; default `90`) |
-| `LOGIN_ACTIVITY_PER_USER_CAP`   | Optional    | Max `login_activity` rows kept per user after purge (default `100`) |
-| `CMS_BATCH_WRITES`              | Optional    | Set to `false` to disable batched CMS PUT performance path       |
-| `MEDIA_FULL_RECONCILE`          | Optional    | Set to `true` for full media usage reconcile (default scoped)   |
-| `SMTP_HOST`                     | Optional    | SMTP host for contact replies, credentials, and role requests   |
-| `SMTP_PORT`                     | Optional    | SMTP port (default `587`)                                       |
-| `SMTP_USER`                     | Optional    | SMTP username                                                   |
-| `SMTP_PASS`                     | Optional    | SMTP password or app password                                   |
-| `SMTP_FROM`                     | Optional    | From address for outbound mail                                  |
-| `EMAIL_BRAND_NAME`              | Optional    | Display name in email templates                                 |
-| `EMAIL_BRAND_ROLE`              | Optional    | Role line in email templates                                    |
-| `EMAIL_PORTFOLIO_LABEL`         | Optional    | Portfolio label in email footers                                |
-| `EMAIL_PORTFOLIO_URL`           | Optional    | Portfolio URL in email footers                                  |
-| `EMAIL_GITHUB_URL`              | Optional    | GitHub link in email footers                                    |
-| `EMAIL_LINKEDIN_URL`            | Optional    | LinkedIn link in email footers                                  |
 
-Example (from `.env.example`):
+### Runtime settings (database)
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-# PORTFOLIO_PUBLIC_ORIGINS=https://your-portfolio.example
-```
+SMTP, session/login retention, CMS performance toggles, and email branding are stored in **`site_runtime_config`** and edited under **Settings → System → Environment**. They are **not** read from host environment variables at runtime (only built-in code defaults apply when a key is unset in the database). **Import from env file** (admin UI) merges runtime keys from `.env` / `.env.local` on the server into the database when migrating legacy setups.
 
 > **Security:** Never commit `.env` or `.env.local`. These paths are listed in `.gitignore`.
 
@@ -308,7 +290,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 The PostgreSQL schema covers:
 
-- **Core** — `sites`, `profiles`, `site_settings`, `notification_preferences`, `security_settings`, `two_factor_backup_codes`, `login_activity`, `user_sessions`, `backup_snapshots`, `user_notifications`
+- **Core** — `sites`, `profiles`, `site_settings`, `site_runtime_config`, `notification_preferences`, `security_settings`, `two_factor_backup_codes`, `login_activity`, `user_sessions`, `backup_snapshots`, `user_notifications`
 - **CMS** — `categories`, `projects`, `project_tags`, `project_gallery_images`, `technologies`, `tool_categories`, `tool_items`, `blog_categories`, `blog_posts` (incl. `meta_title`, `meta_description`, engagement flags), `blog_post_tags`, `blog_post_comments`, `blog_post_likes`, `media_assets`, `testimonials`, `experience_entries`, `contact_messages`, `contact_message_replies`
 - **Activity** — `recent_activities`
 - **Views** — `dashboard_stats` (with caching helpers in later migrations)
@@ -561,11 +543,12 @@ This is a standard Next.js 14 application. Deploy to any Node-compatible host (e
 1. Set all [environment variables](#environment-variables) in the hosting provider.
 2. Ensure Supabase migrations are applied to your production project (`npm run db:push`).
 3. Set `NEXT_PUBLIC_SITE_URL` to your production admin URL.
-4. Set `PORTFOLIO_PUBLIC_ORIGINS` (or `NEXT_PUBLIC_PORTFOLIO_URL` / `EMAIL_PORTFOLIO_URL`) so your live portfolio site can call `/api/public/blog/*`.
-5. Configure `CRON_SECRET` and schedule:
+4. Set `PORTFOLIO_PUBLIC_ORIGINS` (or `NEXT_PUBLIC_PORTFOLIO_URL`) so your live portfolio site can call `/api/public/blog/*`.
+5. Configure runtime retention and SMTP under **Settings → System → Environment** (stored in `site_runtime_config`).
+6. Configure `CRON_SECRET` and schedule:
    - `/api/cron/purge-activities` for activity retention
-   - `/api/cron/prune-sessions` for old session and login-activity rows (optional `SESSION_PRUNE_KEEP_DAYS`, `LOGIN_ACTIVITY_RETENTION_DAYS`, `LOGIN_ACTIVITY_PER_USER_CAP`)
-6. Build and start:
+   - `/api/cron/prune-sessions` for old session and login-activity rows
+7. Build and start:
 
 ```bash
 npm run build

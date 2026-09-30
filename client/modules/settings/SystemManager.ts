@@ -8,12 +8,10 @@ import { activateTab } from '../shell/panels.js';
 const UNCHANGED_SECRET = '__UNCHANGED__';
 
 const SECRET_FIELDS = new Set([
-  'CRON_SECRET',
   'SMTP_PASS',
 ]);
 
 const ENV_FORM_KEYS = [
-  'CRON_SECRET',
   'SESSION_PRUNE_KEEP_DAYS',
   'LOGIN_ACTIVITY_RETENTION_DAYS',
   'LOGIN_ACTIVITY_PER_USER_CAP',
@@ -37,6 +35,7 @@ const TABLE_META = {
   sites: { desc: 'Site configuration records', category: 'system', icon: 'ri-global-line', tone: 'tone-blue' },
   profiles: { desc: 'User profile data', category: 'auth', icon: 'ri-user-line', tone: 'tone-green' },
   site_settings: { desc: 'Dashboard and site preferences', category: 'system', icon: 'ri-settings-3-line', tone: 'tone-orange' },
+  site_runtime_config: { desc: 'SMTP, retention, and runtime toggles', category: 'system', icon: 'ri-toggle-line', tone: 'tone-blue' },
   notification_preferences: { desc: 'Per-user notification settings', category: 'system', icon: 'ri-notification-3-line', tone: 'tone-purple' },
   security_settings: { desc: 'Account security configuration', category: 'auth', icon: 'ri-shield-keyhole-line', tone: 'tone-green' },
   two_factor_backup_codes: { desc: 'MFA backup codes', category: 'auth', icon: 'ri-key-2-line', tone: 'tone-green' },
@@ -424,6 +423,9 @@ export class SystemManager {
 
     const reloadBtn = $id('systemEnvReloadBtn');
     if (reloadBtn) this.on(reloadBtn, 'click', () => { void this.loadEnvironment(); });
+
+    const importBtn = $id('systemEnvImportBtn');
+    if (importBtn) this.on(importBtn, 'click', () => { void this.importEnvironmentFromEnv(); });
 
     const form = $id('systemEnvForm');
     if (form) {
@@ -1181,12 +1183,10 @@ export class SystemManager {
   renderEnvironmentMeta(config) {
     const meta = $id('systemEnvMeta');
     if (!meta || !config) return;
-    const source = config.source ? `Loaded from ${config.source}` : 'Environment settings loaded';
-    const target = config.targetFile ? ` · writes to ${config.targetFile}` : '';
-    const writable = config.writable === false
-      ? ' · file writes may be unavailable in this deployment'
-      : '';
-    meta.innerHTML = `<i class="ri-information-line"></i> ${escapeHtml(source)}${escapeHtml(target)}${escapeHtml(writable)}`;
+    const source = config.source === 'database'
+      ? 'Stored in database (site_runtime_config)'
+      : 'Runtime settings loaded';
+    meta.innerHTML = `<i class="ri-information-line"></i> ${escapeHtml(source)}`;
   }
 
   async loadEnvironment() {
@@ -1197,6 +1197,41 @@ export class SystemManager {
       this.renderEnvironmentMeta(config);
     } catch (err) {
       showToast(err.message || 'Could not load environment configuration.', 'danger');
+    }
+  }
+
+  async importEnvironmentFromEnv() {
+    if (!(await this.ensureAdminAccess())) return;
+    requestConfirm({
+      title: 'Import from env file?',
+      message:
+        'Reads runtime keys from <code>.env</code> and <code>.env.local</code> on the server and saves them to <code>site_runtime_config</code>. '
+        + 'Values found in the file overwrite the matching fields here; other saved settings are kept. '
+        + 'Host deployment variables and <code>.env.example</code> are not used.',
+      confirmLabel: 'Import',
+      iconClass: 'ri-download-line',
+      onConfirm: () => { void this.runImportEnvironmentFromEnvFile(); },
+    });
+  }
+
+  async runImportEnvironmentFromEnvFile() {
+    if (!(await this.ensureAdminAccess())) return;
+    const importBtn = $id('systemEnvImportBtn');
+    if (importBtn) importBtn.disabled = true;
+    try {
+      const payload = await this.fetchJson('/api/admin/environment/import-env', {
+        method: 'POST',
+        body: JSON.stringify({ onlyIfEmpty: false }),
+      });
+      this.state.env = payload;
+      this.hydrateEnvironmentForm(payload.values || {});
+      this.renderEnvironmentMeta(payload);
+      const tone = payload.imported ? 'success' : 'info';
+      showStatusToast(payload.message || 'Import finished.', tone);
+    } catch (err) {
+      showToast(err.message || 'Could not import from env file.', 'danger');
+    } finally {
+      if (importBtn) importBtn.disabled = false;
     }
   }
 
@@ -1215,7 +1250,7 @@ export class SystemManager {
       this.state.env = payload;
       this.hydrateEnvironmentForm(payload.values || {});
       this.renderEnvironmentMeta(payload);
-      showStatusToast(payload.message || 'Environment saved to .env.local.', 'success');
+      showStatusToast(payload.message || 'Settings saved.', 'success');
     } catch (err) {
       showToast(err.message || 'Could not save environment configuration.', 'danger');
     } finally {

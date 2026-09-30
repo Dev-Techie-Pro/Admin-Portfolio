@@ -3,6 +3,7 @@ import {
   THEME,
   buildBrandSignatureHtml,
   escapeHtml,
+  ensureEmailRuntimeConfig,
   getBrand,
   getFromAddress,
   getLoginUrl,
@@ -197,9 +198,10 @@ export function buildUserCredentialsHtml({
  * @param {{ to: string, toName?: string, credentials: { email: string, password: string, role: string }, isReset?: boolean }} payload
  */
 export async function sendUserCredentialsEmail(payload) {
+  await ensureEmailRuntimeConfig();
   const smtp = getSmtpConfig();
   if (!smtp) {
-    return { sent: false, reason: 'SMTP is not configured. Set SMTP_USER and SMTP_PASS in .env.local.' };
+    return { sent: false, reason: 'SMTP is not configured. Set SMTP in Settings → System → Environment.' };
   }
 
   const to = String(payload.to || payload.credentials?.email || '').trim();

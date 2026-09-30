@@ -3,6 +3,7 @@ import {
   THEME,
   buildBrandSignatureHtml,
   escapeHtml,
+  ensureEmailRuntimeConfig,
   getBrand,
   getFromAddress,
   getLoginUrl,
@@ -33,9 +34,10 @@ export async function sendRoleRequestEmail({
   message,
   usersUrl,
 }) {
+  await ensureEmailRuntimeConfig();
   const smtp = getSmtpConfig();
   if (!smtp) {
-    return { sent: false, reason: 'SMTP is not configured on the server.' };
+    return { sent: false, reason: 'SMTP is not configured. Set SMTP in Settings → System → Environment.' };
   }
 
   const brand = getBrand();

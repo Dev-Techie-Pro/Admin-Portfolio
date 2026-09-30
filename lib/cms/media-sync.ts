@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import { createAdminClient } from '../supabase/admin';
 import { SITE_ID, legacyUuid } from './constants';
+import { mediaFullReconcileEnabled } from '@/lib/config/runtime-settings';
 
 const IMAGE_URL_RE = /^(https?:\/\/|data:image\/)/i;
 const MEDIA_URL_RE = /^(https?:\/\/|data:)/i;
@@ -629,7 +630,7 @@ export async function pruneOrphanedEntityMediaForUrls(urls) {
  * Does NOT full-scan the database when the reference set is small.
  */
 export async function reconcileEntityMediaForRefs(references) {
-  if (process.env.MEDIA_FULL_RECONCILE === 'true') {
+  if (await mediaFullReconcileEnabled()) {
     return reconcileAllEntityMedia();
   }
 

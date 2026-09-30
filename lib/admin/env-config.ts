@@ -1,6 +1,3 @@
-import fs from 'fs/promises';
-import path from 'path';
-
 export const UNCHANGED_SECRET = '__UNCHANGED__';
 
 /**
@@ -20,25 +17,17 @@ export const UNCHANGED_SECRET = '__UNCHANGED__';
  * }} EnvFieldDef
  */
 
+/** Host / deploy only — not stored in site_runtime_config or the Environment UI. */
+export const DEPLOYMENT_ENV_KEYS = [
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'NEXT_PUBLIC_SITE_URL',
+  'CRON_SECRET',
+  'PORTFOLIO_PUBLIC_ORIGINS',
+];
+
 export const UI_ENV_DEFINITIONS = [
-  {
-    key: 'CRON_SECRET',
-    label: 'Cron secret',
-    required: false,
-    secret: true,
-    type: 'text',
-    fullWidth: true,
-    placeholder: 'Long random string (e.g. openssl rand -hex 32)',
-    description:
-      'Shared secret that protects scheduled HTTP cron routes from public access. Cron jobs must send this value in the Authorization header.',
-    details: [
-      'Used by <code>/api/cron/purge-activities</code> and <code>/api/cron/prune-sessions</code> (also prunes <code>login_activity</code>).',
-      'Your host (Vercel Cron, GitHub Actions, etc.) should call: <code>Authorization: Bearer &lt;CRON_SECRET&gt;</code>.',
-      'Leave empty in development if you do not run cron HTTP calls; production should always set a strong secret.',
-      'After changing this value, update the same secret in your cron scheduler configuration.',
-    ],
-    defaultValue: 'Empty (cron routes reject unauthenticated calls when set)',
-  },
   {
     key: 'SESSION_PRUNE_KEEP_DAYS',
     label: 'Session history retention',
@@ -285,10 +274,9 @@ export const UI_ENV_GROUPS = [
     title: 'Security & Cron',
     icon: 'ri-shield-keyhole-line',
     description:
-      'Secrets and retention for automated jobs and security audit data. Values are written to <code>.env.local</code> and take effect after save (some features may need a server restart).',
+      'Retention for sessions and login activity audit data. Stored in the database and applied on save. Cron HTTP authentication uses <code>CRON_SECRET</code> in your deployment environment (not editable here).',
     column: 'left',
     keys: [
-      'CRON_SECRET',
       'SESSION_PRUNE_KEEP_DAYS',
       'LOGIN_ACTIVITY_RETENTION_DAYS',
       'LOGIN_ACTIVITY_PER_USER_CAP',
@@ -308,7 +296,7 @@ export const UI_ENV_GROUPS = [
     title: 'SMTP Email',
     icon: 'ri-mail-settings-line',
     description:
-      'Outgoing mail configuration for <strong>Contact Messages → Reply</strong> and <strong>Users → send login credentials</strong>. Without SMTP, those actions fail gracefully or show an error.',
+      'Outgoing mail configuration for <strong>Contact Messages → Reply</strong> and <strong>Users → send login credentials</strong>. Stored in the database. Without SMTP, those actions fail gracefully or show an error.',
     column: 'right',
     keys: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'],
   },
@@ -331,23 +319,15 @@ export const UI_ENV_GROUPS = [
 ];
 
 const DEF_BY_KEY = new Map(UI_ENV_DEFINITIONS.map((def) => [def.key, def]));
-export const UI_ENV_KEYS = UI_ENV_DEFINITIONS.map((item) => item.key);
-const SECRET_KEYS = new Set(UI_ENV_DEFINITIONS.filter((item) => item.secret).map((item) => item.key));
+export const RUNTIME_CONFIG_KEYS = UI_ENV_DEFINITIONS.map((item) => item.key);
+/** @deprecated Use RUNTIME_CONFIG_KEYS */
+export const UI_ENV_KEYS = RUNTIME_CONFIG_KEYS;
+export const RUNTIME_SECRET_KEYS = new Set(
+  UI_ENV_DEFINITIONS.filter((item) => item.secret).map((item) => item.key),
+);
 
 export function getEnvFieldDefinition(key) {
   return DEF_BY_KEY.get(key);
-}
-
-function localEnvPath() {
-  return path.join(process.cwd(), '.env.local');
-}
-
-function exampleEnvPath() {
-  return path.join(process.cwd(), '.env.example');
-}
-
-function baseEnvPath() {
-  return path.join(process.cwd(), '.env');
 }
 
 export function maskSecretValue(value) {
@@ -375,59 +355,6 @@ export function parseEnvFile(content) {
     vars[key] = value;
   }
   return vars;
-}
-
-async function readEnvSource() {
-  for (const filePath of [localEnvPath(), baseEnvPath(), exampleEnvPath()]) {
-    try {
-      const content = await fs.readFile(filePath, 'utf8');
-      return { content, filePath };
-    } catch {
-      /* try next */
-    }
-  }
-  return { content: '', filePath: localEnvPath() };
-}
-
-export async function canWriteEnvFile() {
-  try {
-    await fs.access(process.cwd(), fs.constants.W_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export async function getEnvConfig() {
-  const { content, filePath } = await readEnvSource();
-  const parsed = parseEnvFile(content);
-  const values = {};
-  const masked = {};
-  const configured = {};
-
-  for (const key of UI_ENV_KEYS) {
-    const resolved = parsed[key] ?? process.env[key] ?? '';
-    values[key] = resolved;
-    configured[key] = Boolean(resolved);
-    masked[key] = SECRET_KEYS.has(key) && resolved ? maskSecretValue(resolved) : resolved;
-  }
-
-  return {
-    values: masked,
-    configured,
-    source: path.basename(filePath),
-    writable: await canWriteEnvFile(),
-    targetFile: '.env.local',
-    groups: UI_ENV_GROUPS,
-    definitions: UI_ENV_DEFINITIONS,
-  };
-}
-
-function serializeValue(value) {
-  const text = String(value ?? '');
-  if (!text) return '';
-  if (/[\s#"'=]/.test(text)) return `"${text.replace(/"/g, '\\"')}"`;
-  return text;
 }
 
 function isValidUrl(value) {
@@ -474,8 +401,8 @@ export function validateEnvUpdates(updates = {}) {
     if (def.type === 'number') {
       const port = Number(trimmed);
       if (def.key === 'SMTP_PORT') {
-        if (!Number.isInteger(port) || port < 1 || port > 65535) {
-          errors.push(`${def.label} must be a number between 1 and 65535.`);
+      if (!Number.isInteger(port) || port < 1 || port > 65535) {
+        errors.push(`${def.label} must be a number between 1 and 65535.`);
         }
       } else {
         const err = validatePositiveInt(trimmed, def.label);
@@ -507,46 +434,4 @@ export function validateEnvUpdates(updates = {}) {
   }
 
   return errors;
-}
-
-export async function saveEnvConfig(updates = {}) {
-  const errors = validateEnvUpdates(updates);
-  if (errors.length) {
-    const err = new Error(errors[0]);
-    err.validationErrors = errors;
-    throw err;
-  }
-
-  const { content } = await readEnvSource();
-  const parsed = parseEnvFile(content);
-  const merged = { ...parsed };
-
-  for (const key of UI_ENV_KEYS) {
-    const value = updates[key];
-    if (value === undefined || value === UNCHANGED_SECRET) continue;
-    merged[key] = String(value).trim();
-  }
-
-  const handled = new Set();
-  const lines = content ? content.split('\n') : [];
-  const nextLines = lines.map((line) => {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) return line;
-    const eq = trimmed.indexOf('=');
-    if (eq === -1) return line;
-    const key = trimmed.slice(0, eq).trim();
-    if (!UI_ENV_KEYS.includes(key)) return line;
-    handled.add(key);
-    return `${key}=${serializeValue(merged[key] ?? '')}`;
-  });
-
-  for (const key of UI_ENV_KEYS) {
-    if (handled.has(key)) continue;
-    if (merged[key] == null || merged[key] === '') continue;
-    nextLines.push(`${key}=${serializeValue(merged[key])}`);
-  }
-
-  const output = nextLines.join('\n').replace(/\n+$/, '') + '\n';
-  await fs.writeFile(localEnvPath(), output, 'utf8');
-  return { ok: true, file: '.env.local' };
 }

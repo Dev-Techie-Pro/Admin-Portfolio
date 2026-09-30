@@ -91,12 +91,19 @@ function renderGroupCard(group, { firstInColumn = false } = {}) {
     .map((key) => getEnvFieldDefinition(key))
     .filter(Boolean);
 
+  const cronDeployNotice = group.id === 'security'
+    ? `<div class="pa-env-deploy-notice pa-info-box fs-sm mb-16">
+                            <p class="mb-0"><strong>CRON_SECRET</strong> is not stored here. Set it in your deployment environment (<code>.env.local</code> / Vercel env vars) so scheduled calls to <code>/api/cron/*</code> can authenticate with <code>Authorization: Bearer …</code>.</p>
+                          </div>`
+    : '';
+
   const fieldsHtml = fields.map((f) => renderField(f)).join('');
 
   return `
                         <div class="pa-card-settings pa-env-card${marginClass}" id="systemEnvCard_${group.id}" data-env-group="${group.id}">
                             <div class="pa-card-title"><i class="${group.icon}"></i> ${group.title}</div>
                             <div class="pa-env-card-intro pa-text-mute fs-sm mb-16">${group.description}</div>
+                            ${cronDeployNotice}
                             ${fieldsHtml}
                         </div>`;
 }
@@ -117,11 +124,11 @@ export function buildSystemEnvFormHtml(): string {
   return `
                 <form id="systemEnvForm" class="pa-settings-grid pa-env-form" novalidate>
                     <div class="pa-env-intro pa-info-box mb-16">
-                        <p class="mb-8"><strong>Environment variables</strong> configure cron jobs, retention, mail delivery, and email branding. They are stored in <code>.env.local</code> on the server (not in the database).</p>
+                        <p class="mb-8"><strong>Runtime settings</strong> (retention, SMTP, email branding, performance toggles) are saved to the database table <code>site_runtime_config</code> and apply on the next request.</p>
                         <ul class="pa-env-intro-list">
-                            <li>Secret fields show a masked value when already set; leave blank on save to keep the current secret.</li>
-                            <li>Supabase and site URL are configured in <code>.env.local</code> / <code>.env.example</code> — not on this screen.</li>
-                            <li>After saving, restart the dev server or redeploy if a variable does not appear to apply immediately.</li>
+                            <li>Deployment-only: Supabase keys, <code>NEXT_PUBLIC_SITE_URL</code>, and <code>CRON_SECRET</code> stay in your host environment — see <code>.env.example</code>.</li>
+                            <li>SMTP password is masked when set; leave blank on save to keep the current value.</li>
+                            <li><strong>Import from env file</strong> reads <code>.env</code> and <code>.env.local</code> on the server for runtime keys only (not deployment vars, not <code>.env.example</code>, not host <code>process.env</code>). Merges into the database; keys absent from the file stay as saved.</li>
                         </ul>
                     </div>
                     <div>
@@ -130,7 +137,8 @@ export function buildSystemEnvFormHtml(): string {
                     <div class="pa-settings-right-grid">
                         ${rightCards}
                         <div class="pa-settings-actions mt-16">
-                            <button class="pa-btn pa-btn-primary" type="submit" id="systemEnvSaveBtn"><i class="ri-save-line"></i> Save Environment</button>
+                            <button class="pa-btn pa-btn-primary" type="submit" id="systemEnvSaveBtn"><i class="ri-save-line"></i> Save Settings</button>
+                            <button class="pa-btn pa-btn-secondary flex-0-auto" type="button" id="systemEnvImportBtn"><i class="ri-download-line"></i> Import from env file</button>
                             <button class="pa-btn pa-btn-secondary flex-0-auto" type="button" id="systemEnvReloadBtn"><i class="ri-refresh-line"></i> Reload</button>
                         </div>
                     </div>

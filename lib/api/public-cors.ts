@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 function allowedOrigins(): string[] {
   const raw = process.env.PORTFOLIO_PUBLIC_ORIGINS?.trim()
     || process.env.NEXT_PUBLIC_PORTFOLIO_URL?.trim()
-    || process.env.EMAIL_PORTFOLIO_URL?.trim()
     || '';
   const list = raw.split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean);
   if (process.env.NODE_ENV !== 'production') {

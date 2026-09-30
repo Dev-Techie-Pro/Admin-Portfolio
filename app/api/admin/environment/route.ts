@@ -1,6 +1,10 @@
 import { guardAdmin } from '@/lib/auth/guard';
 import { jsonGet, jsonOk } from '@/lib/api/json-response';
-import { getEnvConfig, saveEnvConfig } from '@/lib/admin/env-config';
+import {
+  getRuntimeConfigForApi,
+  importRuntimeConfigFromEnv,
+  saveRuntimeConfig,
+} from '@/lib/config/runtime-settings';
 import { recordUserAction } from '@/lib/cms/activity-log';
 
 export async function GET() {
@@ -8,7 +12,12 @@ export async function GET() {
   if (!auth.ok) return auth.response;
 
   try {
-    const config = await getEnvConfig();
+    let config = await getRuntimeConfigForApi();
+    const hasAny = Object.values(config.configured || {}).some(Boolean);
+    if (!hasAny) {
+      await importRuntimeConfigFromEnv(auth.user.id, { onlyIfEmpty: true });
+      config = await getRuntimeConfigForApi();
+    }
     return jsonGet(config);
   } catch (error) {
     return jsonOk({ error: error.message || 'Could not load environment configuration.' }, { status: 500 });
@@ -21,21 +30,21 @@ export async function PUT(request) {
 
   try {
     const body = await request.json();
-    const result = await saveEnvConfig(body?.values || body || {});
+    await saveRuntimeConfig(body?.values || body || {}, auth.user.id);
 
     await recordUserAction({
       userId: auth.user.id,
-      actionTitle: 'Environment updated',
-      actionDescription: 'Environment variables were saved to .env.local from System settings',
+      actionTitle: 'Runtime settings updated',
+      actionDescription: 'System environment settings were saved to the database',
       status: 'success',
-      metadata: { action: 'environment.updated', file: result.file },
+      metadata: { action: 'runtime_settings.updated' },
       request,
     });
 
-    const config = await getEnvConfig();
+    const config = await getRuntimeConfigForApi();
     return jsonOk({
       ok: true,
-      message: 'Environment saved to .env.local. Restart the dev server for changes to take effect.',
+      message: 'Settings saved. Changes apply immediately for new requests.',
       ...config,
     });
   } catch (error) {

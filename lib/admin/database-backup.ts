@@ -16,6 +16,7 @@ const FALLBACK_TABLES = [
   'sites',
   'profiles',
   'site_settings',
+  'site_runtime_config',
   'notification_preferences',
   'security_settings',
   'two_factor_backup_codes',

@@ -4,6 +4,7 @@ import {
   avatarInitial,
   buildBrandSignatureHtml,
   escapeHtml,
+  ensureEmailRuntimeConfig,
   getBrand,
   getFromAddress,
   getSmtpConfig,
@@ -260,9 +261,10 @@ export function buildContactReplyHtml(payload) {
  * @param {{ to: string, toName?: string, subject: string, replyText: string, originalMessage?: string, originalFrom?: string, originalDate?: string, fromEmail?: string }} payload
  */
 export async function sendContactReplyEmail(payload) {
+  await ensureEmailRuntimeConfig();
   const smtp = getSmtpConfig();
   if (!smtp) {
-    return { sent: false, reason: 'SMTP is not configured. Set SMTP_USER and SMTP_PASS in .env.local.' };
+    return { sent: false, reason: 'SMTP is not configured. Set SMTP in Settings → System → Environment.' };
   }
 
   const from = getFromAddress(smtp.auth.user);

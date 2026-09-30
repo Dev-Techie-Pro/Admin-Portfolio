@@ -1,4 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import {
+  getRuntimeSettingSync,
+  warmRuntimeSettings,
+} from '@/lib/config/runtime-settings';
 
 /** Default days to retain login_activity rows (aligns with SESSION_PRUNE_KEEP_DAYS). */
 export const DEFAULT_LOGIN_ACTIVITY_RETENTION_DAYS = 90;
@@ -16,28 +20,30 @@ function parsePositiveInt(value: string | undefined, fallback: number) {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
-export function loginActivityRetentionDays() {
+export async function loginActivityRetentionDays() {
+  await warmRuntimeSettings();
   return parsePositiveInt(
-    process.env.LOGIN_ACTIVITY_RETENTION_DAYS,
+    getRuntimeSettingSync('LOGIN_ACTIVITY_RETENTION_DAYS'),
     DEFAULT_LOGIN_ACTIVITY_RETENTION_DAYS,
   );
 }
 
-export function loginActivityPerUserCap() {
+export async function loginActivityPerUserCap() {
+  await warmRuntimeSettings();
   return parsePositiveInt(
-    process.env.LOGIN_ACTIVITY_PER_USER_CAP,
+    getRuntimeSettingSync('LOGIN_ACTIVITY_PER_USER_CAP'),
     DEFAULT_LOGIN_ACTIVITY_PER_USER_CAP,
   );
 }
 
-function retentionCutoffIso() {
-  const days = loginActivityRetentionDays();
+async function retentionCutoffIso() {
+  const days = await loginActivityRetentionDays();
   const ms = days * 24 * 60 * 60 * 1000;
   return new Date(Date.now() - ms).toISOString();
 }
 
 /** ISO timestamp for queries that should only return non-expired rows. */
-export function loginActivityRetentionCutoffIso() {
+export async function loginActivityRetentionCutoffIso() {
   return retentionCutoffIso();
 }
 
@@ -45,8 +51,9 @@ export function loginActivityRetentionCutoffIso() {
  * Delete login_activity rows older than the retention window and trim per-user excess.
  */
 export async function purgeExpiredLoginActivity() {
-  const keepDays = loginActivityRetentionDays();
-  const maxPerUser = loginActivityPerUserCap();
+  await warmRuntimeSettings();
+  const keepDays = await loginActivityRetentionDays();
+  const maxPerUser = await loginActivityPerUserCap();
   const sb = createAdminClient();
 
   const { data: deletedByAge, error: ageError } = await sb.rpc('pa_prune_login_activity', {

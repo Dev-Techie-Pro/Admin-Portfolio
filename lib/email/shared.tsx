@@ -1,3 +1,8 @@
+import {
+  getRuntimeSettingSync,
+  warmRuntimeSettings,
+} from '@/lib/config/runtime-settings';
+
 export const THEME = {
   bg: '#0b0e14',
   card: '#12151c',
@@ -23,11 +28,15 @@ export function nl2br(value) {
   return escapeHtml(value).replace(/\r\n|\r|\n/g, '<br />');
 }
 
+export async function ensureEmailRuntimeConfig() {
+  await warmRuntimeSettings();
+}
+
 export function getSmtpConfig() {
-  const host = process.env.SMTP_HOST?.trim() || 'smtp.gmail.com';
-  const port = Number(process.env.SMTP_PORT || 587);
-  const user = process.env.SMTP_USER?.trim();
-  const pass = process.env.SMTP_PASS?.trim();
+  const host = getRuntimeSettingSync('SMTP_HOST')?.trim() || 'smtp.gmail.com';
+  const port = Number(getRuntimeSettingSync('SMTP_PORT') || 587);
+  const user = getRuntimeSettingSync('SMTP_USER')?.trim();
+  const pass = getRuntimeSettingSync('SMTP_PASS')?.trim();
 
   if (!user || !pass) return null;
 
@@ -40,21 +49,24 @@ export function getSmtpConfig() {
 }
 
 export function getFromAddress(smtpUser) {
-  return process.env.SMTP_FROM?.trim() || smtpUser;
+  return getRuntimeSettingSync('SMTP_FROM')?.trim() || smtpUser;
 }
 
 export function getBrand() {
   return {
-    name: process.env.EMAIL_BRAND_NAME?.trim() || 'Muhammad Sohaib',
-    role: process.env.EMAIL_BRAND_ROLE?.trim() || 'Full Stack Web Developer',
-    portfolioLabel: process.env.EMAIL_PORTFOLIO_LABEL?.trim() || 'Portfolio Dashboard',
+    name: getRuntimeSettingSync('EMAIL_BRAND_NAME')?.trim() || 'Muhammad Sohaib',
+    role: getRuntimeSettingSync('EMAIL_BRAND_ROLE')?.trim() || 'Full Stack Web Developer',
+    portfolioLabel: getRuntimeSettingSync('EMAIL_PORTFOLIO_LABEL')?.trim() || 'Portfolio Dashboard',
     portfolioUrl:
-      process.env.EMAIL_PORTFOLIO_URL?.trim()
+      getRuntimeSettingSync('EMAIL_PORTFOLIO_URL')?.trim()
       || process.env.NEXT_PUBLIC_SITE_URL?.trim()?.replace(/\/$/, '')
       || 'https://sohaibishaque.com',
-    githubUrl: process.env.EMAIL_GITHUB_URL?.trim() || 'https://github.com/',
-    linkedinUrl: process.env.EMAIL_LINKEDIN_URL?.trim() || 'https://www.linkedin.com/',
-    email: process.env.SMTP_FROM?.trim() || process.env.SMTP_USER?.trim() || process.env.ADMIN_EMAIL?.trim() || '',
+    githubUrl: getRuntimeSettingSync('EMAIL_GITHUB_URL')?.trim() || 'https://github.com/',
+    linkedinUrl: getRuntimeSettingSync('EMAIL_LINKEDIN_URL')?.trim() || 'https://www.linkedin.com/',
+    email: getRuntimeSettingSync('SMTP_FROM')?.trim()
+      || getRuntimeSettingSync('SMTP_USER')?.trim()
+      || process.env.ADMIN_EMAIL?.trim()
+      || '',
   };
 }
 

@@ -23,6 +23,7 @@ import {
 } from './media-sync';
 import { saveProjectsBatch, saveBlogPostsBatch } from './batch-writes';
 import { CMS_CACHE_TTL, getCached, invalidateCache, invalidateCachePrefix, invalidateCmsReadCaches } from './server-cache';
+import { cmsBatchWritesEnabled } from '@/lib/config/runtime-settings';
 import { contactReplyMediaChanged } from './media-reconcile';
 
 const RECENT_ACTIVITIES_LIMIT = 150;
@@ -176,7 +177,7 @@ export async function saveProjects(records, { reconcileMedia = true } = {}) {
     .eq('site_id', SITE_ID);
   if (fetchError) throw fetchError;
 
-  if (process.env.CMS_BATCH_WRITES === 'false') {
+  if (!(await cmsBatchWritesEnabled())) {
     await saveProjectsLegacy(records);
   } else {
     await saveProjectsBatch(records, existing || []);
@@ -881,7 +882,7 @@ export async function saveBlogPosts(records, { reconcileMedia = true } = {}) {
     .eq('site_id', SITE_ID);
   if (fetchError) throw fetchError;
 
-  if (process.env.CMS_BATCH_WRITES === 'false') {
+  if (!(await cmsBatchWritesEnabled())) {
     await saveBlogPostsLegacy(records);
   } else {
     await saveBlogPostsBatch(records, existing || []);

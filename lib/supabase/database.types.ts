@@ -1219,6 +1219,38 @@ export type Database = {
           },
         ]
       }
+      site_runtime_config: {
+        Row: {
+          secrets: Json
+          settings: Json
+          site_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          secrets?: Json
+          settings?: Json
+          site_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          secrets?: Json
+          settings?: Json
+          site_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_runtime_config_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: true
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           admin_email: string | null

@@ -140,12 +140,13 @@ export async function recordLoginActivity({
 
 export async function getLoginActivity(userId, { limit = 25 } = {}) {
   schedulePurgeExpiredLoginActivity();
+  const cutoff = await loginActivityRetentionCutoffIso();
 
   const { data, error } = await admin()
     .from('login_activity')
     .select('*')
     .eq('user_id', userId)
-    .gte('created_at', loginActivityRetentionCutoffIso())
+    .gte('created_at', cutoff)
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -156,11 +157,12 @@ export async function getLoginActivity(userId, { limit = 25 } = {}) {
 /** All staff login events — admin / super_admin only. */
 export async function getAllLoginActivity({ limit = 50 } = {}) {
   schedulePurgeExpiredLoginActivity();
+  const cutoff = await loginActivityRetentionCutoffIso();
 
   const { data, error } = await admin()
     .from('login_activity')
     .select('*, profiles(full_name, username, email)')
-    .gte('created_at', loginActivityRetentionCutoffIso())
+    .gte('created_at', cutoff)
     .order('created_at', { ascending: false })
     .limit(limit);
 

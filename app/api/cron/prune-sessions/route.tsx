@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { purgeExpiredLoginActivity } from '@/lib/auth/login-activity-retention';
+import { sessionPruneKeepDays } from '@/lib/config/runtime-settings';
 
 /**
  * Scheduled purge for stale user_sessions and login_activity rows.
@@ -15,7 +16,7 @@ export async function GET(request) {
   }
 
   try {
-    const keepDays = Number.parseInt(process.env.SESSION_PRUNE_KEEP_DAYS || '90', 10);
+    const keepDays = await sessionPruneKeepDays();
     const { data, error } = await createAdminClient().rpc('pa_prune_user_sessions', {
       p_keep_days: keepDays,
     });
