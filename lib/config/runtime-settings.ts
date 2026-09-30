@@ -1,4 +1,3 @@
-import { cache } from 'react';
 import { SITE_ID } from '@/lib/cms/constants';
 import { getCached, invalidateCache } from '@/lib/cms/server-cache';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -153,9 +152,10 @@ async function loadMergedFromDb() {
   return { settings, secrets, merged };
 }
 
-export const warmRuntimeSettings = cache(async () => {
+/** Per-process TTL cache only (see invalidateRuntimeConfigCache). Not wrapped in React cache() — that would survive invalidation within the same request. */
+export async function warmRuntimeSettings() {
   return getCached(CACHE_KEY, CACHE_TTL_MS, () => loadMergedFromDb());
-});
+}
 
 export async function getRuntimeConfigForApi() {
   const { settings, secrets, merged } = await warmRuntimeSettings();
