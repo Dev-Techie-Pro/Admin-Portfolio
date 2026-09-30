@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
-import { guardStaff, guardEditor } from '@/lib/auth/guard';
-import { ADMIN_ROLES } from '@/lib/auth/constants';
+import { guardEditor } from '@/lib/auth/guard';
+import { deriveAccessCapabilities } from '@/lib/auth/capabilities';
 import { withStaffGet } from '@/lib/api/with-staff-get';
-import { getRecentActivitiesPayload, deleteRecentActivity, deleteRecentActivities } from '@/lib/cms/repository';
+import {
+  getRecentActivitiesPayload,
+  deleteRecentActivityForUser,
+  deleteRecentActivitiesForUser,
+  deleteRecentActivity,
+  deleteRecentActivities,
+} from '@/lib/cms/repository';
 
 function parseIdsParam(raw) {
   if (!raw) return [];
@@ -26,7 +32,7 @@ async function readBulkIds(request, searchParams) {
 
 export async function GET() {
   return withStaffGet((auth) => {
-    const scopeAll = ADMIN_ROLES.includes(auth.profile.role);
+    const scopeAll = deriveAccessCapabilities(auth.profile.role).canViewAllStaffActivity;
     return getRecentActivitiesPayload({
       userId: auth.user.id,
       scopeAll,
@@ -37,18 +43,32 @@ export async function GET() {
 export async function DELETE(request) {
   const auth = await guardEditor();
   if (!auth.ok) return auth.response;
+  const scopeAll = deriveAccessCapabilities(auth.profile.role).canViewAllStaffActivity;
+  const userId = auth.user.id;
   try {
     const { searchParams } = new URL(request.url);
     const bulkIds = await readBulkIds(request, searchParams);
     const id = searchParams.get('id');
     if (bulkIds.length) {
-      const deleted = await deleteRecentActivities(bulkIds);
+      const deleted = scopeAll
+        ? await deleteRecentActivities(bulkIds)
+        : await deleteRecentActivitiesForUser(bulkIds, userId);
+      if (!scopeAll && deleted < bulkIds.length) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
       return NextResponse.json({ ok: true, deleted });
     }
     if (!id) {
       return NextResponse.json({ error: 'Activity id is required.' }, { status: 400 });
     }
-    await deleteRecentActivity(id);
+    if (scopeAll) {
+      await deleteRecentActivity(id);
+    } else {
+      const ok = await deleteRecentActivityForUser(id, userId);
+      if (!ok) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

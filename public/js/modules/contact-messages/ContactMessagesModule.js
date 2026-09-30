@@ -6,6 +6,7 @@ import { debounce } from "../../utils/timing.js";
 import { requestDelete } from "../../modules/shell/confirm.js";
 import { closeAllCardMenus } from "../../modules/shell/cardMenu.js";
 import { BulkSelectController } from "../../core/BulkSelectController.js";
+import { canManageContent } from "../../core/cms-access.js";
 import { closePanels, openPanel, registerPanel } from "../../modules/shell/panels.js";
 import * as mediaPicker from "../../utils/MediaPicker.js";
 const MSG_AVATAR_COLORS = ["#e5484d", "#f0c040", "#22c55e", "#38bdf8", "#a78bfa", "#f472b6", "#ff6600", "#2dd4bf"];
@@ -113,6 +114,7 @@ class ContactMessagesModule extends Module {
     });
   }
   async persist() {
+    if (!canManageContent()) return;
     await this.saveRecords(this.store.get("messages"));
   }
   computeNow() {
@@ -311,7 +313,7 @@ class ContactMessagesModule extends Module {
         const id = this.parseMsgId(item.dataset.msgId);
         closeAllCardMenus();
         const m = this.findById(id);
-        if (!m) return;
+        if (!m || !canManageContent()) return;
         if (action === "mark-read") {
           m.status = "read";
           this.persist();
@@ -462,6 +464,7 @@ class ContactMessagesModule extends Module {
     return btoa(binary);
   }
   openReplyModal(messageId, replyId = null) {
+    if (!canManageContent()) return;
     const m = this.findById(messageId);
     if (!m) return;
     const editing = replyId ? this.getMessageReplies(m).find((r) => String(r.id) === String(replyId)) : null;
@@ -517,6 +520,7 @@ class ContactMessagesModule extends Module {
     }
   }
   async submitReplyModal() {
+    if (!canManageContent()) return;
     const m = this.findById(this.store.get("selectedId"));
     if (!m) return;
     const text = ($id("paMsgReplyText")?.value || "").trim();
@@ -587,6 +591,7 @@ class ContactMessagesModule extends Module {
     }
   }
   async deleteReply(replyId) {
+    if (!canManageContent()) return;
     const m = this.findById(this.store.get("selectedId"));
     if (!m || !replyId || String(replyId).startsWith("legacy-")) {
       this.toast("This reply cannot be deleted.", "danger");
@@ -718,6 +723,7 @@ class ContactMessagesModule extends Module {
     });
   }
   async deleteById(id) {
+    if (!canManageContent()) return;
     const m = this.findById(id);
     if (!m) return;
     const prev = this.store.get("messages");
@@ -735,6 +741,7 @@ class ContactMessagesModule extends Module {
     }
   }
   exportCsv() {
+    if (!canManageContent()) return;
     const rows = this.getFiltered();
     const header = ["Name", "Email", "Subject", "Status", "Date", "Message"];
     const csvRows = [header.map(csvEscapeField).join(",")];

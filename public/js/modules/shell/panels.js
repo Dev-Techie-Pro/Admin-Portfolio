@@ -1,4 +1,6 @@
 import { $id } from "../../utils/dom.js";
+import { canManageContent } from "../../core/cms-access.js";
+const VIEWER_PANEL_IDS = /* @__PURE__ */ new Set(["paCustomPanel"]);
 const registeredPanelIds = /* @__PURE__ */ new Set();
 function registerPanel(id) {
   registeredPanelIds.add(id);
@@ -14,6 +16,7 @@ function closePanels() {
   document.body.style.overflow = "";
 }
 function openPanel(panelId, hidePanelIds = []) {
+  if (!canManageContent() && !VIEWER_PANEL_IDS.has(panelId)) return;
   hidePanelIds.forEach((id) => $id(id)?.classList.remove("visible"));
   $id("paPanelOverlay")?.classList.add("visible");
   $id(panelId)?.classList.add("visible");

@@ -1,5 +1,6 @@
 import { $id } from "../utils/dom.js";
 import { requestBulkAction } from "../modules/shell/confirm.js";
+import { canManageContent } from "./cms-access.js";
 const DEFAULT_IDS = {
   selectBtn: "paSelectModeBtn",
   bar: "paBulkActionBar",
@@ -40,6 +41,7 @@ class BulkSelectController {
     return this.selectedIds.size;
   }
   checkboxHtml(id, ariaLabel = "Select item") {
+    if (!canManageContent()) return "";
     const selected = this.isSelected(id);
     const hiddenStyle = this.selectMode ? "" : "display:none;";
     return `<div class="pa-select-checkbox${selected ? " selected" : ""}" data-select-id="${id}" style="${hiddenStyle}" role="checkbox" aria-checked="${selected}" aria-label="${ariaLabel}" tabindex="0"><i class="${selected ? "ri-checkbox-fill" : "ri-checkbox-blank-line"}"></i></div>`;
@@ -52,6 +54,7 @@ class BulkSelectController {
     return typeof fn !== "function" || fn(id);
   }
   onRender() {
+    if (!canManageContent()) return;
     this._bindBar();
     this._bindContainer();
     this._updateBar();
@@ -125,12 +128,14 @@ class BulkSelectController {
     this._containerBound = true;
   }
   toggleSelectMode() {
+    if (!canManageContent()) return;
     this.selectMode = !this.selectMode;
     $id(this.ids.selectBtn)?.classList.toggle("active", this.selectMode);
     if (!this.selectMode) this.selectedIds.clear();
     this.module.render();
   }
   toggleSelect(id) {
+    if (!canManageContent()) return;
     const key = String(id);
     if (this.selectedIds.has(key)) {
       this.selectedIds.delete(key);

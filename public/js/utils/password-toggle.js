@@ -92,11 +92,9 @@ function setupPasswordToggle(inputRef, toggleBtnId) {
   return toggleBtn;
 }
 function setupAllPasswordToggles(container = document, selector = 'input[type="password"]') {
+  if (container == null) return [];
   const containerEl = typeof container === "string" ? document.getElementById(container) : container;
-  if (!containerEl) {
-    console.warn("[password-toggle] Container not found:", container);
-    return [];
-  }
+  if (!containerEl) return [];
   const toggles = [];
   containerEl.querySelectorAll(selector).forEach((input) => {
     const toggle = setupPasswordToggle(input);

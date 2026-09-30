@@ -21,6 +21,7 @@ import {
 import { openPanel, closePanels, registerPanel } from "../../modules/shell/panels.js";
 import { PAGE } from "../../core/router.js";
 import { storage } from "../../core/StorageService.js";
+import { canManageContent } from "../../core/cms-access.js";
 const MEDIA_PROPAGATION_KEYS = [
   "pa_projects",
   "pa_blog_posts",
@@ -125,6 +126,7 @@ class MediaModule extends Module {
   }
   /** Full reconcile is expensive; run after first paint and respect cooldown. */
   async reconcileMediaInBackground() {
+    if (!canManageContent()) return;
     if (Date.now() - readLastMediaSyncMs() < MEDIA_SYNC_COOLDOWN_MS) return;
     try {
       const res = await fetch("/api/media/sync", { method: "POST", credentials: "same-origin" });

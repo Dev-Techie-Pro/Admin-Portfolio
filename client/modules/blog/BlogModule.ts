@@ -1,4 +1,5 @@
 import { CrudCardModule } from '../../core/CrudCardModule.js';
+import { canManageContent } from '../../core/cms-access.js';
 import type { BulkSelectController } from '../../core/BulkSelectController.js';
 import { escapeHtml, $id, $all, $field, $select, $input, $img } from '../../utils/dom.js';
 import { storage } from '../../core/StorageService.js';
@@ -318,6 +319,7 @@ export class BlogModule extends CrudCardModule {
   }
 
   async persist() {
+    if (!canManageContent()) return;
     await this.saveRecords(this.store.get('records'));
     await storage.get('pa_media_library', []).catch(() => []);
   }

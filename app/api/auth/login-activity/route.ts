@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { guardStaff } from '@/lib/auth/guard';
-import { ADMIN_ROLES } from '@/lib/auth/constants';
+import { deriveAccessCapabilities } from '@/lib/auth/capabilities';
 import { getAllLoginActivity, getLoginActivity } from '@/lib/auth/login-activity';
 
 export async function GET(request) {
@@ -10,7 +10,7 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get('limit') || '25', 10) || 25, 50);
-    const scopeAll = ADMIN_ROLES.includes(auth.profile.role);
+    const scopeAll = deriveAccessCapabilities(auth.profile.role).canViewAllStaffActivity;
     const items = scopeAll
       ? await getAllLoginActivity({ limit })
       : await getLoginActivity(auth.user.id, { limit });

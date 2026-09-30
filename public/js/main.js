@@ -5,7 +5,7 @@ import {
   notifyCredentialsEmailStatus,
   populateStaffRoleSelect,
   showUserCredentialsPanel
-} from "./chunks/chunk-QNJ666RU.js";
+} from "./chunks/chunk-2JUKOHBJ.js";
 import {
   applyRoleBasedAccess,
   applyUserDisplay,
@@ -17,13 +17,10 @@ import {
   previewUserAvatar,
   showNavFlyout,
   syncSidebarGroupNav
-} from "./chunks/chunk-7QUKIKDH.js";
-import {
-  getAccessCapabilities
-} from "./chunks/chunk-FSKKBMCW.js";
+} from "./chunks/chunk-B32ZLKSF.js";
 import {
   initPasswordToggles
-} from "./chunks/chunk-5SJ7MEVC.js";
+} from "./chunks/chunk-6SMWR5OB.js";
 import {
   authService
 } from "./chunks/chunk-MRY75FFO.js";
@@ -48,17 +45,6 @@ import {
   closeAllCardMenus
 } from "./chunks/chunk-UUTTVH4R.js";
 import {
-  activateTab,
-  anyPanelOpen,
-  closeConfirm,
-  closePanels,
-  initConfirmDialog,
-  isConfirmOpen,
-  openPanel,
-  registerPanel,
-  requestLogout
-} from "./chunks/chunk-52WQA3VL.js";
-import {
   APPEARANCE_DEFAULTS,
   ICON_PREVIEW_SIZES,
   MAX_CUSTOM_FONTS,
@@ -67,22 +53,33 @@ import {
   VALID_FONT_WEIGHTS,
   VALID_ICON_SIZES,
   VALID_SPACINGS,
+  activateTab,
   addNotification,
+  anyPanelOpen,
   applyAppearanceSettings,
   bootstrapAppearanceFromCache,
   buildCustomFontFromFile,
   clearNotifications,
+  closeConfirm,
+  closePanels,
   eventBus,
+  getAccessCapabilities,
   getFontById,
   getFontGroups,
+  initConfirmDialog,
+  isConfirmOpen,
   loadNotifications,
   markNotificationRead,
   normalizeAppearanceSettings,
+  openPanel,
   readAppearanceCache,
+  registerPanel,
   renderNotifications,
+  requestLogout,
   storage,
+  stripCmsWriteControls,
   writeAppearanceCache
-} from "./chunks/chunk-M734VJHD.js";
+} from "./chunks/chunk-SPN22GYW.js";
 import {
   $all,
   $id,
@@ -1109,6 +1106,7 @@ function ensureModalInDom() {
   const overlay = document.createElement("div");
   overlay.className = "pa-role-access-overlay";
   overlay.id = "paRoleAccessOverlay";
+  overlay.hidden = true;
   overlay.setAttribute("role", "dialog");
   overlay.setAttribute("aria-modal", "true");
   overlay.setAttribute("aria-labelledby", "paRoleAccessTitle");
@@ -1149,6 +1147,7 @@ function bindModalEvents() {
   if (!overlay || !okBtn) return;
   const close = () => {
     overlay.classList.remove("visible");
+    overlay.hidden = true;
     document.body.classList.remove("pa-role-access-open");
     overlay.dataset.userId = "";
     overlay.dataset.role = "";
@@ -1190,6 +1189,7 @@ function openModal(userId, role) {
   populateModal(role);
   overlay.dataset.userId = userId;
   overlay.dataset.role = role;
+  overlay.hidden = false;
   overlay.classList.add("visible");
   document.body.classList.add("pa-role-access-open");
   $id("paRoleAccessOk")?.focus();
@@ -1286,6 +1286,9 @@ var ShellModule = class extends Module {
           avatarUrl: profile.avatarUrl
         });
         applyRoleBasedAccess(profile.role || user.role, user.capabilities);
+        storage.reconcileRecentActivitiesScope({
+          user: { id: profile.id || user.id, capabilities: user.capabilities }
+        });
         this.addUser.setProfileRole(profile.role || user.role);
         void maybeShowRoleAccessModal({
           id: profile.id || user.id,
@@ -1294,6 +1297,7 @@ var ShellModule = class extends Module {
       } catch {
         applyUserDisplay(user);
         applyRoleBasedAccess(user.role, user.capabilities);
+        storage.reconcileRecentActivitiesScope({ user });
         this.addUser.setProfileRole(user.role);
         void maybeShowRoleAccessModal({ id: user.id, role: user.role });
       }
@@ -1742,45 +1746,45 @@ var PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
 async function loadPageModuleClass(page) {
   switch (page) {
     case "dashboard":
-      return (await import("./chunks/DashboardModule-ZEVPHUP3.js")).DashboardModule;
+      return (await import("./chunks/DashboardModule-ROGAIQ7S.js")).DashboardModule;
     case "projects":
-      return (await import("./chunks/ProjectsModule-GTSMLKWT.js")).ProjectsModule;
+      return (await import("./chunks/ProjectsModule-XQGVGTI2.js")).ProjectsModule;
     case "categories":
-      return (await import("./chunks/CategoriesModule-W7IT6WYO.js")).CategoriesModule;
+      return (await import("./chunks/CategoriesModule-IQET6CXK.js")).CategoriesModule;
     case "tags":
-      return (await import("./chunks/TagsModule-MYQQDTLP.js")).TagsModule;
+      return (await import("./chunks/TagsModule-J2F4X6OX.js")).TagsModule;
     case "technologies":
-      return (await import("./chunks/TechnologiesModule-ISQRKCWT.js")).TechnologiesModule;
+      return (await import("./chunks/TechnologiesModule-UANMNVDX.js")).TechnologiesModule;
     case "tool-categories":
-      return (await import("./chunks/ToolCategoriesModule-T4OGLE3D.js")).ToolCategoriesModule;
+      return (await import("./chunks/ToolCategoriesModule-LWQHT6OT.js")).ToolCategoriesModule;
     case "blog-categories":
-      return (await import("./chunks/BlogCategoriesModule-OJTG6LIU.js")).BlogCategoriesModule;
+      return (await import("./chunks/BlogCategoriesModule-MXBQAPME.js")).BlogCategoriesModule;
     case "tools":
-      return (await import("./chunks/ToolsModule-DOWEFPFB.js")).ToolsModule;
+      return (await import("./chunks/ToolsModule-7RRZHCRW.js")).ToolsModule;
     case "media":
-      return (await import("./chunks/MediaModule-NNVBST6Z.js")).MediaModule;
+      return (await import("./chunks/MediaModule-JECXCMKH.js")).MediaModule;
     case "testimonials":
-      return (await import("./chunks/TestimonialsModule-MR5TKAHD.js")).TestimonialsModule;
+      return (await import("./chunks/TestimonialsModule-NNJTXQN2.js")).TestimonialsModule;
     case "blogposts":
-      return (await import("./chunks/BlogModule-6F4S55M5.js")).BlogModule;
+      return (await import("./chunks/BlogModule-MDJIYEME.js")).BlogModule;
     case "experience":
-      return (await import("./chunks/ExperienceModule-JOIQSVHE.js")).ExperienceModule;
+      return (await import("./chunks/ExperienceModule-SNSPHWRZ.js")).ExperienceModule;
     case "contact-messages":
-      return (await import("./chunks/ContactMessagesModule-OZGYNEXA.js")).ContactMessagesModule;
+      return (await import("./chunks/ContactMessagesModule-6AG6X3R3.js")).ContactMessagesModule;
     case "blog-engagement":
-      return (await import("./chunks/BlogEngagementModule-2LXGCMQV.js")).BlogEngagementModule;
+      return (await import("./chunks/BlogEngagementModule-CJV4BGNU.js")).BlogEngagementModule;
     case "users":
-      return (await import("./chunks/UsersModule-7XPMEQ7K.js")).UsersModule;
+      return (await import("./chunks/UsersModule-IPXFH63E.js")).UsersModule;
     case "recent-activities":
-      return (await import("./chunks/RecentActivitiesModule-3HA66MNQ.js")).RecentActivitiesModule;
+      return (await import("./chunks/RecentActivitiesModule-DPM5HFUO.js")).RecentActivitiesModule;
     case "settings":
-      return (await import("./chunks/SettingsModule-H46MDLNO.js")).SettingsModule;
+      return (await import("./chunks/SettingsModule-YKBUAGJO.js")).SettingsModule;
     case "login":
-      return (await import("./chunks/LoginModule-FCS2VOFB.js")).LoginModule;
+      return (await import("./chunks/LoginModule-VJ3JMAX7.js")).LoginModule;
     case "forgot-password":
-      return (await import("./chunks/ForgotPasswordModule-56KPUQE4.js")).ForgotPasswordModule;
+      return (await import("./chunks/ForgotPasswordModule-7GT5PEVJ.js")).ForgotPasswordModule;
     case "reset-password":
-      return (await import("./chunks/ResetPasswordModule-MZI6UDX5.js")).ResetPasswordModule;
+      return (await import("./chunks/ResetPasswordModule-5GWVGL3H.js")).ResetPasswordModule;
     default:
       return null;
   }
@@ -1803,7 +1807,7 @@ function bindGlobalPanelChrome() {
 var quickAddModule = null;
 async function bindQuickAddButton(pageModule) {
   if (quickAddModule) return;
-  const { QuickAddModule } = await import("./chunks/QuickAddModule-FHCRFX4D.js");
+  const { QuickAddModule } = await import("./chunks/QuickAddModule-5YHLU3TD.js");
   quickAddModule = new QuickAddModule(pageModule);
   quickAddModule.bindEvents();
 }
@@ -1815,6 +1819,7 @@ async function initPageModule(pageModule) {
     requestAnimationFrame(() => {
       pageModule.render();
       pageModule.bindEvents();
+      stripCmsWriteControls(document);
       resolve();
     });
   });
@@ -1876,6 +1881,7 @@ async function bootAppPage(ModuleClass, page) {
     void storage.waitForBootstrap().then(() => {
       if (activePageModule === pageModule && typeof pageModule.render === "function") {
         pageModule.render();
+        stripCmsWriteControls(document);
       }
     });
   }

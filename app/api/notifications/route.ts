@@ -16,7 +16,7 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const auth = await guardEditor();
+  const auth = await guardStaff();
   if (!auth.ok) return auth.response;
 
   try {

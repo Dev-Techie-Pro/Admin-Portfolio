@@ -13,6 +13,7 @@ import {
   syncListPaginationChrome,
 } from '../utils/listDataTable.js';
 import { arrangeForLayout, renderGroupedCards } from '../utils/groupLayout.js';
+import { canManageContent } from './cms-access.js';
 
 /**
  * CrudCardModule — generic engine behind every "grid of cards with
@@ -182,21 +183,25 @@ export class CrudCardModule extends Module {
 
   bindEvents() {
     const { ids } = this.config;
-    registerPanel(ids.addPanel);
-    registerPanel(ids.editPanel);
+    if (canManageContent()) {
+      registerPanel(ids.addPanel);
+      registerPanel(ids.editPanel);
+    }
 
-    this.on($id(ids.addNewBtn), 'click', () => this.openAddPanel());
-    this.on($id(ids.addPanelClose), 'click', () => closePanels());
-    this.on($id(ids.editPanelClose), 'click', () => closePanels());
-    this.on($id(ids.addCancel), 'click', () => closePanels());
-    this.on($id(ids.editCancel), 'click', () => closePanels());
-    this.on($id(ids.addSubmit), 'click', () => { void this.handleAddSubmit(); });
-    this.on($id(ids.editSubmit), 'click', () => { void this.handleEditSubmit(); });
-    if (ids.editDelete) {
-      this.on($id(ids.editDelete), 'click', () => {
-        const record = this.findById(this.currentEditId);
-        if (record) requestDelete(record[this.config.idField], this.config.deleteType, this.getDeleteName(record), this.getDeleteExtraInfo(record));
-      });
+    if (canManageContent()) {
+      this.on($id(ids.addNewBtn), 'click', () => this.openAddPanel());
+      this.on($id(ids.addPanelClose), 'click', () => closePanels());
+      this.on($id(ids.editPanelClose), 'click', () => closePanels());
+      this.on($id(ids.addCancel), 'click', () => closePanels());
+      this.on($id(ids.editCancel), 'click', () => closePanels());
+      this.on($id(ids.addSubmit), 'click', () => { void this.handleAddSubmit(); });
+      this.on($id(ids.editSubmit), 'click', () => { void this.handleEditSubmit(); });
+      if (ids.editDelete) {
+        this.on($id(ids.editDelete), 'click', () => {
+          const record = this.findById(this.currentEditId);
+          if (record) requestDelete(record[this.config.idField], this.config.deleteType, this.getDeleteName(record), this.getDeleteExtraInfo(record));
+        });
+      }
     }
 
     const searchInput = $input('paSearchInput');
@@ -250,13 +255,15 @@ export class CrudCardModule extends Module {
       this.on(newListBtn, 'click', () => this._setViewMode('list'));
     }
 
-    this.onBus('confirm:confirmed', ({ id, type }) => {
-      if (type !== this.config.deleteType) return;
-      void this.deleteById(id);
-    });
-    this.onBus('shortcut:new-item', ({ page }) => {
-      if (page === PAGE) this.openAddPanel();
-    });
+    if (canManageContent()) {
+      this.onBus('confirm:confirmed', ({ id, type }) => {
+        if (type !== this.config.deleteType) return;
+        void this.deleteById(id);
+      });
+      this.onBus('shortcut:new-item', ({ page }) => {
+        if (page === PAGE) this.openAddPanel();
+      });
+    }
   }
 
   setViewModeFromStore() {
@@ -439,7 +446,17 @@ export class CrudCardModule extends Module {
 
   _emptyStateHtml() {
     const hasFilters = !!(this.store.get('searchQuery') || '').trim() || Object.values(this.store.get('filters')).some((v) => v && v !== 'all');
-    return `<div class="pa-empty-state"><i class="ri-folder-open-line"></i><div class="pa-empty-state-title">${hasFilters ? 'No results match your filters' : 'Nothing here yet'}</div><div class="pa-empty-state-text">${hasFilters ? "Try adjusting your search or filters to find what you're looking for." : 'Get started by adding your first item.'}</div>${hasFilters ? `<button class="pa-empty-state-btn" id="${this.config.ids.emptyResetBtn}">Reset filters</button>` : `<button class="pa-empty-state-btn" id="${this.config.ids.emptyAddBtn}">+ Add New</button>`}</div>`;
+    const addBtn = hasFilters
+      ? ''
+      : `<button class="pa-empty-state-btn" id="${this.config.ids.emptyAddBtn}">+ Add New</button>`;
+    const emptyText = hasFilters
+      ? "Try adjusting your search or filters to find what you're looking for."
+      : 'Get started by adding your first item.';
+    const emptyTitle = hasFilters ? 'No results match your filters' : 'Nothing here yet';
+    const resetBtn = hasFilters
+      ? `<button class="pa-empty-state-btn" id="${this.config.ids.emptyResetBtn}">Reset filters</button>`
+      : '';
+    return `<div class="pa-empty-state"><i class="ri-folder-open-line"></i><div class="pa-empty-state-title">${emptyTitle}</div><div class="pa-empty-state-text">${emptyText}</div>${hasFilters ? resetBtn : addBtn}</div>`;
   }
 
   renderPagination(totalItems, totalPages, page) {
@@ -517,6 +534,18 @@ export class CrudCardModule extends Module {
     if (!grid) return;
     const idAttr = this.config.cardIdAttr || 'data-id';
 
+    $all('.pa-action-more', grid).forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const host = btn.closest('.pa-lv-more-wrap, .pa-cat-card__footer-more, .pa-cat-card__list-actions, .pa-card-actions');
+        const menu = host?.querySelector('.pa-card-menu') || btn.parentElement?.querySelector('.pa-card-menu');
+        if (menu) toggleCardMenu(menu, btn);
+      });
+    });
+
+    if (!canManageContent()) return;
+
     $all('.pa-action-edit', grid).forEach((btn) => {
       if (!(btn instanceof HTMLElement)) return;
       btn.addEventListener('click', () => this.openEditPanel(btn.getAttribute(idAttr) ?? btn.dataset.id));
@@ -527,15 +556,6 @@ export class CrudCardModule extends Module {
         const id = btn.getAttribute(idAttr) ?? btn.dataset.id;
         const record = this.findById(id);
         if (record) requestDelete(record[this.config.idField], this.config.deleteType, this.getDeleteName(record), this.getDeleteExtraInfo(record));
-      });
-    });
-    $all('.pa-action-more', grid).forEach((btn) => {
-      if (!(btn instanceof HTMLElement)) return;
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const host = btn.closest('.pa-lv-more-wrap, .pa-cat-card__footer-more, .pa-cat-card__list-actions, .pa-card-actions');
-        const menu = host?.querySelector('.pa-card-menu') || btn.parentElement?.querySelector('.pa-card-menu');
-        if (menu) toggleCardMenu(menu, btn);
       });
     });
     $all('.pa-card-menu-item', grid).forEach((item) => {
@@ -558,6 +578,7 @@ export class CrudCardModule extends Module {
   }
 
   async duplicateRecord(id) {
+    if (!canManageContent()) return;
     const record = this.findById(id);
     if (!record) return;
     const copy = this.config.buildDuplicate
@@ -577,6 +598,7 @@ export class CrudCardModule extends Module {
   }
 
   async deleteById(id) {
+    if (!canManageContent()) return;
     const record = this.findById(id);
     if (!record) return;
     const name = this.getDeleteName(record);
@@ -598,6 +620,7 @@ export class CrudCardModule extends Module {
   }
 
   openAddPanel() {
+    if (!canManageContent()) return;
     if (PAGE !== this.config.page) return;
     this.resetAddForm();
     openPanel(this.config.ids.addPanel, [this.config.ids.editPanel]);
@@ -607,6 +630,7 @@ export class CrudCardModule extends Module {
   }
 
   openEditPanel(id) {
+    if (!canManageContent()) return;
     if (PAGE !== this.config.page) return;
     const record = this.findById(id);
     if (!record) return;
@@ -619,6 +643,7 @@ export class CrudCardModule extends Module {
   }
 
   async handleAddSubmit() {
+    if (!canManageContent()) return;
     if (PAGE !== this.config.page) return;
     const result = this.validateForm('add');
     if (!result.valid) {
@@ -643,6 +668,7 @@ export class CrudCardModule extends Module {
   }
 
   async handleEditSubmit() {
+    if (!canManageContent()) return;
     if (PAGE !== this.config.page || this.currentEditId == null) return;
     const result = this.validateForm('edit');
     if (!result.valid) {

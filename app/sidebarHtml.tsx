@@ -1,4 +1,8 @@
-import { deriveAccessCapabilities, type AccessCapabilities } from '@/lib/auth/capabilities';
+import {
+  canAccessSettingsTab,
+  deriveAccessCapabilities,
+  type AccessCapabilities,
+} from '@/lib/auth/capabilities';
 
 const LOGO_SVG = `<svg class="pa-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" shape-rendering="crispEdges">
         <rect class="pa-logo-svg-bg" width="96" height="96"/>
@@ -96,6 +100,7 @@ function navSubItem(href, nav, icon, label, extraClass = '', capabilities: Acces
 
 function navSettingsSubItem(href, tab, icon, label, extraClass = '', capabilities: AccessCapabilities) {
   if (extraClass.includes('pa-admin-only-item') && !capabilities.isAdmin) return '';
+  if (!canAccessSettingsTab(tab, capabilities)) return '';
   const classes = ['pa-nav-subitem', extraClass].filter(Boolean).join(' ');
   return `<a class="${classes}" href="${href}" data-settings-tab="${tab}"><i class="${icon}"></i> ${label}</a>`;
 }

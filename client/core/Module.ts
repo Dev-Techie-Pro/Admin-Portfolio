@@ -3,6 +3,7 @@ import { storage } from './StorageService.js';
 import { StateStore } from './StateStore.js';
 import { $, $all, type DomQueryRoot } from '../utils/dom.js';
 import { showToast, showStatusToast } from '../modules/shell/toast.js';
+import { canManageContent } from './cms-access.js';
 import { addNotification } from '../modules/shell/notifications.js';
 
 export type ModuleOptions = {
@@ -84,6 +85,10 @@ export class Module {
 
   async saveRecords(data, { feedback = true } = {}) {
     if (!this.storageKey) throw new Error(`${this.name}: saveRecords() requires storageKey`);
+    if (!canManageContent()) {
+      showStatusToast('You do not have permission to change this content.', 'warning');
+      return;
+    }
     if (feedback) showStatusToast('Saving changes…', 'info', 120000);
     try {
       await storage.set(this.storageKey, data);

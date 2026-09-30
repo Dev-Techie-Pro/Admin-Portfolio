@@ -1,4 +1,8 @@
 import { $id } from '../../utils/dom.js';
+import { canManageContent } from '../../core/cms-access.js';
+
+/** Panels viewers may still open (e.g. read-only chrome). */
+const VIEWER_PANEL_IDS = new Set(['paCustomPanel']);
 
 const registeredPanelIds = new Set();
 
@@ -25,6 +29,7 @@ export function closePanels() {
  * @param {string[]} [hidePanelIds]
  */
 export function openPanel(panelId, hidePanelIds = []) {
+  if (!canManageContent() && !VIEWER_PANEL_IDS.has(panelId)) return;
   hidePanelIds.forEach((id) => $id(id)?.classList.remove('visible'));
   $id('paPanelOverlay')?.classList.add('visible');
   $id(panelId)?.classList.add('visible');

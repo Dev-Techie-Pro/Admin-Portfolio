@@ -4,6 +4,7 @@ import { slugify } from "../../utils/strings.js";
 import { setupRte, getRteHtml, setRteHtml } from "../../utils/rte.js";
 import { addChip, populateChips } from "../../utils/chips.js";
 import { requestDelete } from "../shell/confirm.js";
+import { canManageContent } from "../../core/cms-access.js";
 class BlogPostWorkspace {
   constructor(blog) {
     this.wired = false;
@@ -82,6 +83,7 @@ class BlogPostWorkspace {
     });
   }
   openAdd() {
+    if (!canManageContent()) return;
     this.bind();
     this.wsOpenMode = "add";
     this.blog.currentEditId = null;
@@ -97,6 +99,7 @@ class BlogPostWorkspace {
     setTimeout(() => $id("blogWsTitle")?.focus(), 420);
   }
   async open(id, mode = "edit") {
+    if (!canManageContent() && mode !== "preview") return;
     this.bind();
     let record = this.blog.findById(id);
     if (!record) {
@@ -321,6 +324,7 @@ class BlogPostWorkspace {
     await this.save();
   }
   async save() {
+    if (!canManageContent()) return;
     const f = this.blog.validateForm("ws");
     if (!f.valid) return;
     const btn = $id("paBlogWsSaveBtn");
@@ -355,6 +359,7 @@ class BlogPostWorkspace {
     }
   }
   requestDelete() {
+    if (!canManageContent()) return;
     const id = this.blog.currentEditId;
     if (!id) return;
     const record = this.blog.findById(id);

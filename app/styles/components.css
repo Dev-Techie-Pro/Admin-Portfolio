@@ -2164,7 +2164,6 @@ select.pa-form-select:not(.pa-select-native) {
   transform: rotate(180deg);
 }
 
-.pa-select-wrap .pa-select-trigger:hover,
 .pa-select-wrap .pa-select-trigger:focus,
 .pa-select-wrap .pa-select-trigger:focus-visible {
   border: none;
@@ -2183,6 +2182,8 @@ select.pa-form-select:not(.pa-select-native) {
   left: 0;
   right: 0;
   z-index: 220;
+  width: fit-content;
+  min-width: 100%;
   overflow: hidden;
   max-height: 0;
   opacity: 0;
@@ -2820,6 +2821,166 @@ body.pa-rte-fullscreen-active {
   transform: scale(1) translateY(0);
 }
 
+/* Role access briefing (editor / viewer) — created in roleAccessModal.ts */
+.pa-role-access-overlay[hidden] {
+  display: none !important;
+}
+
+.pa-role-access-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: var(--pa-overlay-faint);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+  -webkit-backdrop-filter: blur(4px);
+          backdrop-filter: blur(4px);
+}
+
+.pa-role-access-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.pa-role-access-box {
+  width: min(520px, 100%);
+  max-height: min(88vh, 720px);
+  overflow: auto;
+  background: var(--pa-bg-chip);
+  border: 1px solid var(--pa-border-soft);
+  border-radius: var(--pa-radius);
+  box-shadow: 0 24px 60px var(--pa-shadow-color);
+  padding: 22px 22px 18px;
+  transform: scale(0.96) translateY(8px);
+  transition: transform 0.22s ease;
+}
+
+.pa-role-access-overlay.visible .pa-role-access-box {
+  transform: scale(1) translateY(0);
+}
+
+.pa-role-access-head {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.pa-role-access-icon {
+  width: var(--pa-icon-circle);
+  height: var(--pa-icon-circle);
+  border-radius: var(--pa-radius);
+  background: var(--pa-orange-dim);
+  color: var(--pa-orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--pa-fs-xl);
+  flex-shrink: 0;
+}
+
+.pa-role-access-eyebrow {
+  font-size: var(--pa-fs-sm);
+  font-weight: var(--pa-fw-lg);
+  color: var(--pa-orange);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.pa-role-access-title {
+  font-family: var(--pa-font-display);
+  font-size: var(--pa-fs-xl);
+  font-weight: var(--pa-fw-xl);
+  color: var(--pa-text);
+  margin-bottom: 6px;
+}
+
+.pa-role-access-subtitle {
+  font-size: var(--pa-fs-md);
+  color: var(--pa-text-muted);
+  line-height: 1.45;
+}
+
+.pa-role-access-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 640px) {
+  .pa-role-access-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pa-role-access-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--pa-fs-sm);
+  font-weight: var(--pa-fw-lg);
+  margin-bottom: 8px;
+  color: var(--pa-text);
+}
+
+.pa-role-access-section-title.allowed i {
+  color: var(--pa-green);
+}
+
+.pa-role-access-section-title.restricted i {
+  color: var(--pa-red);
+}
+
+.pa-role-access-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pa-role-access-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: var(--pa-fs-sm);
+  line-height: 1.45;
+  color: var(--pa-text-dim);
+}
+
+.pa-role-access-item i {
+  flex-shrink: 0;
+  margin-top: 2px;
+  font-size: var(--pa-fs-md);
+}
+
+.pa-role-access-item--allowed i {
+  color: var(--pa-green);
+}
+
+.pa-role-access-item--restricted i {
+  color: var(--pa-red);
+}
+
+.pa-role-access-note {
+  margin: 0 0 12px;
+  font-size: var(--pa-fs-sm);
+  color: var(--pa-text-muted);
+  line-height: 1.45;
+}
+
+body.pa-role-access-open {
+  overflow: hidden;
+}
+
 .pa-confirm-icon {
   width: var(--pa-icon-circle);
   height: var(--pa-icon-circle);
@@ -3123,7 +3284,8 @@ body.pa-rte-fullscreen-active {
   font-size: 0.875rem;
 }
 
-body.pa-settings-readonly .pa-tab-panel[data-panel="settings"] .pa-toggle-switch input {
+body.pa-settings-site-readonly .pa-tab-panel[data-content="general"] .pa-toggle-switch input,
+body.pa-settings-site-readonly .pa-tab-panel[data-content="other"] .pa-toggle-switch input {
   pointer-events: none;
   opacity: 0.65;
 }

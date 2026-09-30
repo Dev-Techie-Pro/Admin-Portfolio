@@ -189,6 +189,19 @@ function initConfirmDialog() {
 function isConfirmOpen() {
   return !!document.getElementById("paConfirmOverlay")?.classList.contains("visible");
 }
+const PERMISSION_DENIED_MESSAGE = "You don't have permission to do that. Contact admin for access.";
+function showPermissionDeniedDialog() {
+  requestConfirm({
+    title: "Permission required",
+    message: PERMISSION_DENIED_MESSAGE,
+    confirmLabel: "OK",
+    iconClass: "ri-lock-line",
+    danger: false,
+    iconTone: "warning",
+    onConfirm: () => {
+    }
+  });
+}
 export {
   closeConfirm,
   initConfirmDialog,
@@ -196,5 +209,6 @@ export {
   requestBulkAction,
   requestConfirm,
   requestDelete,
-  requestLogout
+  requestLogout,
+  showPermissionDeniedDialog
 };

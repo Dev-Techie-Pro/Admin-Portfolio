@@ -2004,6 +2004,25 @@ export async function deleteRecentActivity(id) {
   invalidateCachePrefix('cms:recent-activities:user');
 }
 
+/** Delete one activity only when it belongs to the given user. Returns false if no row matched. */
+export async function deleteRecentActivityForUser(id, userId) {
+  const sb = supabase();
+  const { data, error } = await sb
+    .from('recent_activities')
+    .delete()
+    .eq('site_id', SITE_ID)
+    .eq('id', id)
+    .eq('user_id', userId)
+    .select('id')
+    .maybeSingle();
+  if (error) throw error;
+  if (data) {
+    invalidateCache('cms:recent-activities');
+    invalidateCachePrefix('cms:recent-activities:user');
+  }
+  return !!data;
+}
+
 export async function deleteRecentActivities(ids) {
   const uniqueIds = [...new Set((ids || []).map(String).filter(Boolean))];
   if (!uniqueIds.length) return 0;
@@ -2017,6 +2036,26 @@ export async function deleteRecentActivities(ids) {
   if (error) throw error;
   invalidateCache('cms:recent-activities');
   invalidateCachePrefix('cms:recent-activities:user');
+  return data?.length ?? 0;
+}
+
+/** Bulk delete limited to rows owned by userId. */
+export async function deleteRecentActivitiesForUser(ids, userId) {
+  const uniqueIds = [...new Set((ids || []).map(String).filter(Boolean))];
+  if (!uniqueIds.length) return 0;
+  const sb = supabase();
+  const { data, error } = await sb
+    .from('recent_activities')
+    .delete()
+    .eq('site_id', SITE_ID)
+    .eq('user_id', userId)
+    .in('id', uniqueIds)
+    .select('id');
+  if (error) throw error;
+  if (data?.length) {
+    invalidateCache('cms:recent-activities');
+    invalidateCachePrefix('cms:recent-activities:user');
+  }
   return data?.length ?? 0;
 }
 

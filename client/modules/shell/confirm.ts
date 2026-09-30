@@ -231,3 +231,19 @@ export function initConfirmDialog() {
 export function isConfirmOpen() {
   return !!document.getElementById('paConfirmOverlay')?.classList.contains('visible');
 }
+
+const PERMISSION_DENIED_MESSAGE =
+  "You don't have permission to do that. Contact admin for access.";
+
+/** Inform viewers that a CMS write action is not allowed for their role. */
+export function showPermissionDeniedDialog() {
+  requestConfirm({
+    title: 'Permission required',
+    message: PERMISSION_DENIED_MESSAGE,
+    confirmLabel: 'OK',
+    iconClass: 'ri-lock-line',
+    danger: false,
+    iconTone: 'warning',
+    onConfirm: () => {},
+  });
+}

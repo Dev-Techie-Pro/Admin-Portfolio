@@ -6,6 +6,7 @@ import { debounce } from '../../utils/timing.js';
 import { requestDelete } from '../../modules/shell/confirm.js';
 import { closeAllCardMenus } from '../../modules/shell/cardMenu.js';
 import { BulkSelectController } from '../../core/BulkSelectController.js';
+import { canManageContent } from '../../core/cms-access.js';
 import { closePanels, openPanel, registerPanel } from '../../modules/shell/panels.js';
 import * as mediaPicker from '../../utils/MediaPicker.js';
 
@@ -113,7 +114,10 @@ export class ContactMessagesModule extends Module {
     storage._persist(this.storageKey, messages).catch(() => {});
   }
 
-  async persist() { await this.saveRecords(this.store.get('messages')); }
+  async persist() {
+    if (!canManageContent()) return;
+    await this.saveRecords(this.store.get('messages'));
+  }
 
   computeNow() {
     const messages = this.store.get('messages');
@@ -293,7 +297,7 @@ export class ContactMessagesModule extends Module {
         const id = this.parseMsgId(item.dataset.msgId);
         closeAllCardMenus();
         const m = this.findById(id);
-        if (!m) return;
+        if (!m || !canManageContent()) return;
         if (action === 'mark-read') { m.status = 'read'; this.persist(); this.renderTable(); if (this.sameId(this.store.get('selectedId'), id)) this.renderDetail(); this.toast(`Marked "${m.name}"'s message as read.`, 'info', 2000); }
         else if (action === 'mark-unread') { m.status = 'new'; this.persist(); this.renderTable(); if (this.sameId(this.store.get('selectedId'), id)) this.renderDetail(); this.toast(`Marked "${m.name}"'s message as unread.`, 'info', 2000); }
         else if (action === 'toggle-spam') {
@@ -440,6 +444,7 @@ export class ContactMessagesModule extends Module {
   }
 
   openReplyModal(messageId, replyId = null) {
+    if (!canManageContent()) return;
     const m = this.findById(messageId);
     if (!m) return;
     const editing = replyId
@@ -504,6 +509,7 @@ export class ContactMessagesModule extends Module {
   }
 
   async submitReplyModal() {
+    if (!canManageContent()) return;
     const m = this.findById(this.store.get('selectedId'));
     if (!m) return;
 
@@ -581,6 +587,7 @@ export class ContactMessagesModule extends Module {
   }
 
   async deleteReply(replyId) {
+    if (!canManageContent()) return;
     const m = this.findById(this.store.get('selectedId'));
     if (!m || !replyId || String(replyId).startsWith('legacy-')) {
       this.toast('This reply cannot be deleted.', 'danger');
@@ -727,6 +734,7 @@ export class ContactMessagesModule extends Module {
   }
 
   async deleteById(id) {
+    if (!canManageContent()) return;
     const m = this.findById(id);
     if (!m) return;
     const prev = this.store.get('messages');
@@ -745,6 +753,7 @@ export class ContactMessagesModule extends Module {
   }
 
   exportCsv() {
+    if (!canManageContent()) return;
     const rows = this.getFiltered();
     const header = ['Name', 'Email', 'Subject', 'Status', 'Date', 'Message'];
     const csvRows = [header.map(csvEscapeField).join(',')];

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { guardEditor } from '@/lib/auth/guard';
+import { guardStaff } from '@/lib/auth/guard';
+import { deriveAccessCapabilities } from '@/lib/auth/capabilities';
 import {
   assertAllowedUpload,
   uploadMediaBuffer,
@@ -11,10 +12,19 @@ import {
   isUploadPurpose,
 } from '@/lib/cms/upload-file-name';
 
-export async function POST(request) {
-  const auth = await guardEditor();
-  if (!auth.ok) return auth.response;
+/** Staff self-service profile media (viewers cannot use general CMS upload). */
+function isStaffSelfProfileMediaUpload(pageRaw: string, purposeRaw: string, folder: string) {
+  if (folder !== 'avatars') return false;
+  if (pageRaw === 'settings' && (purposeRaw === 'profile-avatar' || purposeRaw === 'profile-cover')) {
+    return true;
+  }
+  if (pageRaw === 'shell' && purposeRaw === 'user-avatar') {
+    return true;
+  }
+  return false;
+}
 
+export async function POST(request) {
   try {
     const form = await request.formData();
     const file = form.get('file');
@@ -23,10 +33,20 @@ export async function POST(request) {
     }
 
     const folder = String(form.get('folder') || 'general');
-    const modeRaw = String(form.get('mode') || 'image').toLowerCase();
-    const mode = modeRaw === 'contact' || modeRaw === 'font' ? modeRaw : 'image';
     const pageRaw = String(form.get('page') || '').trim();
     const purposeRaw = String(form.get('purpose') || '').trim();
+
+    const auth = await guardStaff();
+    if (!auth.ok) return auth.response;
+
+    const caps = deriveAccessCapabilities(auth.profile.role);
+    const selfProfileMedia = isStaffSelfProfileMediaUpload(pageRaw, purposeRaw, folder);
+    if (!caps.canManageContent && (!caps.canManageOwnAccountSettings || !selfProfileMedia)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const modeRaw = String(form.get('mode') || 'image').toLowerCase();
+    const mode = modeRaw === 'contact' || modeRaw === 'font' ? modeRaw : 'image';
     const sequenceRaw = parseInt(String(form.get('sequence') || ''), 10);
 
     const buffer = Buffer.from(await file.arrayBuffer());

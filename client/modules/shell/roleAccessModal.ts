@@ -82,6 +82,7 @@ function ensureModalInDom() {
   const overlay = document.createElement('div');
   overlay.className = 'pa-role-access-overlay';
   overlay.id = 'paRoleAccessOverlay';
+  overlay.hidden = true;
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-modal', 'true');
   overlay.setAttribute('aria-labelledby', 'paRoleAccessTitle');
@@ -126,6 +127,7 @@ function bindModalEvents() {
 
   const close = () => {
     overlay.classList.remove('visible');
+    overlay.hidden = true;
     document.body.classList.remove('pa-role-access-open');
     overlay.dataset.userId = '';
     overlay.dataset.role = '';
@@ -176,6 +178,7 @@ function openModal(userId, role) {
   populateModal(role);
   overlay.dataset.userId = userId;
   overlay.dataset.role = role;
+  overlay.hidden = false;
   overlay.classList.add('visible');
   document.body.classList.add('pa-role-access-open');
   $id('paRoleAccessOk')?.focus();

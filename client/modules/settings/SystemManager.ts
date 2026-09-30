@@ -440,7 +440,8 @@ export class SystemManager {
       });
     }
 
-    setupAllPasswordToggles($id('systemEnvForm'));
+    const envForm = $id('systemEnvForm');
+    if (envForm) setupAllPasswordToggles(envForm);
   }
 
   setViewMode(mode) {

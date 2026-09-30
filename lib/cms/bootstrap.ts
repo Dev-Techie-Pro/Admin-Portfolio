@@ -31,7 +31,14 @@ const KEY_FETCHERS = {
   pa_blog_posts: () => getBlogPosts({ includeContent: true }),
   pa_experience: getExperience,
   pa_contact_messages: () => getContactMessagesPage({ limit: CONTACT_PAGE_SIZE }),
-  pa_recent_activities: getRecentActivitiesPayload,
+  pa_recent_activities: async (auth) => {
+    const scopeAll = deriveAccessCapabilities(auth.profile.role).canViewAllStaffActivity;
+    const payload = await getRecentActivitiesPayload({
+      userId: auth.user.id,
+      scopeAll,
+    });
+    return { ...payload, scope: scopeAll ? 'all' : 'self' };
+  },
   pa_tools: getToolItems,
   pa_tool_categories: getToolCategories,
   pa_blog_categories: getBlogCategories,

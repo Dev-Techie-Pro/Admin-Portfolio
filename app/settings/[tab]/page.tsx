@@ -22,6 +22,7 @@ export default function SettingsTabPage({ params }) {
       html={html}
       includeAddUserPanel
       requireAdmin={tab === 'system'}
+      settingsTab={tab}
       authBody={false}
     />
   );

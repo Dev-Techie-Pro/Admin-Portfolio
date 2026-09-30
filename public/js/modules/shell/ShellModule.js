@@ -94,6 +94,9 @@ class ShellModule extends Module {
           avatarUrl: profile.avatarUrl
         });
         applyRoleBasedAccess(profile.role || user.role, user.capabilities);
+        storage.reconcileRecentActivitiesScope({
+          user: { id: profile.id || user.id, capabilities: user.capabilities }
+        });
         this.addUser.setProfileRole(profile.role || user.role);
         void maybeShowRoleAccessModal({
           id: profile.id || user.id,
@@ -102,6 +105,7 @@ class ShellModule extends Module {
       } catch {
         applyUserDisplay(user);
         applyRoleBasedAccess(user.role, user.capabilities);
+        storage.reconcileRecentActivitiesScope({ user });
         this.addUser.setProfileRole(user.role);
         void maybeShowRoleAccessModal({ id: user.id, role: user.role });
       }

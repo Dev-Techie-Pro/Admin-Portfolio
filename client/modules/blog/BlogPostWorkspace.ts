@@ -5,6 +5,7 @@ import { setupRte, getRteHtml, setRteHtml } from '../../utils/rte.js';
 import { addChip, getChipValues, populateChips } from '../../utils/chips.js';
 import { requestDelete } from '../shell/confirm.js';
 import type { BlogModule } from './BlogModule.js';
+import { canManageContent } from '../../core/cms-access.js';
 
 type WsEditorMode = 'edit' | 'preview';
 type WsOpenMode = 'add' | 'edit' | 'preview';
@@ -91,6 +92,7 @@ export class BlogPostWorkspace {
   }
 
   openAdd() {
+    if (!canManageContent()) return;
     this.bind();
     this.wsOpenMode = 'add';
     this.blog.currentEditId = null;
@@ -107,6 +109,7 @@ export class BlogPostWorkspace {
   }
 
   async open(id: string | number, mode: WsOpenMode = 'edit') {
+    if (!canManageContent() && mode !== 'preview') return;
     this.bind();
     let record = this.blog.findById(id);
     if (!record) {
@@ -354,6 +357,7 @@ export class BlogPostWorkspace {
   }
 
   async save() {
+    if (!canManageContent()) return;
     const f = this.blog.validateForm('ws');
     if (!f.valid) return;
 
@@ -390,6 +394,7 @@ export class BlogPostWorkspace {
   }
 
   requestDelete() {
+    if (!canManageContent()) return;
     const id = this.blog.currentEditId;
     if (!id) return;
     const record = this.blog.findById(id);

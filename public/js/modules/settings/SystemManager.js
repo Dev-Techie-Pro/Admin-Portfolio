@@ -360,7 +360,8 @@ class SystemManager {
         void this.saveEnvironment();
       });
     }
-    setupAllPasswordToggles($id("systemEnvForm"));
+    const envForm = $id("systemEnvForm");
+    if (envForm) setupAllPasswordToggles(envForm);
   }
   setViewMode(mode) {
     this.state.viewMode = mode;

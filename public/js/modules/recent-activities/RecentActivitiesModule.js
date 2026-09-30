@@ -5,6 +5,7 @@ import { debounce } from "../../utils/timing.js";
 import { requestDelete } from "../../modules/shell/confirm.js";
 import { closeAllCardMenus, toggleCardMenu } from "../../modules/shell/cardMenu.js";
 import { BulkSelectController } from "../../core/BulkSelectController.js";
+import { getAccessCapabilities } from "../../core/access.js";
 const PAGE_SIZE = 10;
 const AVATAR_COLORS = ["#e5484d", "#f0c040", "#22c55e", "#38bdf8", "#a78bfa", "#f472b6", "#ff6600", "#2dd4bf"];
 const TYPE_META = {
@@ -66,7 +67,8 @@ class RecentActivitiesModule extends Module {
         searchQuery: "",
         page: 1,
         selectedId: null,
-        loading: false
+        loading: false,
+        activityScope: "self"
       }
     });
     this.actNow = Date.now();
@@ -103,14 +105,17 @@ class RecentActivitiesModule extends Module {
     this.store.set("loading", true);
     try {
       if (forceRefresh) storage.invalidate("pa_recent_activities");
-      const payload = await storage.get("pa_recent_activities", { activities: [], stats: null, users: [] });
+      const payload = await storage.get("pa_recent_activities", { activities: [], stats: null, users: [], scope: "self" });
+      const scope = payload.scope === "all" || payload.scope === "self" ? payload.scope : getAccessCapabilities().canViewAllStaffActivity ? "all" : "self";
       this.store.batch(() => {
         this.store.set("activities", payload.activities || []);
         this.store.set("stats", payload.stats || null);
         this.store.set("users", payload.users || []);
+        this.store.set("activityScope", scope);
         this.store.set("loading", false);
       });
       this.computeNow();
+      this.applyActivityScopeUi();
       this.populateUserFilter();
     } catch (err) {
       this.store.set("loading", false);
@@ -172,7 +177,19 @@ class RecentActivitiesModule extends Module {
     }
     return result;
   }
+  isStaffWideScope() {
+    return this.store.get("activityScope") === "all";
+  }
+  applyActivityScopeUi() {
+    if (this.isStaffWideScope()) return;
+    const select = $id("paActUserFilter");
+    const filterRoot = select?.closest(".pa-filter-field, .pa-toolbar-field, .pa-select-wrap, label");
+    if (filterRoot) filterRoot.remove();
+    else select?.remove();
+    this.store.set("userFilter", "all");
+  }
   populateUserFilter() {
+    if (!this.isStaffWideScope()) return;
     const select = $id("paActUserFilter");
     if (!select) return;
     const users = this.store.get("users");
@@ -182,6 +199,7 @@ class RecentActivitiesModule extends Module {
     ).join("")}`;
   }
   render() {
+    this.applyActivityScopeUi();
     this.renderStats();
     this.renderTable();
   }
@@ -269,7 +287,10 @@ class RecentActivitiesModule extends Module {
   }
   getEmptyStateHtml() {
     const hasFilters = this.store.get("searchQuery").trim() || this.store.get("typeFilter") !== "all" || this.store.get("dateFilter") !== "7" || this.store.get("userFilter") !== "all" || this.store.get("statusFilter") !== "all";
-    return `<div class="pa-empty-state"><i class="ri-history-line"></i><div class="pa-empty-state-title">${hasFilters ? "No activities match your filters" : "No activities yet"}</div><div class="pa-empty-state-text">${hasFilters ? "Try adjusting your filters or date range." : "User actions and system events will appear here as they occur."}</div>${hasFilters ? '<button class="pa-empty-state-btn" id="paActEmptyResetBtn">Reset filters</button>' : ""}</div>`;
+    const selfScope = !this.isStaffWideScope();
+    const emptyTitle = hasFilters ? "No activities match your filters" : selfScope ? "No activity recorded for you yet" : "No activities yet";
+    const emptyText = hasFilters ? "Try adjusting your filters or date range." : selfScope ? "Actions you take in the dashboard will appear here." : "User actions and system events will appear here as they occur.";
+    return `<div class="pa-empty-state"><i class="ri-history-line"></i><div class="pa-empty-state-title">${emptyTitle}</div><div class="pa-empty-state-text">${emptyText}</div>${hasFilters ? '<button class="pa-empty-state-btn" id="paActEmptyResetBtn">Reset filters</button>' : ""}</div>`;
   }
   renderTable() {
     const all = this.getFiltered();

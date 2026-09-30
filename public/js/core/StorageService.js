@@ -15,6 +15,7 @@ const MEDIA_LINKED_KEYS = [
   "pa_tools",
   "pa_contact_messages"
 ];
+const RECENT_ACTIVITIES_SCOPE_KEY = "pa_recent_activities_scope";
 const REMOTE_ROUTES = {
   pa_projects: "/api/projects",
   pa_category_meta: "/api/categories",
@@ -60,6 +61,21 @@ class StorageService {
     if (key === "appearance_settings_v2") writeAppearanceCache(value);
     await persistentCache.set(key, value, fetchedAt);
   }
+  /** Drop scoped activity cache when a different user or scope signs in on this browser. */
+  reconcileRecentActivitiesScope(session) {
+    const user = session?.user;
+    if (!user?.id) return;
+    const scopeAll = user.capabilities?.canViewAllStaffActivity === true;
+    const marker = `${user.id}:${scopeAll ? "all" : "self"}`;
+    try {
+      const prev = sessionStorage.getItem(RECENT_ACTIVITIES_SCOPE_KEY);
+      if (prev && prev !== marker) {
+        this.invalidate("pa_recent_activities");
+      }
+      sessionStorage.setItem(RECENT_ACTIVITIES_SCOPE_KEY, marker);
+    } catch {
+    }
+  }
   async _persistBootstrapPayload(payload) {
     if (!payload) return;
     const fetchedAt = payload.fetchedAt ? Date.parse(payload.fetchedAt) : Date.now();
@@ -88,7 +104,10 @@ class StorageService {
           this._cache.set("appearance_settings_v2", payload.appearance);
           writeAppearanceCache(payload.appearance);
         }
-        if (payload.session) window.__paBootstrapSession = payload.session;
+        if (payload.session) {
+          window.__paBootstrapSession = payload.session;
+          this.reconcileRecentActivitiesScope(payload.session);
+        }
         if (payload.profile) window.__paBootstrapProfile = payload.profile;
         await this._persistBootstrapPayload(payload);
         delete bag.__bootstrap;

@@ -3,6 +3,8 @@ import LegacyBody from '@/components/LegacyBody';
 import { requireStaffPageContext } from '@/lib/auth/require-staff-page';
 import { personalizePageHtml } from '@/lib/shell/html-access';
 import { ADD_USER_PANEL_HTML } from '@/app/addUserPanelHtml';
+import { QUICK_ADD_PANEL_HTML } from '@/app/quickAddPanelHtml';
+import { canAccessSettingsTab } from '@/lib/auth/capabilities';
 
 type StaffLegacyBodyProps = {
   html: string;
@@ -13,6 +15,8 @@ type StaffLegacyBodyProps = {
   requireAdmin?: boolean;
   /** Redirect when the user cannot access editor features (e.g. blog engagement). */
   requireEditor?: boolean;
+  /** When set, redirect viewers away from disallowed settings tabs. */
+  settingsTab?: string;
   authBody?: boolean;
   standaloneBody?: boolean;
   needsCanvasJs?: boolean;
@@ -28,6 +32,7 @@ export default async function StaffLegacyBody({
   includeAddUserPanel = false,
   requireAdmin = false,
   requireEditor = false,
+  settingsTab,
   authBody = false,
   standaloneBody = false,
   needsCanvasJs = false,
@@ -40,8 +45,14 @@ export default async function StaffLegacyBody({
   if (requireEditor && !capabilities.canAccessBlogEngagement) {
     redirect('/');
   }
+  if (settingsTab && !canAccessSettingsTab(settingsTab, capabilities)) {
+    redirect('/settings/profile');
+  }
 
   let combined = html + extraHtml;
+  if (capabilities.canManageContent) {
+    combined += QUICK_ADD_PANEL_HTML;
+  }
   if (includeAddUserPanel && capabilities.isAdmin) {
     combined += ADD_USER_PANEL_HTML;
   }

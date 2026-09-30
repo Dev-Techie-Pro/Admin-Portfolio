@@ -22,6 +22,7 @@ import { handleFileValidation } from '../../utils/files.js';
 import { uploadCmsFileWithPreview } from '../../utils/media-upload.js';
 import { applyUserDisplay, renderPreviewAvatar, setCoverImage, applyRoleBasedAccess } from '../../utils/user-display.js';
 import { getAccessCapabilities } from '../../core/access.js';
+import { canAccessSettingsTab } from '../../../lib/auth/capabilities.js';
 import { eventBus } from '../../core/EventBus.js';
 import { initRoleRequestCard } from './roleRequest.js';
 
@@ -347,16 +348,12 @@ export class SettingsModule extends Module {
   }
 
   applySettingsAccess(role) {
-    const generalReadOnly = role === 'viewer';
-    document.body.classList.toggle('pa-settings-general-readonly', generalReadOnly);
-    document.body.classList.toggle('pa-settings-readonly', generalReadOnly);
+    const siteSettingsReadOnly = !getAccessCapabilities().canManageContent;
+    document.body.classList.toggle('pa-settings-site-readonly', siteSettingsReadOnly);
 
     ['general', 'other'].forEach((section) => {
       const saveBtn = asHtmlButton(document.querySelector(`[data-save="${section}"]`));
-      if (saveBtn) {
-        saveBtn.disabled = generalReadOnly;
-        saveBtn.hidden = generalReadOnly;
-      }
+      if (saveBtn && siteSettingsReadOnly) saveBtn.remove();
     });
 
     const panel = document.querySelector('.pa-tab-panel[data-panel="settings"][data-content="general"]')
@@ -368,13 +365,13 @@ export class SettingsModule extends Module {
       pane.querySelectorAll('input:not([type="hidden"]), textarea, select').forEach((el) => {
         const field = asFormField(el);
         if (!field || field.id === 'profileRole') return;
-        field.disabled = generalReadOnly;
-        if (generalReadOnly) field.setAttribute('readonly', '');
+        field.disabled = siteSettingsReadOnly;
+        if (siteSettingsReadOnly) field.setAttribute('readonly', '');
         else field.removeAttribute('readonly');
       });
     });
 
-    if (generalReadOnly && panel) {
+    if (siteSettingsReadOnly && panel) {
       let notice = document.getElementById('paSettingsReadonlyNotice');
       if (!notice) {
         notice = document.createElement('div');
@@ -825,7 +822,11 @@ export class SettingsModule extends Module {
   }
 
   applySettingsPage(tab) {
-    const resolved = SETTINGS_TABS.includes(tab) ? tab : 'general';
+    const caps = getAccessCapabilities();
+    let resolved = SETTINGS_TABS.includes(tab) ? tab : 'general';
+    if (!canAccessSettingsTab(resolved, caps)) {
+      resolved = 'profile';
+    }
 
     this.store.set('activeTab', resolved);
     const settingsPanels = document.querySelectorAll('.pa-tab-panel[data-panel="settings"]');
@@ -873,8 +874,13 @@ export class SettingsModule extends Module {
   syncUI() {
     const path = window.location.pathname.replace(/\/$/, '') || '/';
     const segment = path.match(/\/settings\/([^/]+)$/)?.[1];
+    const caps = getAccessCapabilities();
     if (segment && !SETTINGS_TABS.includes(segment)) {
-      window.location.replace(getSettingsTabPath('general'));
+      window.location.replace(getSettingsTabPath('profile'));
+      return;
+    }
+    if (segment && !canAccessSettingsTab(segment, caps)) {
+      window.location.replace(getSettingsTabPath('profile'));
       return;
     }
     this.applySettingsPage(getSettingsTabFromPath(path));

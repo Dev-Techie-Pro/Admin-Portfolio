@@ -10,6 +10,7 @@ import { addChip, getChipValues } from '../../utils/chips.js';
 import { parseSortInput, sortByNewestFirst } from '../../utils/format.js';
 import { showStatusToast } from '../shell/toast.js';
 import { closePanels, openPanel, activateTab, activateWizardStep, registerPanel } from '../shell/panels.js';
+import { canManageContent } from '../../core/cms-access.js';
 import { CATEGORY_META_PROJECTS, pickSceneForCategory } from '../projects/ProjectsModule.js';
 function setVal(id, value) {
   const el = $id(id);
@@ -105,6 +106,8 @@ export class QuickAddModule extends Module {
   }
 
   bindEvents() {
+    if (!canManageContent()) return;
+
     registerPanel('paQuickAddPanel');
 
     $id('paAddNewBtn')?.addEventListener('click', () => this.open());

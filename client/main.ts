@@ -34,6 +34,8 @@ import { initAllPaSelects } from './utils/paSelect.js';
 
 import { initPasswordToggles } from './utils/password-toggle.js';
 
+import { stripCmsWriteControls } from './core/cms-access.js';
+
 
 
 const AUTH_PAGES = new Set(['login', 'forgot-password', 'reset-password']);
@@ -226,6 +228,8 @@ async function initPageModule(pageModule: InstanceType<PageModuleClass>) {
 
       pageModule.bindEvents();
 
+      stripCmsWriteControls(document);
+
       resolve();
 
     });
@@ -373,6 +377,8 @@ async function bootAppPage(ModuleClass: PageModuleClass, page: string) {
       if (activePageModule === pageModule && typeof pageModule.render === 'function') {
 
         pageModule.render();
+
+        stripCmsWriteControls(document);
 
       }
 
