@@ -21,6 +21,7 @@ import { activateTab } from '../shell/panels.js';
 import { handleFileValidation } from '../../utils/files.js';
 import { uploadCmsFileWithPreview } from '../../utils/media-upload.js';
 import { applyUserDisplay, renderPreviewAvatar, setCoverImage, applyRoleBasedAccess } from '../../utils/user-display.js';
+import { getAccessCapabilities } from '../../core/access.js';
 import { eventBus } from '../../core/EventBus.js';
 import { initRoleRequestCard } from './roleRequest.js';
 
@@ -531,7 +532,7 @@ export class SettingsModule extends Module {
   }
 
   async logoutAllDevices() {
-    if (!document.body.classList.contains('pa-role-admin')) {
+    if (!getAccessCapabilities().canLogoutAllDevices) {
       showToast('Only administrators can log out of all devices.', 'warning');
       return;
     }

@@ -1,3 +1,4 @@
+import { deriveAccessCapabilities, type AccessCapabilities } from '@/lib/auth/capabilities';
 
 const LOGO_SVG = `<svg class="pa-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" shape-rendering="crispEdges">
         <rect class="pa-logo-svg-bg" width="96" height="96"/>
@@ -86,27 +87,28 @@ const LOGO_SVG = `<svg class="pa-logo-svg" xmlns="http://www.w3.org/2000/svg" vi
         </g>
       </svg>`;
 
-function navSubItem(href, nav, icon, label, extraClass = '') {
+function navSubItem(href, nav, icon, label, extraClass = '', capabilities: AccessCapabilities) {
+  if (extraClass.includes('pa-admin-only-item') && !capabilities.isAdmin) return '';
+  if (extraClass.includes('pa-editor-only-item') && !capabilities.isEditor) return '';
   const classes = ['pa-nav-subitem', extraClass].filter(Boolean).join(' ');
-  const hidden = extraClass.includes('pa-admin-only-item') ? ' hidden' : '';
-  return `<a class="${classes}" href="${href}" data-nav="${nav}"${hidden}><i class="${icon}"></i> ${label}</a>`;
+  return `<a class="${classes}" href="${href}" data-nav="${nav}"><i class="${icon}"></i> ${label}</a>`;
 }
 
-function navSettingsSubItem(href, tab, icon, label, extraClass = '') {
+function navSettingsSubItem(href, tab, icon, label, extraClass = '', capabilities: AccessCapabilities) {
+  if (extraClass.includes('pa-admin-only-item') && !capabilities.isAdmin) return '';
   const classes = ['pa-nav-subitem', extraClass].filter(Boolean).join(' ');
-  const hidden = extraClass.includes('pa-admin-only-item') ? ' hidden' : '';
-  return `<a class="${classes}" href="${href}" data-settings-tab="${tab}"${hidden}><i class="${icon}"></i> ${label}</a>`;
+  return `<a class="${classes}" href="${href}" data-settings-tab="${tab}"><i class="${icon}"></i> ${label}</a>`;
 }
 
-function navMainSubItem(href, nav, icon, label) {
-  return navSubItem(href, nav, icon, label);
+function navMainSubItem(href, nav, icon, label, capabilities: AccessCapabilities) {
+  return navSubItem(href, nav, icon, label, '', capabilities);
 }
 
-function navGroup(groupId, parent, subItems, defaultOpen = false) {
+function navGroup(groupId, parent, subItems, capabilities: AccessCapabilities, defaultOpen = false) {
   const openClass = defaultOpen ? ' open' : '';
   const expanded = defaultOpen ? 'true' : 'false';
   const parentItem = parent.href
-    ? navMainSubItem(parent.href, parent.nav, parent.submenuIcon || parent.icon, parent.submenuLabel || parent.label)
+    ? navMainSubItem(parent.href, parent.nav, parent.submenuIcon || parent.icon, parent.submenuLabel || parent.label, capabilities)
     : '';
   const submenuItems = parentItem
     ? `${parentItem}\n            ${subItems}`
@@ -128,7 +130,8 @@ function railBtn(section, icon, label) {
   return `<button type="button" class="pa-rail-btn" data-rail-target="${section}" aria-label="${label}"><i class="${icon}"></i></button>`;
 }
 
-export const SIDEBAR_INNER_HTML = `<aside class="pa-sidebar" id="paSidebar">
+export function buildSidebarInnerHtml(capabilities: AccessCapabilities) {
+  return `<aside class="pa-sidebar" id="paSidebar">
       <div class="pa-sidebar-rail" aria-label="Primary navigation">
         <a href="/settings/profile" class="pa-rail-avatar" id="paRailAvatar" aria-label="Profile">
           <span class="pa-rail-profile" aria-hidden="true">
@@ -166,19 +169,19 @@ export const SIDEBAR_INNER_HTML = `<aside class="pa-sidebar" id="paSidebar">
           icon: 'ri-dashboard-line',
           label: 'Dashboard',
         }, [
-          navSubItem('/recent-activities', 'Recent Activities', 'ri-history-line', 'Recent Activities'),
-          navSubItem('/contact-messages', 'Contact Messages', 'ri-mail-line', 'Contact Messages'),
-          navSubItem('/users', 'Users', 'ri-group-line', 'Users', 'pa-admin-only-item'),
-        ].join('\n            '))}
+          navSubItem('/recent-activities', 'Recent Activities', 'ri-history-line', 'Recent Activities', '', capabilities),
+          navSubItem('/contact-messages', 'Contact Messages', 'ri-mail-line', 'Contact Messages', '', capabilities),
+          navSubItem('/users', 'Users', 'ri-group-line', 'Users', 'pa-admin-only-item', capabilities),
+        ].join('\n            '), capabilities)}
         ${navGroup('projects', {
           href: '/projects',
           nav: 'Projects',
           icon: 'ri-apps-line',
           label: 'Projects',
         }, [
-          navSubItem('/categories', 'Categories', 'ri-folder-line', 'Categories'),
-          navSubItem('/tags', 'Tags', 'ri-price-tag-3-line', 'Tags'),
-        ].join('\n            '))}
+          navSubItem('/categories', 'Categories', 'ri-folder-line', 'Categories', '', capabilities),
+          navSubItem('/tags', 'Tags', 'ri-price-tag-3-line', 'Tags', '', capabilities),
+        ].join('\n            '), capabilities)}
         ${navGroup('tools', {
           href: '/tool-categories',
           nav: 'Tool Categories',
@@ -187,9 +190,9 @@ export const SIDEBAR_INNER_HTML = `<aside class="pa-sidebar" id="paSidebar">
           submenuLabel: 'Categories',
           submenuIcon: 'ri-folder-settings-line',
         }, [
-          navSubItem('/technologies', 'Technologies', 'ri-code-s-slash-line', 'Technologies'),
-          navSubItem('/tools', 'Tools', 'ri-tools-line', 'Tools'),
-        ].join('\n            '))}
+          navSubItem('/technologies', 'Technologies', 'ri-code-s-slash-line', 'Technologies', '', capabilities),
+          navSubItem('/tools', 'Tools', 'ri-tools-line', 'Tools', '', capabilities),
+        ].join('\n            '), capabilities)}
         ${navGroup('content', {
           href: '/blog-categories',
           nav: 'Blog Categories',
@@ -198,25 +201,29 @@ export const SIDEBAR_INNER_HTML = `<aside class="pa-sidebar" id="paSidebar">
           submenuLabel: 'Categories',
           submenuIcon: 'ri-price-tag-3-line',
         }, [
-          navSubItem('/blog-post', 'Blog Posts', 'ri-article-line', 'Blog Posts'),
-          navSubItem('/blog-engagement', 'Comments & Likes', 'ri-chat-heart-line', 'Comments & Likes', 'pa-editor-only-item'),
-          navSubItem('/testimonials', 'Testimonials', 'ri-chat-quote-line', 'Testimonials'),
-          navSubItem('/experience', 'Experience', 'ri-briefcase-line', 'Experience'),
-          navSubItem('/media-library', 'Media Library', 'ri-image-line', 'Media Library'),
-        ].join('\n            '))}
+          navSubItem('/blog-post', 'Blog Posts', 'ri-article-line', 'Blog Posts', '', capabilities),
+          navSubItem('/blog-engagement', 'Comments & Likes', 'ri-chat-heart-line', 'Comments & Likes', 'pa-editor-only-item', capabilities),
+          navSubItem('/testimonials', 'Testimonials', 'ri-chat-quote-line', 'Testimonials', '', capabilities),
+          navSubItem('/experience', 'Experience', 'ri-briefcase-line', 'Experience', '', capabilities),
+          navSubItem('/media-library', 'Media Library', 'ri-image-line', 'Media Library', '', capabilities),
+        ].join('\n            '), capabilities)}
         ${navGroup('settings', {
           icon: 'ri-settings-line',
           label: 'Settings',
         }, [
-          navSettingsSubItem('/settings/general', 'general', 'ri-settings-3-line', 'General'),
-          navSettingsSubItem('/settings/profile', 'profile', 'ri-user-settings-line', 'Profile'),
-          navSettingsSubItem('/settings/security', 'security', 'ri-shield-keyhole-line', 'Security'),
-          navSettingsSubItem('/settings/notifications', 'notifications', 'ri-notification-3-line', 'Notifications'),
-          navSettingsSubItem('/settings/system', 'system', 'ri-server-line', 'System', 'pa-admin-only-item'),
-        ].join('\n            '))}
+          navSettingsSubItem('/settings/general', 'general', 'ri-settings-3-line', 'General', '', capabilities),
+          navSettingsSubItem('/settings/profile', 'profile', 'ri-user-settings-line', 'Profile', '', capabilities),
+          navSettingsSubItem('/settings/security', 'security', 'ri-shield-keyhole-line', 'Security', '', capabilities),
+          navSettingsSubItem('/settings/notifications', 'notifications', 'ri-notification-3-line', 'Notifications', '', capabilities),
+          navSettingsSubItem('/settings/system', 'system', 'ri-server-line', 'System', 'pa-admin-only-item', capabilities),
+        ].join('\n            '), capabilities)}
       </nav>
       </div>
     </aside>`;
+}
+
+/** Full sidebar markup for static HTML export scripts (super-admin view). */
+export const SIDEBAR_INNER_HTML = buildSidebarInnerHtml(deriveAccessCapabilities('super_admin'));
 
 export function sidebarAsideForBodyHtml() {
   return SIDEBAR_INNER_HTML

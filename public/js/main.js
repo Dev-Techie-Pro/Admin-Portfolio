@@ -17,7 +17,10 @@ import {
   previewUserAvatar,
   showNavFlyout,
   syncSidebarGroupNav
-} from "./chunks/chunk-4FU3P2XW.js";
+} from "./chunks/chunk-7QUKIKDH.js";
+import {
+  getAccessCapabilities
+} from "./chunks/chunk-FSKKBMCW.js";
 import {
   initPasswordToggles
 } from "./chunks/chunk-5SJ7MEVC.js";
@@ -1282,7 +1285,7 @@ var ShellModule = class extends Module {
           role: profile.role || user.role,
           avatarUrl: profile.avatarUrl
         });
-        applyRoleBasedAccess(profile.role || user.role);
+        applyRoleBasedAccess(profile.role || user.role, user.capabilities);
         this.addUser.setProfileRole(profile.role || user.role);
         void maybeShowRoleAccessModal({
           id: profile.id || user.id,
@@ -1290,7 +1293,7 @@ var ShellModule = class extends Module {
         });
       } catch {
         applyUserDisplay(user);
-        applyRoleBasedAccess(user.role);
+        applyRoleBasedAccess(user.role, user.capabilities);
         this.addUser.setProfileRole(user.role);
         void maybeShowRoleAccessModal({ id: user.id, role: user.role });
       }
@@ -1406,8 +1409,8 @@ var ShellModule = class extends Module {
       });
       this.on($id("paNotifClearBtn"), "click", (e) => {
         e.stopPropagation();
-        if (document.body.classList.contains("pa-role-readonly")) {
-          showToast("Viewers cannot clear notifications.", "warning", 2200);
+        if (!getAccessCapabilities().canClearAllNotifications) {
+          showToast("You do not have permission to clear notifications.", "warning", 2200);
           return;
         }
         void clearNotifications().then(() => {
@@ -1765,13 +1768,13 @@ async function loadPageModuleClass(page) {
     case "contact-messages":
       return (await import("./chunks/ContactMessagesModule-OZGYNEXA.js")).ContactMessagesModule;
     case "blog-engagement":
-      return (await import("./chunks/BlogEngagementModule-ZY3L2OLL.js")).BlogEngagementModule;
+      return (await import("./chunks/BlogEngagementModule-2LXGCMQV.js")).BlogEngagementModule;
     case "users":
       return (await import("./chunks/UsersModule-7XPMEQ7K.js")).UsersModule;
     case "recent-activities":
       return (await import("./chunks/RecentActivitiesModule-3HA66MNQ.js")).RecentActivitiesModule;
     case "settings":
-      return (await import("./chunks/SettingsModule-A3IMAPZD.js")).SettingsModule;
+      return (await import("./chunks/SettingsModule-H46MDLNO.js")).SettingsModule;
     case "login":
       return (await import("./chunks/LoginModule-FCS2VOFB.js")).LoginModule;
     case "forgot-password":

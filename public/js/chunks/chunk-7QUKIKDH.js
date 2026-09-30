@@ -1,4 +1,9 @@
 import {
+  applyCapabilityGatedElements,
+  deriveAccessCapabilities,
+  setAccessCapabilities
+} from "./chunk-FSKKBMCW.js";
+import {
   getSettingsTabFromPath
 } from "./chunk-CLQNCO7D.js";
 
@@ -434,8 +439,6 @@ function setImageSrc(container, url, { alt = "" } = {}) {
   img.decoding = "async";
   container.appendChild(img);
 }
-var ADMIN_ROLES = ["super_admin", "admin"];
-var EDITOR_ROLES = ["super_admin", "admin", "editor"];
 function applyUserDisplay(user) {
   if (!user) return;
   const displayName = user.fullName || user.username || user.email || "User";
@@ -454,42 +457,12 @@ function applyUserDisplay(user) {
   ).forEach((el) => {
     renderAvatarElement(el, user.avatarUrl);
   });
-  applyRoleBasedAccess(user.role);
+  applyRoleBasedAccess(user.role, user.capabilities);
 }
-function pruneInaccessibleSidebarNav(isAdmin, isEditor) {
-  document.querySelectorAll(".pa-admin-only-item").forEach((el) => {
-    if (isAdmin) {
-      el.removeAttribute("hidden");
-      el.removeAttribute("aria-hidden");
-      el.style.removeProperty("display");
-    } else {
-      el.setAttribute("hidden", "");
-      el.setAttribute("aria-hidden", "true");
-      el.style.display = "none";
-    }
-  });
-  document.querySelectorAll(".pa-editor-only-item").forEach((el) => {
-    if (isEditor) {
-      el.removeAttribute("hidden");
-      el.removeAttribute("aria-hidden");
-      el.style.removeProperty("display");
-    } else {
-      el.setAttribute("hidden", "");
-      el.setAttribute("aria-hidden", "true");
-      el.style.display = "none";
-    }
-  });
-}
-function applyRoleBasedAccess(role) {
-  const isAdmin = ADMIN_ROLES.includes(role);
-  const isEditor = EDITOR_ROLES.includes(role);
-  const isViewer = role === "viewer";
-  document.body.classList.toggle("pa-role-editor", role === "editor");
-  document.body.classList.toggle("pa-role-viewer", isViewer);
-  document.body.classList.toggle("pa-role-admin", isAdmin);
-  document.body.classList.toggle("pa-role-readonly", isViewer);
-  document.body.classList.toggle("pa-role-can-edit", isEditor);
-  pruneInaccessibleSidebarNav(isAdmin, isEditor);
+function applyRoleBasedAccess(role, capabilitiesFromServer) {
+  const capabilities = capabilitiesFromServer ?? deriveAccessCapabilities(role);
+  setAccessCapabilities(capabilities);
+  applyCapabilityGatedElements(capabilities);
 }
 function renderAvatarElement(container, url) {
   if (!container) return;

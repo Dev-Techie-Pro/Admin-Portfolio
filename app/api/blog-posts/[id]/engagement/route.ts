@@ -5,10 +5,10 @@ import {
   updateCommentStatus,
 } from '@/lib/cms/blog-engagement';
 import { guardEditor } from '@/lib/auth/guard';
-import { withEditorGet } from '@/lib/api/with-editor-get';
+import { withStaffGet } from '@/lib/api/with-staff-get';
 
 export async function GET(_request, { params }) {
-  return withEditorGet(() => getPostEngagementForStaff(params.id), { maxAgeSec: 0 });
+  return withStaffGet(() => getPostEngagementForStaff(params.id), { maxAgeSec: 0 });
 }
 
 export async function PATCH(request, { params }) {

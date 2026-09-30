@@ -20,6 +20,7 @@ import {
 } from './repository';
 import { getNotificationPreferences, getUserNotifications } from './notifications';
 import { getProfileForUser } from '@/lib/auth/profile';
+import { deriveAccessCapabilities } from '@/lib/auth/capabilities';
 
 const KEY_FETCHERS = {
   pa_projects: getProjects,
@@ -42,14 +43,16 @@ const KEY_FETCHERS = {
 };
 
 function sessionFromProfile(userId, authEmail, profile) {
+  const role = profile?.role ?? 'viewer';
   return {
     id: userId,
     email: profile?.email || authEmail || '',
-    role: profile?.role ?? 'viewer',
+    role,
     fullName: profile?.fullName || null,
     username: profile?.username || null,
     avatarUrl: profile?.avatarUrl || null,
     coverImageUrl: profile?.coverImageUrl || null,
+    capabilities: deriveAccessCapabilities(role),
   };
 }
 

@@ -1,13 +1,14 @@
-import LegacyBody from '@/components/LegacyBody';
-import { ADD_USER_PANEL_HTML } from '@/app/addUserPanelHtml';
+import StaffLegacyBody from '@/components/StaffLegacyBody';
 import { BODY_HTML } from './bodyHtml';
 
 export const metadata = { title: 'Portfolio Admin — Comments & Likes' };
 
 export default function Page() {
   return (
-    <LegacyBody
-      html={BODY_HTML + ADD_USER_PANEL_HTML}
+    <StaffLegacyBody
+      html={BODY_HTML}
+      includeAddUserPanel
+      requireEditor
       authBody={false}
       needsCanvasJs={false}
     />

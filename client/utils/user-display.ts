@@ -1,3 +1,10 @@
+import {
+  applyCapabilityGatedElements,
+  setAccessCapabilities,
+  setAccessFromRole,
+} from '../core/access.js';
+import { deriveAccessCapabilities } from '../../lib/auth/capabilities.js';
+
 function setImageSrc(container, url, { alt = '' } = {}) {
   if (!container) return;
   container.innerHTML = '';
@@ -8,9 +15,6 @@ function setImageSrc(container, url, { alt = '' } = {}) {
   img.decoding = 'async';
   container.appendChild(img);
 }
-
-const ADMIN_ROLES = ['super_admin', 'admin'];
-const EDITOR_ROLES = ['super_admin', 'admin', 'editor'];
 
 /**
  * Update header user chip and other user labels across the shell.
@@ -38,52 +42,22 @@ export function applyUserDisplay(user) {
     renderAvatarElement(el, user.avatarUrl);
   });
 
-  applyRoleBasedAccess(user.role);
-}
-
-function pruneInaccessibleSidebarNav(isAdmin, isEditor) {
-  document.querySelectorAll('.pa-admin-only-item').forEach((el) => {
-    if (isAdmin) {
-      el.removeAttribute('hidden');
-      el.removeAttribute('aria-hidden');
-      el.style.removeProperty('display');
-    } else {
-      el.setAttribute('hidden', '');
-      el.setAttribute('aria-hidden', 'true');
-      el.style.display = 'none';
-    }
-  });
-
-  document.querySelectorAll('.pa-editor-only-item').forEach((el) => {
-    if (isEditor) {
-      el.removeAttribute('hidden');
-      el.removeAttribute('aria-hidden');
-      el.style.removeProperty('display');
-    } else {
-      el.setAttribute('hidden', '');
-      el.setAttribute('aria-hidden', 'true');
-      el.style.display = 'none';
-    }
-  });
+  applyRoleBasedAccess(user.role, user.capabilities);
 }
 
 /**
- * Toggle role-based shell affordances (admin nav, CRUD controls, settings tabs).
+ * Apply server-derived access flags and hide UI the user cannot use.
+ * Role/capabilities come from /api/auth/session or bootstrap — not from CSS.
  * @param {string} [role]
+ * @param {import('../../lib/auth/capabilities').AccessCapabilities} [capabilitiesFromServer]
  */
-export function applyRoleBasedAccess(role) {
-  const isAdmin = ADMIN_ROLES.includes(role);
-  const isEditor = EDITOR_ROLES.includes(role);
-  const isViewer = role === 'viewer';
-
-  document.body.classList.toggle('pa-role-editor', role === 'editor');
-  document.body.classList.toggle('pa-role-viewer', isViewer);
-  document.body.classList.toggle('pa-role-admin', isAdmin);
-  document.body.classList.toggle('pa-role-readonly', isViewer);
-  document.body.classList.toggle('pa-role-can-edit', isEditor);
-
-  pruneInaccessibleSidebarNav(isAdmin, isEditor);
+export function applyRoleBasedAccess(role, capabilitiesFromServer) {
+  const capabilities = capabilitiesFromServer ?? deriveAccessCapabilities(role);
+  setAccessCapabilities(capabilities);
+  applyCapabilityGatedElements(capabilities);
 }
+
+export { setAccessFromRole, deriveAccessCapabilities };
 
 /**
  * @param {HTMLElement} container

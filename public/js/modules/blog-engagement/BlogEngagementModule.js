@@ -6,6 +6,7 @@ import { debounce } from "../../utils/timing.js";
 import { syncPaSelect } from "../../utils/paSelect.js";
 import { BulkSelectController } from "../../core/BulkSelectController.js";
 import { requestDelete } from "../shell/confirm.js";
+import { getAccessCapabilities } from "../../core/access.js";
 const PAGE_SIZE = 8;
 const LIKES_PAGE_SIZE = 12;
 const AVATAR_COLORS = ["#e5484d", "#f0c040", "#22c55e", "#38bdf8", "#a78bfa", "#f472b6", "#ff6600", "#2dd4bf"];
@@ -79,7 +80,7 @@ class BlogEngagementModule extends Module {
     });
   }
   async load() {
-    if (document.body.classList.contains("pa-role-readonly")) {
+    if (!getAccessCapabilities().canAccessBlogEngagement) {
       this.toast("You do not have access to Comments & Likes.", "danger");
       window.location.assign("/");
       return;
@@ -644,7 +645,8 @@ class BlogEngagementModule extends Module {
       if (id) void this.moderateOne(id, "delete");
     });
     this.on($id("paBlogEngBulkApproveBtn"), "click", () => {
-      void this.bulkAction(this.bulkSelect.selectedIds, "approve");
+      const bulk = this.bulkSelect;
+      void this.bulkAction(bulk.selectedIds, "approve");
     });
     this.onBus("confirm:confirmed", ({ id, type }) => {
       if (type === "blogcomment") void this.deleteById(String(id));

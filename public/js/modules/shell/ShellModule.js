@@ -20,6 +20,7 @@ import { initSidebarCollapse } from "./sidebarCollapse.js";
 import { initSidebarGroupNav } from "./sidebarGroupNav.js";
 import { storage } from "../../core/StorageService.js";
 import { applyUserDisplay, applyRoleBasedAccess } from "../../utils/user-display.js";
+import { getAccessCapabilities } from "../../core/access.js";
 import { uploadUserAvatar } from "../../utils/avatar-upload.js";
 import {
   closeMobileHeaderSearch,
@@ -92,7 +93,7 @@ class ShellModule extends Module {
           role: profile.role || user.role,
           avatarUrl: profile.avatarUrl
         });
-        applyRoleBasedAccess(profile.role || user.role);
+        applyRoleBasedAccess(profile.role || user.role, user.capabilities);
         this.addUser.setProfileRole(profile.role || user.role);
         void maybeShowRoleAccessModal({
           id: profile.id || user.id,
@@ -100,7 +101,7 @@ class ShellModule extends Module {
         });
       } catch {
         applyUserDisplay(user);
-        applyRoleBasedAccess(user.role);
+        applyRoleBasedAccess(user.role, user.capabilities);
         this.addUser.setProfileRole(user.role);
         void maybeShowRoleAccessModal({ id: user.id, role: user.role });
       }
@@ -216,8 +217,8 @@ class ShellModule extends Module {
       });
       this.on($id("paNotifClearBtn"), "click", (e) => {
         e.stopPropagation();
-        if (document.body.classList.contains("pa-role-readonly")) {
-          showToast("Viewers cannot clear notifications.", "warning", 2200);
+        if (!getAccessCapabilities().canClearAllNotifications) {
+          showToast("You do not have permission to clear notifications.", "warning", 2200);
           return;
         }
         void clearNotifications().then(() => {

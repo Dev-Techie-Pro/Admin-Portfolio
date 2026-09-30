@@ -6,6 +6,7 @@ import { debounce } from '../../utils/timing.js';
 import { syncPaSelect } from '../../utils/paSelect.js';
 import { BulkSelectController } from '../../core/BulkSelectController.js';
 import { requestDelete } from '../shell/confirm.js';
+import { getAccessCapabilities } from '../../core/access.js';
 
 const PAGE_SIZE = 8;
 const LIKES_PAGE_SIZE = 12;
@@ -44,6 +45,8 @@ function snippet(text: string, max = 72) {
 }
 
 export class BlogEngagementModule extends Module {
+  bulkSelect!: BulkSelectController;
+
   constructor() {
     super({
       name: 'BlogEngagement',
@@ -87,7 +90,7 @@ export class BlogEngagementModule extends Module {
   }
 
   async load() {
-    if (document.body.classList.contains('pa-role-readonly')) {
+    if (!getAccessCapabilities().canAccessBlogEngagement) {
       this.toast('You do not have access to Comments & Likes.', 'danger');
       window.location.assign('/');
       return;
@@ -701,7 +704,8 @@ export class BlogEngagementModule extends Module {
     });
 
     this.on($id('paBlogEngBulkApproveBtn'), 'click', () => {
-      void this.bulkAction(this.bulkSelect.selectedIds, 'approve');
+      const bulk = this.bulkSelect as BulkSelectController & { selectedIds: Set<string> };
+      void this.bulkAction(bulk.selectedIds, 'approve');
     });
 
     this.onBus('confirm:confirmed', ({ id, type }) => {

@@ -1,6 +1,7 @@
 import { cache } from 'react';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isImageUrl, reconcileEntityMediaForRefs } from '@/lib/cms/media-sync';
+import { deriveAccessCapabilities } from '@/lib/auth/capabilities';
 
 function admin() {
   return createAdminClient();
@@ -234,13 +235,15 @@ export async function getProfileForUser(user) {
 
 export async function getSessionUserPayload(userId, authEmail) {
   const profile = await getProfileByUserId(userId);
+  const role = profile?.role ?? 'viewer';
   return {
     id: userId,
     email: profile?.email || authEmail || '',
-    role: profile?.role ?? 'viewer',
+    role,
     fullName: profile?.fullName || null,
     username: profile?.username || null,
     avatarUrl: profile?.avatarUrl || null,
     coverImageUrl: profile?.coverImageUrl || null,
+    capabilities: deriveAccessCapabilities(role),
   };
 }

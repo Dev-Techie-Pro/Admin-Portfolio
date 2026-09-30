@@ -2,6 +2,9 @@ import {
   debounce
 } from "./chunk-SVZQZYTF.js";
 import {
+  getAccessCapabilities
+} from "./chunk-FSKKBMCW.js";
+import {
   syncPaSelect
 } from "./chunk-DWHWK43L.js";
 import {
@@ -97,7 +100,7 @@ var BlogEngagementModule = class extends Module {
     });
   }
   async load() {
-    if (document.body.classList.contains("pa-role-readonly")) {
+    if (!getAccessCapabilities().canAccessBlogEngagement) {
       this.toast("You do not have access to Comments & Likes.", "danger");
       window.location.assign("/");
       return;
@@ -662,7 +665,8 @@ var BlogEngagementModule = class extends Module {
       if (id) void this.moderateOne(id, "delete");
     });
     this.on($id("paBlogEngBulkApproveBtn"), "click", () => {
-      void this.bulkAction(this.bulkSelect.selectedIds, "approve");
+      const bulk = this.bulkSelect;
+      void this.bulkAction(bulk.selectedIds, "approve");
     });
     this.onBus("confirm:confirmed", ({ id, type }) => {
       if (type === "blogcomment") void this.deleteById(String(id));

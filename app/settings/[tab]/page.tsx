@@ -1,5 +1,4 @@
-import LegacyBody from '@/components/LegacyBody';
-import { ADD_USER_PANEL_HTML } from '@/app/addUserPanelHtml';
+import StaffLegacyBody from '@/components/StaffLegacyBody';
 import { CUSTOM_PANEL_HTML } from '@/app/customPanelHtml';
 import { buildSettingsBodyHtml } from '../buildBodyHtml';
 import { getSettingsPageMeta, resolveSettingsTab, SETTINGS_TABS } from '@/lib/settings/page-meta';
@@ -16,11 +15,13 @@ export function generateStaticParams() {
 
 export default function SettingsTabPage({ params }) {
   const tab = resolveSettingsTab(params?.tab);
-  const html = buildSettingsBodyHtml(tab) + ADD_USER_PANEL_HTML + CUSTOM_PANEL_HTML;
+  const html = buildSettingsBodyHtml(tab) + CUSTOM_PANEL_HTML;
 
   return (
-    <LegacyBody
+    <StaffLegacyBody
       html={html}
+      includeAddUserPanel
+      requireAdmin={tab === 'system'}
       authBody={false}
     />
   );

@@ -4,7 +4,10 @@ import {
   renderPreviewAvatar,
   setCoverImage,
   syncSettingsNavTab
-} from "./chunk-4FU3P2XW.js";
+} from "./chunk-7QUKIKDH.js";
+import {
+  getAccessCapabilities
+} from "./chunk-FSKKBMCW.js";
 import {
   setupAllPasswordToggles
 } from "./chunk-5SJ7MEVC.js";
@@ -2106,7 +2109,7 @@ var SettingsModule = class extends Module {
     }
   }
   async logoutAllDevices() {
-    if (!document.body.classList.contains("pa-role-admin")) {
+    if (!getAccessCapabilities().canLogoutAllDevices) {
       showToast("Only administrators can log out of all devices.", "warning");
       return;
     }
