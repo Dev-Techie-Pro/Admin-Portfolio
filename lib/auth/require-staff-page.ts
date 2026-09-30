@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { guardStaff } from '@/lib/auth/guard';
-import { deriveAccessCapabilities, type AccessCapabilities } from '@/lib/auth/capabilities';
+import type { AccessCapabilities } from '@/lib/auth/capabilities';
+import { getRequestStaffAccess } from '@/lib/auth/request-cache';
 
 export type StaffPageContext = {
   userId: string;
@@ -16,9 +17,10 @@ export async function requireStaffPageContext(): Promise<StaffPageContext> {
   }
 
   const role = auth.profile.role;
+  const access = await getRequestStaffAccess(auth.user.id);
   return {
     userId: auth.user.id,
     role,
-    capabilities: deriveAccessCapabilities(role),
+    capabilities: access.capabilities,
   };
 }

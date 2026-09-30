@@ -28,6 +28,7 @@ import {
   openMobileHeaderSearch
 } from "./mobileHeaderSearch.js";
 import { maybeShowRoleAccessModal } from "./roleAccessModal.js";
+import { syncElevationBanner } from "./elevationBanner.js";
 const KNOWN_NAV_LABELS = [
   "Projects",
   "Categories",
@@ -45,6 +46,7 @@ const KNOWN_NAV_LABELS = [
   "Recent Activities",
   "Settings",
   "Users",
+  "Access Requests",
   "Comments & Likes"
 ];
 class ShellModule extends Module {
@@ -94,6 +96,7 @@ class ShellModule extends Module {
           avatarUrl: profile.avatarUrl
         });
         applyRoleBasedAccess(profile.role || user.role, user.capabilities);
+        syncElevationBanner();
         storage.reconcileRecentActivitiesScope({
           user: { id: profile.id || user.id, capabilities: user.capabilities }
         });
@@ -105,6 +108,7 @@ class ShellModule extends Module {
       } catch {
         applyUserDisplay(user);
         applyRoleBasedAccess(user.role, user.capabilities);
+        syncElevationBanner();
         storage.reconcileRecentActivitiesScope({ user });
         this.addUser.setProfileRole(user.role);
         void maybeShowRoleAccessModal({ id: user.id, role: user.role });

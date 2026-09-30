@@ -2,7 +2,9 @@ import { cache } from 'react';
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { ADMIN_ROLES, EDITOR_ROLES, STAFF_ROLES } from './constants';
+import { ADMIN_ROLES, STAFF_ROLES } from './constants';
+import { getActiveElevationUntil, getStaffCapabilities, reconcileExpiredElevation } from './elevation';
+import type { AccessCapabilities } from './capabilities';
 import {
   clearSessionDeadlineCookie,
   getSessionDeadlineMs,
@@ -19,6 +21,7 @@ export const getRequestUser = cache(async () => {
 
 /** Deduplicate staff profile lookup within a single server request. */
 export const getRequestStaffProfile = cache(async (userId) => {
+  await reconcileExpiredElevation(userId);
   const { data: profile, error } = await createAdminClient()
     .from('profiles')
     .select('role, full_name, email, username, avatar_url')
@@ -26,6 +29,16 @@ export const getRequestStaffProfile = cache(async (userId) => {
     .maybeSingle();
   if (error) throw error;
   return profile;
+});
+
+export const getRequestStaffAccess = cache(async (userId: string) => {
+  const profile = await getRequestStaffProfile(userId);
+  if (!profile) {
+    return { profile: null, elevatedUntil: null as string | null, capabilities: getStaffCapabilities('viewer', null) };
+  }
+  const elevatedUntil = await getActiveElevationUntil(userId);
+  const capabilities = getStaffCapabilities(profile.role, elevatedUntil);
+  return { profile, elevatedUntil, capabilities };
 });
 
 export async function guardAuthenticated() {
@@ -58,12 +71,20 @@ export async function guardStaff() {
   const auth = await guardAuthenticated();
   if (!auth.ok) return auth;
 
-  const profile = await getRequestStaffProfile(auth.user.id);
+  const access = await getRequestStaffAccess(auth.user.id);
+  const profile = access.profile;
   if (!profile || !STAFF_ROLES.includes(profile.role)) {
     return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   }
 
-  return { ok: true, user: auth.user, profile, supabase: auth.supabase };
+  return {
+    ok: true,
+    user: auth.user,
+    profile,
+    supabase: auth.supabase,
+    elevatedUntil: access.elevatedUntil,
+    capabilities: access.capabilities as AccessCapabilities,
+  };
 }
 
 export async function guardAdmin() {
@@ -78,12 +99,12 @@ export async function guardAdmin() {
   return { ok: true, user: auth.user, profile, supabase: auth.supabase };
 }
 
-/** Staff with write access — blocks read-only viewer role. */
+/** Staff with write access — blocks read-only viewer unless temporarily elevated. */
 export async function guardEditor() {
   const auth = await guardStaff();
   if (!auth.ok) return auth;
 
-  if (!EDITOR_ROLES.includes(auth.profile.role)) {
+  if (!auth.capabilities.canManageContent) {
     return { ok: false, response: NextResponse.json({ error: 'Forbidden — read-only access' }, { status: 403 }) };
   }
 

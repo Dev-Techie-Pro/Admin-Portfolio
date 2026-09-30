@@ -189,9 +189,9 @@ function initConfirmDialog() {
 function isConfirmOpen() {
   return !!document.getElementById("paConfirmOverlay")?.classList.contains("visible");
 }
-const PERMISSION_DENIED_MESSAGE = "You don't have permission to do that. Contact admin for access.";
+const PERMISSION_DENIED_MESSAGE = `You don't have permission to do that. <a href="/settings/security">Contact admin for access</a> from Settings \u2192 Security.`;
 function showPermissionDeniedDialog() {
-  requestConfirm({
+  requestBulkAction({
     title: "Permission required",
     message: PERMISSION_DENIED_MESSAGE,
     confirmLabel: "OK",

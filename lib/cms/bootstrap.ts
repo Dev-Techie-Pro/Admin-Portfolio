@@ -20,7 +20,7 @@ import {
 } from './repository';
 import { getNotificationPreferences, getUserNotifications } from './notifications';
 import { getProfileForUser } from '@/lib/auth/profile';
-import { deriveAccessCapabilities } from '@/lib/auth/capabilities';
+import { getActiveElevationUntil, getStaffCapabilities } from '@/lib/auth/elevation';
 
 const KEY_FETCHERS = {
   pa_projects: getProjects,
@@ -32,7 +32,8 @@ const KEY_FETCHERS = {
   pa_experience: getExperience,
   pa_contact_messages: () => getContactMessagesPage({ limit: CONTACT_PAGE_SIZE }),
   pa_recent_activities: async (auth) => {
-    const scopeAll = deriveAccessCapabilities(auth.profile.role).canViewAllStaffActivity;
+    const scopeAll = auth.capabilities?.canViewAllStaffActivity
+      ?? getStaffCapabilities(auth.profile.role, auth.elevatedUntil).canViewAllStaffActivity;
     const payload = await getRecentActivitiesPayload({
       userId: auth.user.id,
       scopeAll,
@@ -49,8 +50,9 @@ const KEY_FETCHERS = {
   pa_notifications: (auth) => getUserNotifications(auth.user.id),
 };
 
-function sessionFromProfile(userId, authEmail, profile) {
+function sessionFromProfile(userId, authEmail, profile, elevatedUntil) {
   const role = profile?.role ?? 'viewer';
+  const capabilities = getStaffCapabilities(role, elevatedUntil);
   return {
     id: userId,
     email: profile?.email || authEmail || '',
@@ -59,7 +61,8 @@ function sessionFromProfile(userId, authEmail, profile) {
     username: profile?.username || null,
     avatarUrl: profile?.avatarUrl || null,
     coverImageUrl: profile?.coverImageUrl || null,
-    capabilities: deriveAccessCapabilities(role),
+    capabilities,
+    elevatedUntil: capabilities.elevatedUntil,
   };
 }
 
@@ -103,7 +106,8 @@ export async function getBootstrapPayload(page, auth) {
     fetchPageData(page, auth),
   ]);
 
-  const sessionUser = sessionFromProfile(auth.user.id, auth.user.email, profile);
+  const elevatedUntil = auth.elevatedUntil ?? await getActiveElevationUntil(auth.user.id);
+  const sessionUser = sessionFromProfile(auth.user.id, auth.user.email, profile, elevatedUntil);
 
   if (getKeysForPage(page).includes('appearance_settings_v2')) {
     data.appearance_settings_v2 = appearance;

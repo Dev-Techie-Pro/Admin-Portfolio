@@ -28,10 +28,11 @@ import {
   openMobileHeaderSearch,
 } from './mobileHeaderSearch.js';
 import { maybeShowRoleAccessModal } from './roleAccessModal.js';
+import { syncElevationBanner } from './elevationBanner.js';
 const KNOWN_NAV_LABELS = [
   'Projects', 'Categories', 'Tags', 'Technologies', 'Tool Categories', 'Tools', 'Media Library',
   'Testimonials', 'Blog Posts', 'Blog Categories', 'Experience', 'Dashboard', 'Contact Messages',
-  'Recent Activities', 'Settings', 'Users', 'Comments & Likes',
+  'Recent Activities', 'Settings', 'Users', 'Access Requests', 'Comments & Likes',
 ];
 
 export class ShellModule extends Module {
@@ -86,6 +87,7 @@ export class ShellModule extends Module {
           avatarUrl: profile.avatarUrl,
         });
         applyRoleBasedAccess(profile.role || user.role, user.capabilities);
+        syncElevationBanner();
         storage.reconcileRecentActivitiesScope({
           user: { id: profile.id || user.id, capabilities: user.capabilities },
         });
@@ -97,6 +99,7 @@ export class ShellModule extends Module {
       } catch {
         applyUserDisplay(user);
         applyRoleBasedAccess(user.role, user.capabilities);
+        syncElevationBanner();
         storage.reconcileRecentActivitiesScope({ user });
         this.addUser.setProfileRole(user.role);
         void maybeShowRoleAccessModal({ id: user.id, role: user.role });

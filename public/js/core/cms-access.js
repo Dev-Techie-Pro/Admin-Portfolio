@@ -10,24 +10,41 @@ import { showPermissionDeniedDialog } from "../modules/shell/confirm.js";
 function canManageContent() {
   return getAccessCapabilities().canManageContent;
 }
-function removeByIdWithinRoot(root, id) {
-  const el = root instanceof Document ? root.getElementById(id) : root.querySelector(`#${CSS.escape(id)}`);
-  el?.remove();
+const CMS_WRITE_HIDDEN_ATTR = "data-pa-cms-write-hidden";
+function hideForViewer(el) {
+  if (!el || el.hasAttribute(CMS_WRITE_HIDDEN_ATTR)) return;
+  el.setAttribute(CMS_WRITE_HIDDEN_ATTR, "true");
+  el.setAttribute("hidden", "");
+  if (el instanceof HTMLElement) {
+    el.style.display = "none";
+  }
+}
+function elementByIdWithinRoot(root, id) {
+  return root instanceof Document ? root.getElementById(id) : root.querySelector(`#${CSS.escape(id)}`);
+}
+function restoreCmsWriteControls(root = document) {
+  root.querySelectorAll(`[${CMS_WRITE_HIDDEN_ATTR}]`).forEach((el) => {
+    el.removeAttribute(CMS_WRITE_HIDDEN_ATTR);
+    el.removeAttribute("hidden");
+    if (el instanceof HTMLElement) {
+      el.style.removeProperty("display");
+    }
+  });
 }
 function stripCmsWriteControls(root = document) {
   if (canManageContent()) return;
   for (const id of CMS_WRITE_CONTROL_IDS) {
-    removeByIdWithinRoot(root, id);
+    hideForViewer(elementByIdWithinRoot(root, id));
   }
   for (const id of CMS_VIEWER_STRIP_PANEL_IDS) {
-    removeByIdWithinRoot(root, id);
+    hideForViewer(elementByIdWithinRoot(root, id));
   }
   for (const selector of CMS_WRITE_DOM_SELECTORS) {
-    root.querySelectorAll(selector).forEach((el) => el.remove());
+    root.querySelectorAll(selector).forEach((el) => hideForViewer(el));
   }
   root.querySelectorAll('.pa-panel[role="dialog"]').forEach((panel) => {
     const id = panel.id;
-    if (id && id !== "paCustomPanel") panel.remove();
+    if (id && id !== "paCustomPanel") hideForViewer(panel);
   });
 }
 let writeGuardInstalled = false;
@@ -109,5 +126,6 @@ function installViewerWriteGuard() {
 export {
   canManageContent,
   installViewerWriteGuard,
+  restoreCmsWriteControls,
   stripCmsWriteControls
 };

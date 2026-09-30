@@ -1,7 +1,11 @@
 import { cache } from 'react';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isImageUrl, reconcileEntityMediaForRefs } from '@/lib/cms/media-sync';
-import { deriveAccessCapabilities } from '@/lib/auth/capabilities';
+import {
+  getActiveElevationUntil,
+  getStaffCapabilities,
+  reconcileExpiredElevation,
+} from '@/lib/auth/elevation';
 
 function admin() {
   return createAdminClient();
@@ -106,6 +110,7 @@ export function profileFromDb(row) {
 }
 
 export const getProfileByUserId = cache(async (userId) => {
+  await reconcileExpiredElevation(userId);
   const { data, error } = await admin()
     .from('profiles')
     .select(`
@@ -236,6 +241,7 @@ export async function getProfileForUser(user) {
 export async function getSessionUserPayload(userId, authEmail) {
   const profile = await getProfileByUserId(userId);
   const role = profile?.role ?? 'viewer';
+  const elevatedUntil = await getActiveElevationUntil(userId);
   return {
     id: userId,
     email: profile?.email || authEmail || '',
@@ -244,6 +250,7 @@ export async function getSessionUserPayload(userId, authEmail) {
     username: profile?.username || null,
     avatarUrl: profile?.avatarUrl || null,
     coverImageUrl: profile?.coverImageUrl || null,
-    capabilities: deriveAccessCapabilities(role),
+    capabilities: getStaffCapabilities(role, elevatedUntil),
+    elevatedUntil,
   };
 }

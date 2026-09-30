@@ -12,35 +12,55 @@ export function canManageContent(): boolean {
   return getAccessCapabilities().canManageContent;
 }
 
+const CMS_WRITE_HIDDEN_ATTR = 'data-pa-cms-write-hidden';
+
 /**
- * Remove CMS write affordances from the live DOM (viewers).
+ * Hide CMS write affordances for viewers (do not remove — restores when role elevates).
  * List/grid action buttons stay visible; clicks are blocked by {@link installViewerWriteGuard}.
  */
-function removeByIdWithinRoot(root: ParentNode, id: string): void {
-  const el = root instanceof Document
+function hideForViewer(el: Element | null | undefined): void {
+  if (!el || el.hasAttribute(CMS_WRITE_HIDDEN_ATTR)) return;
+  el.setAttribute(CMS_WRITE_HIDDEN_ATTR, 'true');
+  el.setAttribute('hidden', '');
+  if (el instanceof HTMLElement) {
+    el.style.display = 'none';
+  }
+}
+
+function elementByIdWithinRoot(root: ParentNode, id: string): Element | null {
+  return root instanceof Document
     ? root.getElementById(id)
     : root.querySelector(`#${CSS.escape(id)}`);
-  el?.remove();
+}
+
+export function restoreCmsWriteControls(root: ParentNode = document): void {
+  root.querySelectorAll(`[${CMS_WRITE_HIDDEN_ATTR}]`).forEach((el) => {
+    el.removeAttribute(CMS_WRITE_HIDDEN_ATTR);
+    el.removeAttribute('hidden');
+    if (el instanceof HTMLElement) {
+      el.style.removeProperty('display');
+    }
+  });
 }
 
 export function stripCmsWriteControls(root: ParentNode = document): void {
   if (canManageContent()) return;
 
   for (const id of CMS_WRITE_CONTROL_IDS) {
-    removeByIdWithinRoot(root, id);
+    hideForViewer(elementByIdWithinRoot(root, id));
   }
 
   for (const id of CMS_VIEWER_STRIP_PANEL_IDS) {
-    removeByIdWithinRoot(root, id);
+    hideForViewer(elementByIdWithinRoot(root, id));
   }
 
   for (const selector of CMS_WRITE_DOM_SELECTORS) {
-    root.querySelectorAll(selector).forEach((el) => el.remove());
+    root.querySelectorAll(selector).forEach((el) => hideForViewer(el));
   }
 
   root.querySelectorAll('.pa-panel[role="dialog"]').forEach((panel) => {
     const id = panel.id;
-    if (id && id !== 'paCustomPanel') panel.remove();
+    if (id && id !== 'paCustomPanel') hideForViewer(panel);
   });
 }
 

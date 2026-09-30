@@ -12,6 +12,7 @@ const ROUTES = [
   ["/blog-engagement", "blog-engagement"],
   ["/experience", "experience"],
   ["/contact-messages", "contact-messages"],
+  ["/access-requests", "access-requests"],
   ["/users", "users"],
   ["/recent-activities", "recent-activities"],
   ["/settings", "settings"],

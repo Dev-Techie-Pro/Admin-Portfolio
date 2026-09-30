@@ -34,7 +34,7 @@ import { initAllPaSelects } from './utils/paSelect.js';
 
 import { initPasswordToggles } from './utils/password-toggle.js';
 
-import { stripCmsWriteControls } from './core/cms-access.js';
+import { applyCapabilityGatedElements, getAccessCapabilities } from './core/access.js';
 
 
 
@@ -119,6 +119,10 @@ async function loadPageModuleClass(page: string): Promise<PageModuleClass | null
     case 'blog-engagement':
 
       return (await import('./modules/blog-engagement/BlogEngagementModule.js')).BlogEngagementModule;
+
+    case 'access-requests':
+
+      return (await import('./modules/access-requests/AccessRequestsModule.js')).AccessRequestsModule;
 
     case 'users':
 
@@ -228,7 +232,7 @@ async function initPageModule(pageModule: InstanceType<PageModuleClass>) {
 
       pageModule.bindEvents();
 
-      stripCmsWriteControls(document);
+      applyCapabilityGatedElements(getAccessCapabilities());
 
       resolve();
 
@@ -352,7 +356,8 @@ async function bootAppPage(ModuleClass: PageModuleClass, page: string) {
 
 
 
-  await Promise.all([initPageModule(pageModule), ensureShell()]);
+  await ensureShell();
+  await initPageModule(pageModule);
 
 
 
@@ -378,7 +383,7 @@ async function bootAppPage(ModuleClass: PageModuleClass, page: string) {
 
         pageModule.render();
 
-        stripCmsWriteControls(document);
+        applyCapabilityGatedElements(getAccessCapabilities());
 
       }
 

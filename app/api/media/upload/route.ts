@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { guardStaff } from '@/lib/auth/guard';
-import { deriveAccessCapabilities } from '@/lib/auth/capabilities';
 import {
   assertAllowedUpload,
   uploadMediaBuffer,
@@ -39,7 +38,7 @@ export async function POST(request) {
     const auth = await guardStaff();
     if (!auth.ok) return auth.response;
 
-    const caps = deriveAccessCapabilities(auth.profile.role);
+    const caps = auth.capabilities;
     const selfProfileMedia = isStaffSelfProfileMediaUpload(pageRaw, purposeRaw, folder);
     if (!caps.canManageContent && (!caps.canManageOwnAccountSettings || !selfProfileMedia)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

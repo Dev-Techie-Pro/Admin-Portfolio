@@ -16,6 +16,7 @@ const ROUTE_RAIL: [string, string][] = [
   ['/tags', 'projects'],
   ['/recent-activities', 'home'],
   ['/contact-messages', 'home'],
+  ['/access-requests', 'home'],
   ['/users', 'home'],
 ];
 

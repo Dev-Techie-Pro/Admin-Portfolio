@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { guardEditor } from '@/lib/auth/guard';
-import { deriveAccessCapabilities } from '@/lib/auth/capabilities';
 import { withStaffGet } from '@/lib/api/with-staff-get';
 import {
   getRecentActivitiesPayload,
@@ -32,7 +31,7 @@ async function readBulkIds(request, searchParams) {
 
 export async function GET() {
   return withStaffGet((auth) => {
-    const scopeAll = deriveAccessCapabilities(auth.profile.role).canViewAllStaffActivity;
+    const scopeAll = auth.capabilities.canViewAllStaffActivity;
     return getRecentActivitiesPayload({
       userId: auth.user.id,
       scopeAll,
@@ -43,7 +42,7 @@ export async function GET() {
 export async function DELETE(request) {
   const auth = await guardEditor();
   if (!auth.ok) return auth.response;
-  const scopeAll = deriveAccessCapabilities(auth.profile.role).canViewAllStaffActivity;
+  const scopeAll = auth.capabilities.canViewAllStaffActivity;
   const userId = auth.user.id;
   try {
     const { searchParams } = new URL(request.url);

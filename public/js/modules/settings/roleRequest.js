@@ -1,22 +1,11 @@
 import { $id } from "../../utils/dom.js";
 import { authService } from "../../core/AuthService.js";
 import { showToast } from "../shell/toast.js";
+import { getAccessCapabilities } from "../../core/access.js";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 let wired = false;
-function isRestrictedRole(role) {
-  return role === "editor" || role === "viewer";
-}
-function roleOptions(currentRole) {
-  if (currentRole === "viewer") {
-    return [
-      { value: "editor", label: "Editor" },
-      { value: "admin", label: "Admin" }
-    ];
-  }
-  if (currentRole === "editor") {
-    return [{ value: "admin", label: "Admin" }];
-  }
-  return [];
+function isViewerRole(role) {
+  return role === "viewer";
 }
 function ensureCard() {
   const securityPanel = document.querySelector('.pa-tab-panel[data-content="security"]');
@@ -25,8 +14,9 @@ function ensureCard() {
   card.className = "pa-security-card pa-role-request-card pa-staff-only-item";
   card.id = "paRoleRequestCard";
   card.innerHTML = `
-    <div class="pa-card-title"><i class="ri-user-settings-line"></i> Request role update</div>
-    <p class="pa-role-request-lead">Need more access? Send a request to the administrators with your preferred contact email.</p>
+    <div class="pa-card-title"><i class="ri-user-settings-line"></i> Request temporary access</div>
+    <p class="pa-role-request-lead">Need to edit content? Ask an administrator for a temporary <strong>editor</strong> role (default <strong>3 hours</strong>; they can set the duration). User management stays restricted.</p>
+    <div class="pa-role-request-status" id="paRoleRequestStatus" hidden></div>
     <form id="paRoleRequestForm" class="pa-role-request-form" novalidate>
       <div class="pa-form-group">
         <label class="pa-form-label" for="paRoleRequestEmail">Contact email</label>
@@ -34,12 +24,8 @@ function ensureCard() {
         <div class="pa-form-hint"><i class="ri-information-line"></i> Use a valid email where an administrator can reach you.</div>
       </div>
       <div class="pa-form-group">
-        <label class="pa-form-label" for="paRoleRequestRole">Requested role</label>
-        <select class="pa-form-select" id="paRoleRequestRole"></select>
-      </div>
-      <div class="pa-form-group">
         <label class="pa-form-label" for="paRoleRequestMessage">Message</label>
-        <textarea class="pa-form-textarea" id="paRoleRequestMessage" rows="4" maxlength="2000" placeholder="Explain why you need this access level..." required></textarea>
+        <textarea class="pa-form-textarea" id="paRoleRequestMessage" rows="4" maxlength="2000" placeholder="Explain what you need to do in the dashboard..." required></textarea>
       </div>
       <div class="pa-settings-actions">
         <button type="submit" class="pa-btn pa-btn-primary" id="paRoleRequestSubmit">
@@ -54,17 +40,13 @@ function ensureCard() {
     securityPanel.appendChild(card);
   }
 }
-function populateDefaults(role, profile) {
+function populateDefaults(profile) {
   const emailInput = $id("paRoleRequestEmail");
-  const roleSelect = $id("paRoleRequestRole");
   if (emailInput && !emailInput.value) {
     emailInput.value = profile?.email || "";
   }
-  if (!roleSelect) return;
-  const options = roleOptions(role);
-  roleSelect.innerHTML = options.map((opt) => `<option value="${opt.value}">${opt.label}</option>`).join("");
 }
-function bindForm(role) {
+function bindForm() {
   if (wired) return;
   wired = true;
   const form = $id("paRoleRequestForm");
@@ -72,7 +54,6 @@ function bindForm(role) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const contactEmail = $id("paRoleRequestEmail")?.value?.trim() || "";
-    const requestedRole = $id("paRoleRequestRole")?.value?.trim() || "";
     const message = $id("paRoleRequestMessage")?.value?.trim() || "";
     const submitBtn = $id("paRoleRequestSubmit");
     if (!EMAIL_RE.test(contactEmail)) {
@@ -85,34 +66,70 @@ function bindForm(role) {
     }
     submitBtn?.setAttribute("disabled", "true");
     try {
-      const result = await authService.requestRoleUpdate({
-        contactEmail,
-        requestedRole,
-        message
-      });
+      const result = await authService.requestTemporaryAccess({ contactEmail, message });
       showToast(result?.message || "Request sent to administrators.", "success");
       const messageInput = $id("paRoleRequestMessage");
       if (messageInput) messageInput.value = "";
+      await refreshStatus();
     } catch (err) {
-      showToast(err?.message || "Could not send role request.", "danger");
+      showToast(err?.message || "Could not send access request.", "danger");
     } finally {
       submitBtn?.removeAttribute("disabled");
     }
   });
 }
+async function refreshStatus() {
+  const statusEl = $id("paRoleRequestStatus");
+  const form = $id("paRoleRequestForm");
+  const card = $id("paRoleRequestCard");
+  if (!statusEl || !card) return;
+  const caps = getAccessCapabilities();
+  if (caps.isElevated && caps.elevatedUntil) {
+    card.setAttribute("hidden", "");
+    return;
+  }
+  card.removeAttribute("hidden");
+  try {
+    const status = await authService.getAccessElevationStatus();
+    if (status?.activeUntil) {
+      statusEl.hidden = false;
+      statusEl.className = "pa-role-request-status pa-role-request-status--active";
+      statusEl.innerHTML = `<i class="ri-shield-check-line"></i> Temporary access is active until ${new Date(status.activeUntil).toLocaleString()}.`;
+      form?.setAttribute("hidden", "");
+      return;
+    }
+    if (status?.pending) {
+      statusEl.hidden = false;
+      statusEl.className = "pa-role-request-status pa-role-request-status--pending";
+      statusEl.innerHTML = '<i class="ri-time-line"></i> Your request is pending administrator review.';
+      form?.setAttribute("hidden", "");
+      return;
+    }
+    statusEl.hidden = true;
+    form?.removeAttribute("hidden");
+  } catch {
+    statusEl.hidden = true;
+    form?.removeAttribute("hidden");
+  }
+}
 async function initRoleRequestCard(role) {
-  if (!isRestrictedRole(role)) {
+  if (!isViewerRole(role)) {
+    $id("paRoleRequestCard")?.remove();
+    return;
+  }
+  if (getAccessCapabilities().isElevated) {
     $id("paRoleRequestCard")?.remove();
     return;
   }
   ensureCard();
-  bindForm(role);
+  bindForm();
   try {
     const profile = await authService.getProfile();
-    populateDefaults(role, profile);
+    populateDefaults(profile);
   } catch {
-    populateDefaults(role, null);
+    populateDefaults(null);
   }
+  await refreshStatus();
 }
 export {
   initRoleRequestCard

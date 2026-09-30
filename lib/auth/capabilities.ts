@@ -1,5 +1,10 @@
 import { ADMIN_ROLES, EDITOR_ROLES, STAFF_ROLES } from './constants';
 
+function isElevationActive(elevatedUntil: string | null | undefined): boolean {
+  if (!elevatedUntil) return false;
+  return new Date(elevatedUntil).getTime() > Date.now();
+}
+
 /** Settings sub-routes a read-only viewer may open. */
 export const VIEWER_SETTINGS_TABS = ['profile', 'security', 'notifications'] as const;
 
@@ -21,6 +26,9 @@ export type AccessCapabilities = {
   canViewAllStaffActivity: boolean;
   /** Profile, avatar/cover, notifications, and account security (all staff including viewer). */
   canManageOwnAccountSettings: boolean;
+  /** Active temporary editor elevation (profiles.role reverts after elevated_until). */
+  isElevated: boolean;
+  elevatedUntil: string | null;
 };
 
 export function canAccessSettingsTab(
@@ -31,23 +39,32 @@ export function canAccessSettingsTab(
   return (VIEWER_SETTINGS_TABS as readonly string[]).includes(tab);
 }
 
-export function deriveAccessCapabilities(role: string | null | undefined): AccessCapabilities {
+export function deriveAccessCapabilities(
+  role: string | null | undefined,
+  elevatedUntil?: string | null,
+): AccessCapabilities {
   const normalized = typeof role === 'string' ? role : 'viewer';
   const isStaff = STAFF_ROLES.includes(normalized);
   const isAdmin = ADMIN_ROLES.includes(normalized);
-  const isEditor = EDITOR_ROLES.includes(normalized);
+  const baseEditor = EDITOR_ROLES.includes(normalized);
   const isViewer = normalized === 'viewer';
+  const elevated = !isAdmin && isElevationActive(elevatedUntil ?? null);
+  const elevatedUntilIso = elevated && elevatedUntil ? elevatedUntil : null;
+
+  const editorLike = baseEditor || elevated;
 
   return {
     isAdmin,
-    isEditor,
-    isViewer,
-    canManageContent: isEditor,
+    isEditor: editorLike,
+    isViewer: isViewer && !elevated,
+    canManageContent: editorLike,
     canLogoutAllDevices: isAdmin,
-    canClearAllNotifications: isEditor,
-    canShowRoleRequestCard: isStaff && !isAdmin,
-    canAccessBlogEngagement: isEditor,
+    canClearAllNotifications: editorLike,
+    canShowRoleRequestCard: isStaff && !isAdmin && !elevated,
+    canAccessBlogEngagement: editorLike,
     canViewAllStaffActivity: isAdmin,
     canManageOwnAccountSettings: isStaff,
+    isElevated: elevated,
+    elevatedUntil: elevatedUntilIso,
   };
 }

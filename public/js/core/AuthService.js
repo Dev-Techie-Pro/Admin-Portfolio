@@ -66,11 +66,14 @@ const authService = {
   logoutAllDevices() {
     return authRequest("/logout-all", { method: "POST" });
   },
-  requestRoleUpdate({ contactEmail, requestedRole, message }) {
+  requestTemporaryAccess({ contactEmail, message }) {
     return authRequest("/role-request", {
       method: "POST",
-      body: JSON.stringify({ contactEmail, requestedRole, message })
+      body: JSON.stringify({ contactEmail, message })
     });
+  },
+  getAccessElevationStatus() {
+    return authRequest("/access-elevation", { method: "GET" });
   },
   getSecuritySettings() {
     return authRequest("/security-settings", { method: "GET" });

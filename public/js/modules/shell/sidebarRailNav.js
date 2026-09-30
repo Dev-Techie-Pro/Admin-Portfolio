@@ -15,6 +15,7 @@ const ROUTE_RAIL = [
   ["/tags", "projects"],
   ["/recent-activities", "home"],
   ["/contact-messages", "home"],
+  ["/access-requests", "home"],
   ["/users", "home"]
 ];
 function resolveRailSection(path = window.location.pathname) {

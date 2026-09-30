@@ -339,7 +339,8 @@ export class SettingsModule extends Module {
       role: profile.role,
       avatarUrl: profile.avatarUrl,
     });
-    applyRoleBasedAccess(profile.role);
+    const caps = getAccessCapabilities();
+    applyRoleBasedAccess(profile.role, caps);
     this.applySettingsAccess(profile.role);
   }
 

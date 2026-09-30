@@ -48,10 +48,10 @@ export async function sendRoleRequestEmail({
   }
 
   const currentRoleLabel = formatRoleLabel(requesterRole);
-  const requestedRoleLabel = requestedRole ? formatRoleLabel(requestedRole) : 'Elevated access';
-  const subject = `[${brand.portfolioLabel}] Role access request from ${requesterName || requesterEmail}`;
+  const requestedRoleLabel = requestedRole ? formatRoleLabel(requestedRole) : 'Temporary editor role';
+  const subject = `[${brand.portfolioLabel}] Temporary access request from ${requesterName || requesterEmail}`;
   const loginUrl = getLoginUrl();
-  const reviewUrl = usersUrl || `${loginUrl.replace(/\/login$/, '')}/users`;
+  const reviewUrl = usersUrl || `${loginUrl.replace(/\/login$/, '')}/access-requests`;
 
   const html = `
     <div style="margin:0;padding:0;background:${THEME.bg};font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
@@ -62,9 +62,9 @@ export async function sendRoleRequestEmail({
               <tr>
                 <td style="padding:28px 28px 8px;">
                   <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:${THEME.muted};margin-bottom:10px;">Account access request</div>
-                  <h1 style="margin:0 0 12px;font-size:24px;line-height:1.3;color:${THEME.text};">Review a role update request</h1>
+                  <h1 style="margin:0 0 12px;font-size:24px;line-height:1.3;color:${THEME.text};">Review a temporary access request</h1>
                   <p style="margin:0;font-size:15px;line-height:1.6;color:${THEME.soft};">
-                    Hi ${escapeHtml(adminName || 'Admin')}, a staff member has requested a role change in ${escapeHtml(brand.portfolioLabel)}.
+                    Hi ${escapeHtml(adminName || 'Admin')}, a staff member has requested a temporary editor role in ${escapeHtml(brand.portfolioLabel)}. You choose the duration when approving.
                   </p>
                 </td>
               </tr>
@@ -76,7 +76,7 @@ export async function sendRoleRequestEmail({
                       <div><strong style="color:${THEME.text};">Account email:</strong> ${escapeHtml(requesterEmail || '')}</div>
                       <div><strong style="color:${THEME.text};">Contact email:</strong> ${escapeHtml(contactEmail || '')}</div>
                       <div><strong style="color:${THEME.text};">Current role:</strong> ${escapeHtml(currentRoleLabel)}</div>
-                      <div><strong style="color:${THEME.text};">Requested role:</strong> ${escapeHtml(requestedRoleLabel)}</div>
+                      <div><strong style="color:${THEME.text};">Requested access:</strong> ${escapeHtml(requestedRoleLabel)}</div>
                     </td></tr>
                   </table>
                 </td>
@@ -110,7 +110,7 @@ export async function sendRoleRequestEmail({
   const text = [
     `Hi ${adminName || 'Admin'},`,
     '',
-    `${requesterName || requesterEmail} requested a role change.`,
+    `${requesterName || requesterEmail} requested a temporary editor role.`,
     `Account email: ${requesterEmail || ''}`,
     `Contact email: ${contactEmail || ''}`,
     `Current role: ${currentRoleLabel}`,
@@ -119,7 +119,7 @@ export async function sendRoleRequestEmail({
     'Message:',
     message,
     '',
-    `Review users: ${reviewUrl}`,
+    `Review requests: ${reviewUrl}`,
   ].join('\n');
 
   try {

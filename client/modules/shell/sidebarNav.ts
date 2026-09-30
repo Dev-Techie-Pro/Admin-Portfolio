@@ -5,6 +5,7 @@ import { syncSidebarRailActive } from './sidebarRailNav.js';
 const NAV_BY_PATH = [
   ['/tool-categories', 'Tool Categories'],
   ['/recent-activities', 'Recent Activities'],
+  ['/access-requests', 'Access Requests'],
   ['/users', 'Users'],
   ['/contact-messages', 'Contact Messages'],
   ['/media-library', 'Media Library'],

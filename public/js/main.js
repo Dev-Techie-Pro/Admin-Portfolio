@@ -5,7 +5,7 @@ import {
   notifyCredentialsEmailStatus,
   populateStaffRoleSelect,
   showUserCredentialsPanel
-} from "./chunks/chunk-2JUKOHBJ.js";
+} from "./chunks/chunk-Q6RNHVYH.js";
 import {
   applyRoleBasedAccess,
   applyUserDisplay,
@@ -17,13 +17,13 @@ import {
   previewUserAvatar,
   showNavFlyout,
   syncSidebarGroupNav
-} from "./chunks/chunk-B32ZLKSF.js";
+} from "./chunks/chunk-UJ6CC25P.js";
 import {
   initPasswordToggles
 } from "./chunks/chunk-6SMWR5OB.js";
 import {
   authService
-} from "./chunks/chunk-MRY75FFO.js";
+} from "./chunks/chunk-XHRTAOVO.js";
 import {
   getThemeBackground,
   updateFavicon
@@ -40,7 +40,7 @@ import {
   getCurrentPage,
   getLoginPath,
   getSettingsTabFromPath
-} from "./chunks/chunk-CLQNCO7D.js";
+} from "./chunks/chunk-VBVCMLV7.js";
 import {
   closeAllCardMenus
 } from "./chunks/chunk-UUTTVH4R.js";
@@ -57,6 +57,7 @@ import {
   addNotification,
   anyPanelOpen,
   applyAppearanceSettings,
+  applyCapabilityGatedElements,
   bootstrapAppearanceFromCache,
   buildCustomFontFromFile,
   clearNotifications,
@@ -77,9 +78,8 @@ import {
   renderNotifications,
   requestLogout,
   storage,
-  stripCmsWriteControls,
   writeAppearanceCache
-} from "./chunks/chunk-SPN22GYW.js";
+} from "./chunks/chunk-CCUO7KDD.js";
 import {
   $all,
   $id,
@@ -1219,6 +1219,63 @@ async function maybeShowRoleAccessModal(profile = null) {
   });
 }
 
+// client/modules/shell/elevationBanner.ts
+var BANNER_ID = "paElevationBanner";
+var expiryTimer = null;
+function clearExpiryTimer() {
+  if (expiryTimer) {
+    clearTimeout(expiryTimer);
+    expiryTimer = null;
+  }
+}
+function formatUntil(iso) {
+  try {
+    return new Date(iso).toLocaleString(void 0, { dateStyle: "medium", timeStyle: "short" });
+  } catch {
+    return iso;
+  }
+}
+async function refreshSessionAfterExpiry() {
+  try {
+    const data = await authService.session();
+    const user = data?.user;
+    if (user) {
+      applyUserDisplay(user);
+      applyRoleBasedAccess(user.role, user.capabilities);
+      applyCapabilityGatedElements(user.capabilities);
+    }
+  } catch {
+  }
+  syncElevationBanner();
+}
+function syncElevationBanner() {
+  clearExpiryTimer();
+  const caps = getAccessCapabilities();
+  const main = document.querySelector(".pa-main");
+  if (!main) return;
+  const existing = $id(BANNER_ID);
+  if (!caps.isElevated || !caps.elevatedUntil) {
+    existing?.remove();
+    return;
+  }
+  let banner = existing;
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = BANNER_ID;
+    banner.className = "pa-elevation-banner";
+    banner.setAttribute("role", "status");
+    main.insertBefore(banner, main.firstChild);
+  }
+  banner.innerHTML = `<i class="ri-shield-check-line" aria-hidden="true"></i>
+    <span>Temporary <strong>editor</strong> role active until <strong>${formatUntil(caps.elevatedUntil)}</strong>, then your account reverts automatically.</span>`;
+  const ms = new Date(caps.elevatedUntil).getTime() - Date.now();
+  if (ms > 0 && ms < 24 * 60 * 60 * 1e3) {
+    expiryTimer = setTimeout(() => {
+      void refreshSessionAfterExpiry();
+    }, ms + 500);
+  }
+}
+
 // client/modules/shell/ShellModule.ts
 var KNOWN_NAV_LABELS = [
   "Projects",
@@ -1237,6 +1294,7 @@ var KNOWN_NAV_LABELS = [
   "Recent Activities",
   "Settings",
   "Users",
+  "Access Requests",
   "Comments & Likes"
 ];
 var ShellModule = class extends Module {
@@ -1286,6 +1344,7 @@ var ShellModule = class extends Module {
           avatarUrl: profile.avatarUrl
         });
         applyRoleBasedAccess(profile.role || user.role, user.capabilities);
+        syncElevationBanner();
         storage.reconcileRecentActivitiesScope({
           user: { id: profile.id || user.id, capabilities: user.capabilities }
         });
@@ -1297,6 +1356,7 @@ var ShellModule = class extends Module {
       } catch {
         applyUserDisplay(user);
         applyRoleBasedAccess(user.role, user.capabilities);
+        syncElevationBanner();
         storage.reconcileRecentActivitiesScope({ user });
         this.addUser.setProfileRole(user.role);
         void maybeShowRoleAccessModal({ id: user.id, role: user.role });
@@ -1577,6 +1637,7 @@ var ROUTE_RAIL = [
   ["/tags", "projects"],
   ["/recent-activities", "home"],
   ["/contact-messages", "home"],
+  ["/access-requests", "home"],
   ["/users", "home"]
 ];
 function resolveRailSection(path = window.location.pathname) {
@@ -1641,6 +1702,7 @@ function initSidebarRailNav() {
 var NAV_BY_PATH = [
   ["/tool-categories", "Tool Categories"],
   ["/recent-activities", "Recent Activities"],
+  ["/access-requests", "Access Requests"],
   ["/users", "Users"],
   ["/contact-messages", "Contact Messages"],
   ["/media-library", "Media Library"],
@@ -1746,45 +1808,47 @@ var PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
 async function loadPageModuleClass(page) {
   switch (page) {
     case "dashboard":
-      return (await import("./chunks/DashboardModule-ROGAIQ7S.js")).DashboardModule;
+      return (await import("./chunks/DashboardModule-7W6O6KW5.js")).DashboardModule;
     case "projects":
-      return (await import("./chunks/ProjectsModule-XQGVGTI2.js")).ProjectsModule;
+      return (await import("./chunks/ProjectsModule-JUYBP3KM.js")).ProjectsModule;
     case "categories":
-      return (await import("./chunks/CategoriesModule-IQET6CXK.js")).CategoriesModule;
+      return (await import("./chunks/CategoriesModule-UYGGDSW7.js")).CategoriesModule;
     case "tags":
-      return (await import("./chunks/TagsModule-J2F4X6OX.js")).TagsModule;
+      return (await import("./chunks/TagsModule-GBOT2GRJ.js")).TagsModule;
     case "technologies":
-      return (await import("./chunks/TechnologiesModule-UANMNVDX.js")).TechnologiesModule;
+      return (await import("./chunks/TechnologiesModule-U3YGRKP2.js")).TechnologiesModule;
     case "tool-categories":
-      return (await import("./chunks/ToolCategoriesModule-LWQHT6OT.js")).ToolCategoriesModule;
+      return (await import("./chunks/ToolCategoriesModule-3FY433F5.js")).ToolCategoriesModule;
     case "blog-categories":
-      return (await import("./chunks/BlogCategoriesModule-MXBQAPME.js")).BlogCategoriesModule;
+      return (await import("./chunks/BlogCategoriesModule-X545KZDC.js")).BlogCategoriesModule;
     case "tools":
-      return (await import("./chunks/ToolsModule-7RRZHCRW.js")).ToolsModule;
+      return (await import("./chunks/ToolsModule-NVOAKKIT.js")).ToolsModule;
     case "media":
-      return (await import("./chunks/MediaModule-JECXCMKH.js")).MediaModule;
+      return (await import("./chunks/MediaModule-V4SXMBLQ.js")).MediaModule;
     case "testimonials":
-      return (await import("./chunks/TestimonialsModule-NNJTXQN2.js")).TestimonialsModule;
+      return (await import("./chunks/TestimonialsModule-TWA7KFE3.js")).TestimonialsModule;
     case "blogposts":
-      return (await import("./chunks/BlogModule-MDJIYEME.js")).BlogModule;
+      return (await import("./chunks/BlogModule-4IBZ6IJ4.js")).BlogModule;
     case "experience":
-      return (await import("./chunks/ExperienceModule-SNSPHWRZ.js")).ExperienceModule;
+      return (await import("./chunks/ExperienceModule-KDMEZ3UD.js")).ExperienceModule;
     case "contact-messages":
-      return (await import("./chunks/ContactMessagesModule-6AG6X3R3.js")).ContactMessagesModule;
+      return (await import("./chunks/ContactMessagesModule-PIQTTSYL.js")).ContactMessagesModule;
     case "blog-engagement":
-      return (await import("./chunks/BlogEngagementModule-CJV4BGNU.js")).BlogEngagementModule;
+      return (await import("./chunks/BlogEngagementModule-X6DMNPVT.js")).BlogEngagementModule;
+    case "access-requests":
+      return (await import("./chunks/AccessRequestsModule-RW57A6FQ.js")).AccessRequestsModule;
     case "users":
-      return (await import("./chunks/UsersModule-IPXFH63E.js")).UsersModule;
+      return (await import("./chunks/UsersModule-YXCNSCSD.js")).UsersModule;
     case "recent-activities":
-      return (await import("./chunks/RecentActivitiesModule-DPM5HFUO.js")).RecentActivitiesModule;
+      return (await import("./chunks/RecentActivitiesModule-J5OH7UIG.js")).RecentActivitiesModule;
     case "settings":
-      return (await import("./chunks/SettingsModule-YKBUAGJO.js")).SettingsModule;
+      return (await import("./chunks/SettingsModule-RMJHSO2X.js")).SettingsModule;
     case "login":
-      return (await import("./chunks/LoginModule-VJ3JMAX7.js")).LoginModule;
+      return (await import("./chunks/LoginModule-MPJ4QMAY.js")).LoginModule;
     case "forgot-password":
-      return (await import("./chunks/ForgotPasswordModule-7GT5PEVJ.js")).ForgotPasswordModule;
+      return (await import("./chunks/ForgotPasswordModule-F2SJM2IW.js")).ForgotPasswordModule;
     case "reset-password":
-      return (await import("./chunks/ResetPasswordModule-5GWVGL3H.js")).ResetPasswordModule;
+      return (await import("./chunks/ResetPasswordModule-LP23INIZ.js")).ResetPasswordModule;
     default:
       return null;
   }
@@ -1807,7 +1871,7 @@ function bindGlobalPanelChrome() {
 var quickAddModule = null;
 async function bindQuickAddButton(pageModule) {
   if (quickAddModule) return;
-  const { QuickAddModule } = await import("./chunks/QuickAddModule-5YHLU3TD.js");
+  const { QuickAddModule } = await import("./chunks/QuickAddModule-RP3QAEBE.js");
   quickAddModule = new QuickAddModule(pageModule);
   quickAddModule.bindEvents();
 }
@@ -1819,7 +1883,7 @@ async function initPageModule(pageModule) {
     requestAnimationFrame(() => {
       pageModule.render();
       pageModule.bindEvents();
-      stripCmsWriteControls(document);
+      applyCapabilityGatedElements(getAccessCapabilities());
       resolve();
     });
   });
@@ -1870,7 +1934,8 @@ async function bootAppPage(ModuleClass, page) {
   initConfirmDialog();
   const pageModule = new ModuleClass();
   const bootstrapPending = storage.isBootstrapPending();
-  await Promise.all([initPageModule(pageModule), ensureShell()]);
+  await ensureShell();
+  await initPageModule(pageModule);
   initAllPaSelects();
   bindGlobalPanelChrome();
   if (page === "dashboard") void bindQuickAddButton(pageModule);
@@ -1881,7 +1946,7 @@ async function bootAppPage(ModuleClass, page) {
     void storage.waitForBootstrap().then(() => {
       if (activePageModule === pageModule && typeof pageModule.render === "function") {
         pageModule.render();
-        stripCmsWriteControls(document);
+        applyCapabilityGatedElements(getAccessCapabilities());
       }
     });
   }

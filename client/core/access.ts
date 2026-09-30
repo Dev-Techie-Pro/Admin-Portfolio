@@ -1,5 +1,5 @@
 import { deriveAccessCapabilities, type AccessCapabilities } from '../../lib/auth/capabilities.js';
-import { installViewerWriteGuard, stripCmsWriteControls } from './cms-access.js';
+import { installViewerWriteGuard, restoreCmsWriteControls, stripCmsWriteControls } from './cms-access.js';
 
 let activeCapabilities: AccessCapabilities = deriveAccessCapabilities('viewer');
 
@@ -49,7 +49,9 @@ export function applyCapabilityGatedElements(capabilities = activeCapabilities) 
   const clearBtn = document.getElementById('paNotifClearBtn');
   if (clearBtn) setElementAccessible(clearBtn, capabilities.canClearAllNotifications);
 
-  if (!capabilities.canManageContent) {
+  if (capabilities.canManageContent) {
+    restoreCmsWriteControls(document);
+  } else {
     stripCmsWriteControls(document);
     installViewerWriteGuard();
   }

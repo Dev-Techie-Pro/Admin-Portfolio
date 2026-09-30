@@ -233,11 +233,11 @@ export function isConfirmOpen() {
 }
 
 const PERMISSION_DENIED_MESSAGE =
-  "You don't have permission to do that. Contact admin for access.";
+  'You don\'t have permission to do that. <a href="/settings/security">Contact admin for access</a> from Settings → Security.';
 
 /** Inform viewers that a CMS write action is not allowed for their role. */
 export function showPermissionDeniedDialog() {
-  requestConfirm({
+  requestBulkAction({
     title: 'Permission required',
     message: PERMISSION_DENIED_MESSAGE,
     confirmLabel: 'OK',

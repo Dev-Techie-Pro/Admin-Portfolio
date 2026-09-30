@@ -2866,7 +2866,7 @@ body.pa-rte-fullscreen-active {
 
 .pa-role-access-head {
   display: flex;
-  gap: 14px;
+  gap: var(--pa-card-gap);
   align-items: flex-start;
   margin-bottom: 18px;
 }
@@ -2910,7 +2910,7 @@ body.pa-rte-fullscreen-active {
 .pa-role-access-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: var(--pa-card-gap);
   margin-bottom: 16px;
 }
 
@@ -2923,7 +2923,7 @@ body.pa-rte-fullscreen-active {
 .pa-role-access-section-title {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--pa-gap-sm);
   font-size: var(--pa-fs-sm);
   font-weight: var(--pa-fw-lg);
   margin-bottom: 8px;
@@ -2944,12 +2944,12 @@ body.pa-rte-fullscreen-active {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--pa-gap-sm);
 }
 
 .pa-role-access-item {
   display: flex;
-  gap: 8px;
+  gap: var(--pa-gap-sm);
   align-items: flex-start;
   font-size: var(--pa-fs-sm);
   line-height: 1.45;
@@ -8354,6 +8354,10 @@ body.pa-auth-body {
 
 .pa-security-card .pa-password-toggle {
   right: 10px;
+}
+
+.pa-security-card.pa-role-request-card{
+  margin-top: var(--pa-card-gap);
 }
 
 .pa-column-visibility-dropdown {

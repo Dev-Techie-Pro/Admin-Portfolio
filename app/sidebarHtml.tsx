@@ -176,6 +176,7 @@ export function buildSidebarInnerHtml(capabilities: AccessCapabilities) {
         }, [
           navSubItem('/recent-activities', 'Recent Activities', 'ri-history-line', 'Recent Activities', '', capabilities),
           navSubItem('/contact-messages', 'Contact Messages', 'ri-mail-line', 'Contact Messages', '', capabilities),
+          navSubItem('/access-requests', 'Access Requests', 'ri-shield-user-line', 'Access Requests', 'pa-admin-only-item', capabilities),
           navSubItem('/users', 'Users', 'ri-group-line', 'Users', 'pa-admin-only-item', capabilities),
         ].join('\n            '), capabilities)}
         ${navGroup('projects', {
