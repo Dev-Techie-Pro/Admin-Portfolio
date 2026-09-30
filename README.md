@@ -280,7 +280,7 @@ Set these in `.env.local` or your hosting provider (Vercel, etc.). They are **no
 
 ### Runtime settings (database)
 
-SMTP, session/login retention, CMS performance toggles, and email branding are stored in **`site_runtime_config`** and edited under **Settings → System → Environment**. They are **not** read from host environment variables at runtime (only built-in code defaults apply when a key is unset in the database). **Import from env file** (admin UI) merges runtime keys from `.env` / `.env.local` on the server into the database when migrating legacy setups.
+SMTP, session/login retention, CMS performance toggles, and email branding are stored in **`site_runtime_config`** and edited under **Settings → System → Environment**. They are **not** read from host environment variables at runtime (only built-in code defaults apply when a key is unset in the database). **Import from env file** uploads a local `.env` file from your machine and merges recognized runtime keys into the database.
 
 > **Security:** Never commit `.env` or `.env.local`. These paths are listed in `.gitignore`.
 

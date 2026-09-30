@@ -345,8 +345,14 @@ class SystemManager {
     });
     const importBtn = $id("systemEnvImportBtn");
     if (importBtn) this.on(importBtn, "click", () => {
-      void this.importEnvironmentFromEnv();
+      void this.openEnvImportFilePicker();
     });
+    const importFile = $id("systemEnvImportFile");
+    if (importFile) {
+      this.on(importFile, "change", () => {
+        void this.handleEnvImportFileSelected(importFile);
+      });
+    }
     const form = $id("systemEnvForm");
     if (form) {
       this.on(form, "submit", (e) => {
@@ -1019,26 +1025,44 @@ class SystemManager {
       showToast(err.message || "Could not load environment configuration.", "danger");
     }
   }
-  async importEnvironmentFromEnv() {
+  async openEnvImportFilePicker() {
     if (!await this.ensureAdminAccess()) return;
+    const input = $id("systemEnvImportFile");
+    if (!input) {
+      showToast("File upload is not available on this page.", "danger");
+      return;
+    }
+    input.value = "";
+    input.click();
+  }
+  async handleEnvImportFileSelected(input) {
+    const file = input.files?.[0];
+    if (!file) return;
+    if (!await this.ensureAdminAccess()) return;
+    const safeName = file.name || "uploaded file";
     requestConfirm({
       title: "Import from env file?",
-      message: "Reads runtime keys from <code>.env</code> and <code>.env.local</code> on the server and saves them to <code>site_runtime_config</code>. Values found in the file overwrite the matching fields here; other saved settings are kept. Host deployment variables and <code>.env.example</code> are not used.",
+      message: `Import runtime settings from <strong>${escapeHtml(safeName)}</strong> into <code>site_runtime_config</code>? Values in the file overwrite matching fields here; other saved settings are kept. Only runtime keys (SMTP, retention, branding, etc.) are used \u2014 not Supabase or deployment secrets.`,
       confirmLabel: "Import",
-      iconClass: "ri-download-line",
+      iconClass: "ri-upload-2-line",
       onConfirm: () => {
-        void this.runImportEnvironmentFromEnvFile();
+        void this.uploadEnvImportFile(file);
       }
     });
   }
-  async runImportEnvironmentFromEnvFile() {
+  async uploadEnvImportFile(file) {
     if (!await this.ensureAdminAccess()) return;
     const importBtn = $id("systemEnvImportBtn");
     if (importBtn) importBtn.disabled = true;
     try {
+      const content = await file.text();
       const payload = await this.fetchJson("/api/admin/environment/import-env", {
         method: "POST",
-        body: JSON.stringify({ onlyIfEmpty: false })
+        body: JSON.stringify({
+          content,
+          fileName: file.name || "uploaded file",
+          onlyIfEmpty: false
+        })
       });
       this.state.env = payload;
       this.hydrateEnvironmentForm(payload.values || {});
@@ -1049,6 +1073,8 @@ class SystemManager {
       showToast(err.message || "Could not import from env file.", "danger");
     } finally {
       if (importBtn) importBtn.disabled = false;
+      const input = $id("systemEnvImportFile");
+      if (input) input.value = "";
     }
   }
   async saveEnvironment() {

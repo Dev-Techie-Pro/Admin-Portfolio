@@ -1,10 +1,6 @@
 import { guardAdmin } from '@/lib/auth/guard';
 import { jsonGet, jsonOk } from '@/lib/api/json-response';
-import {
-  getRuntimeConfigForApi,
-  importRuntimeConfigFromEnv,
-  saveRuntimeConfig,
-} from '@/lib/config/runtime-settings';
+import { getRuntimeConfigForApi, saveRuntimeConfig } from '@/lib/config/runtime-settings';
 import { recordUserAction } from '@/lib/cms/activity-log';
 
 export async function GET() {
@@ -12,12 +8,7 @@ export async function GET() {
   if (!auth.ok) return auth.response;
 
   try {
-    let config = await getRuntimeConfigForApi();
-    const hasAny = Object.values(config.configured || {}).some(Boolean);
-    if (!hasAny) {
-      await importRuntimeConfigFromEnv(auth.user.id, { onlyIfEmpty: true });
-      config = await getRuntimeConfigForApi();
-    }
+    const config = await getRuntimeConfigForApi();
     return jsonGet(config);
   } catch (error) {
     return jsonOk({ error: error.message || 'Could not load environment configuration.' }, { status: 500 });

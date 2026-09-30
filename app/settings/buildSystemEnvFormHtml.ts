@@ -128,7 +128,7 @@ export function buildSystemEnvFormHtml(): string {
                         <ul class="pa-env-intro-list">
                             <li>Deployment-only: Supabase keys, <code>NEXT_PUBLIC_SITE_URL</code>, and <code>CRON_SECRET</code> stay in your host environment — see <code>.env.example</code>.</li>
                             <li>SMTP password is masked when set; leave blank on save to keep the current value.</li>
-                            <li><strong>Import from env file</strong> reads <code>.env</code> and <code>.env.local</code> on the server for runtime keys only (not deployment vars, not <code>.env.example</code>, not host <code>process.env</code>). Merges into the database; keys absent from the file stay as saved.</li>
+                            <li><strong>Import from env file</strong> uploads a <code>.env</code> (or similar) from your computer. Only runtime keys are applied; deployment secrets in the file are ignored. Matching fields overwrite saved values; keys not in the file stay as saved.</li>
                         </ul>
                     </div>
                     <div>
@@ -138,7 +138,8 @@ export function buildSystemEnvFormHtml(): string {
                         ${rightCards}
                         <div class="pa-settings-actions mt-16">
                             <button class="pa-btn pa-btn-primary" type="submit" id="systemEnvSaveBtn"><i class="ri-save-line"></i> Save Settings</button>
-                            <button class="pa-btn pa-btn-secondary flex-0-auto" type="button" id="systemEnvImportBtn"><i class="ri-download-line"></i> Import from env file</button>
+                            <input type="file" id="systemEnvImportFile" hidden accept=".env,.txt,text/plain,.local" />
+                            <button class="pa-btn pa-btn-secondary flex-0-auto" type="button" id="systemEnvImportBtn"><i class="ri-upload-2-line"></i> Import from env file</button>
                             <button class="pa-btn pa-btn-secondary flex-0-auto" type="button" id="systemEnvReloadBtn"><i class="ri-refresh-line"></i> Reload</button>
                         </div>
                     </div>

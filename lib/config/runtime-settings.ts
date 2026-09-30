@@ -11,10 +11,8 @@ import {
   parseEnvFile,
   validateEnvUpdates,
 } from '@/lib/admin/env-config';
-import fs from 'fs/promises';
-import path from 'path';
-
 const CACHE_KEY = `runtime-config:${SITE_ID}`;
+const MAX_ENV_IMPORT_BYTES = 256 * 1024;
 const CACHE_TTL_MS = 45_000;
 
 /** In-process plaintext snapshot for sync reads after warmRuntimeSettings(). */
@@ -89,33 +87,14 @@ export function invalidateRuntimeConfigCache() {
   memorySnapshot = {};
 }
 
-/** Legacy runtime keys from disk only (.env then .env.local overlays). Not process.env or .env.example. */
-async function readEnvFileForImport() {
-  const candidates = [
-    path.join(process.cwd(), '.env'),
-    path.join(process.cwd(), '.env.local'),
-  ];
-  const merged: Record<string, string> = {};
-  const sourceFiles: string[] = [];
-
-  for (const filePath of candidates) {
-    try {
-      const content = await fs.readFile(filePath, 'utf8');
-      const parsed = parseEnvFile(content);
-      let contributed = false;
-      for (const key of RUNTIME_CONFIG_KEYS) {
-        const value = (parsed[key] ?? '').trim();
-        if (!value) continue;
-        merged[key] = value;
-        contributed = true;
-      }
-      if (contributed) sourceFiles.push(path.basename(filePath));
-    } catch {
-      /* missing file */
-    }
+export function runtimeUpdatesFromEnvFileContent(content: string) {
+  const parsed = parseEnvFile(content);
+  const updates: Record<string, string> = {};
+  for (const key of RUNTIME_CONFIG_KEYS) {
+    const value = (parsed[key] ?? '').trim();
+    if (value) updates[key] = value;
   }
-
-  return { vars: merged, sourceFiles };
+  return updates;
 }
 
 async function fetchDbRow() {
@@ -218,7 +197,19 @@ export async function saveRuntimeConfig(updates: Record<string, unknown>, userId
   await warmRuntimeSettings();
 }
 
-export async function importRuntimeConfigFromEnv(userId: string, { onlyIfEmpty = true } = {}) {
+export async function importRuntimeConfigFromEnvContent(
+  userId: string,
+  content: string,
+  { onlyIfEmpty = false, fileName = 'uploaded file' } = {},
+) {
+  const text = String(content ?? '');
+  if (!text.trim()) {
+    return { imported: false, reason: 'The uploaded file is empty.' };
+  }
+  if (text.length > MAX_ENV_IMPORT_BYTES) {
+    return { imported: false, reason: 'Env file is too large (max 256 KB).' };
+  }
+
   await ensureDbRow();
   const row = await fetchDbRow();
   const settings = jsonRecord(row?.settings);
@@ -226,36 +217,28 @@ export async function importRuntimeConfigFromEnv(userId: string, { onlyIfEmpty =
   if (onlyIfEmpty && !rowIsEmpty(settings, secrets)) {
     return {
       imported: false,
-      reason: 'Runtime settings already exist in the database. Use Import to merge from a file only when you need to pull legacy keys from disk.',
+      reason: 'Runtime settings already exist in the database. Upload merges only when you confirm import.',
     };
   }
 
-  const { vars: fileVars, sourceFiles } = await readEnvFileForImport();
-  const updates: Record<string, string> = {};
-  for (const key of RUNTIME_CONFIG_KEYS) {
-    const value = (fileVars[key] ?? '').trim();
-    if (value) updates[key] = value;
-  }
-
+  const updates = runtimeUpdatesFromEnvFileContent(text);
   if (!Object.keys(updates).length) {
     return {
       imported: false,
       reason:
-        'No runtime settings found in `.env` or `.env.local`. Deployment env vars are not imported — add SMTP/retention keys to those files temporarily, or enter values on this screen.',
-      sourceFiles: [],
+        'No runtime settings found in this file. Only SMTP, retention, performance toggles, and email branding keys are imported (not Supabase or deployment secrets).',
+      sourceFile: fileName,
     };
   }
 
   await saveRuntimeConfig(updates, userId);
-  const from = sourceFiles.length ? sourceFiles.join(', ') : 'env file';
+  const label = fileName || 'uploaded file';
   return {
     imported: true,
     keys: Object.keys(updates),
-    sourceFiles,
+    sourceFile: label,
     merged: !onlyIfEmpty,
-    reason: onlyIfEmpty
-      ? `Imported ${Object.keys(updates).length} setting(s) from ${from} into the database.`
-      : `Merged ${Object.keys(updates).length} setting(s) from ${from} into the database (existing keys not in the file were kept).`,
+    reason: `Merged ${Object.keys(updates).length} setting(s) from ${label} into the database (keys not in the file were kept).`,
   };
 }
 
