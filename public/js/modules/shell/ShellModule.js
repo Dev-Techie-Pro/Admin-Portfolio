@@ -43,7 +43,8 @@ const KNOWN_NAV_LABELS = [
   "Contact Messages",
   "Recent Activities",
   "Settings",
-  "Users"
+  "Users",
+  "Comments & Likes"
 ];
 class ShellModule extends Module {
   constructor() {

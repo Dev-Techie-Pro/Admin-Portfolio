@@ -114,6 +114,10 @@ async function loadPageModuleClass(page: string): Promise<PageModuleClass | null
 
       return (await import('./modules/contact-messages/ContactMessagesModule.js')).ContactMessagesModule;
 
+    case 'blog-engagement':
+
+      return (await import('./modules/blog-engagement/BlogEngagementModule.js')).BlogEngagementModule;
+
     case 'users':
 
       return (await import('./modules/users/UsersModule.js')).UsersModule;

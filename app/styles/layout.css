@@ -941,6 +941,11 @@ a.pa-sidebar-brand.pa-logo-link,
   pointer-events: none;
 }
 
+.pa-nav-group[data-nav-group] .pa-nav-subitem.active::before,
+.pa-nav-group[data-nav-group] .pa-nav-subitem.active::after{
+  border-color: var(--pa-orange-dim);
+}
+
 .pa-sidebar-footer {
   border-top: 1px solid var(--pa-border);
   flex-shrink: 0;

@@ -13,6 +13,7 @@ const NAV_BY_PATH = [
   ["/tags", "Tags"],
   ["/testimonials", "Testimonials"],
   ["/experience", "Experience"],
+  ["/blog-engagement", "Comments & Likes"],
   ["/blog-post", "Blog Posts"],
   ["/projects", "Projects"],
   ["/settings", "Settings"],

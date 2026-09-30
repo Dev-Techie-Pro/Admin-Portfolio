@@ -30,9 +30,20 @@ function applyUserDisplay(user) {
   });
   applyRoleBasedAccess(user.role);
 }
-function pruneInaccessibleSidebarNav(isAdmin) {
+function pruneInaccessibleSidebarNav(isAdmin, isEditor) {
   document.querySelectorAll(".pa-admin-only-item").forEach((el) => {
     if (isAdmin) {
+      el.removeAttribute("hidden");
+      el.removeAttribute("aria-hidden");
+      el.style.removeProperty("display");
+    } else {
+      el.setAttribute("hidden", "");
+      el.setAttribute("aria-hidden", "true");
+      el.style.display = "none";
+    }
+  });
+  document.querySelectorAll(".pa-editor-only-item").forEach((el) => {
+    if (isEditor) {
       el.removeAttribute("hidden");
       el.removeAttribute("aria-hidden");
       el.style.removeProperty("display");
@@ -52,7 +63,7 @@ function applyRoleBasedAccess(role) {
   document.body.classList.toggle("pa-role-admin", isAdmin);
   document.body.classList.toggle("pa-role-readonly", isViewer);
   document.body.classList.toggle("pa-role-can-edit", isEditor);
-  pruneInaccessibleSidebarNav(isAdmin);
+  pruneInaccessibleSidebarNav(isAdmin, isEditor);
 }
 function renderAvatarElement(container, url) {
   if (!container) return;

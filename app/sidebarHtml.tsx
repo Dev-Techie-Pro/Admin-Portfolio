@@ -199,6 +199,7 @@ export const SIDEBAR_INNER_HTML = `<aside class="pa-sidebar" id="paSidebar">
           submenuIcon: 'ri-price-tag-3-line',
         }, [
           navSubItem('/blog-post', 'Blog Posts', 'ri-article-line', 'Blog Posts'),
+          navSubItem('/blog-engagement', 'Comments & Likes', 'ri-chat-heart-line', 'Comments & Likes', 'pa-editor-only-item'),
           navSubItem('/testimonials', 'Testimonials', 'ri-chat-quote-line', 'Testimonials'),
           navSubItem('/experience', 'Experience', 'ri-briefcase-line', 'Experience'),
           navSubItem('/media-library', 'Media Library', 'ri-image-line', 'Media Library'),

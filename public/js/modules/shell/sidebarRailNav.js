@@ -5,6 +5,7 @@ const ROUTE_RAIL = [
   ["/technologies", "tools"],
   ["/tools", "tools"],
   ["/blog-categories", "content"],
+  ["/blog-engagement", "content"],
   ["/blog-post", "content"],
   ["/testimonials", "content"],
   ["/experience", "content"],

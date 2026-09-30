@@ -10,6 +10,7 @@ const ROLE_BRIEFINGS = {
     allowed: [
       "View every dashboard and content page",
       "Create, edit, and delete projects, media, blog posts, and other CMS data",
+      "Moderate blog comments and likes on the Comments & Likes page",
       "Update General, Notifications, Profile, and Security settings",
       "Use appearance and customization options"
     ],
@@ -31,6 +32,7 @@ const ROLE_BRIEFINGS = {
     ],
     restricted: [
       "Create, edit, or delete any content or records",
+      "Access the Comments & Likes moderation page",
       "Dashboard add actions, bulk actions, and edit panels",
       "Changing General site settings (view only)",
       "User management and system settings"

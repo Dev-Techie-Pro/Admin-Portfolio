@@ -30,7 +30,7 @@ import { maybeShowRoleAccessModal } from './roleAccessModal.js';
 const KNOWN_NAV_LABELS = [
   'Projects', 'Categories', 'Tags', 'Technologies', 'Tool Categories', 'Tools', 'Media Library',
   'Testimonials', 'Blog Posts', 'Blog Categories', 'Experience', 'Dashboard', 'Contact Messages',
-  'Recent Activities', 'Settings', 'Users',
+  'Recent Activities', 'Settings', 'Users', 'Comments & Likes',
 ];
 
 export class ShellModule extends Module {

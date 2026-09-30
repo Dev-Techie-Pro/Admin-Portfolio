@@ -9,6 +9,7 @@ const ROUTES = [
   ['/media-library', 'media'],
   ['/testimonials', 'testimonials'],
   ['/blog-post', 'blogposts'],
+  ['/blog-engagement', 'blog-engagement'],
   ['/experience', 'experience'],
   ['/contact-messages', 'contact-messages'],
   ['/users', 'users'],

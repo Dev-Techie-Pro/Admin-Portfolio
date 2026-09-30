@@ -309,3 +309,267 @@ export async function deleteComment(commentId: string) {
     .eq('site_id', SITE_ID);
   if (error) throw error;
 }
+
+export type BlogCommentListItem = BlogCommentRecord & {
+  postLegacyId: number | null;
+  postTitle: string;
+  postSlug: string;
+};
+
+function commentListFromRow(row: {
+  id: string;
+  legacy_id: number | null;
+  author_name: string;
+  author_email: string | null;
+  body: string;
+  status: BlogCommentStatus;
+  created_at: string;
+  blog_posts: { title: string; slug: string; legacy_id: number | null } | null;
+}): BlogCommentListItem {
+  const post = row.blog_posts;
+  return {
+    ...commentFromRow(row),
+    postLegacyId: post?.legacy_id ?? null,
+    postTitle: post?.title || 'Untitled',
+    postSlug: post?.slug || '',
+  };
+}
+
+function timeRangeStart(timeRange: string): string | null {
+  const now = new Date();
+  if (timeRange === 'today') {
+    const d = new Date(now);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  }
+  if (timeRange === 'week') {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 7);
+    return d.toISOString();
+  }
+  if (timeRange === 'month') {
+    const d = new Date(now);
+    d.setMonth(d.getMonth() - 1);
+    return d.toISOString();
+  }
+  return null;
+}
+
+export async function getEngagementStats() {
+  const sb = admin();
+  const base = () => sb
+    .from('blog_post_comments')
+    .select('id', { count: 'exact', head: true })
+    .eq('site_id', SITE_ID)
+    .is('deleted_at', null);
+
+  const [total, pending, approved, spam, rejected, likesRes, pendingPostsRes] = await Promise.all([
+    base(),
+    base().eq('status', 'pending'),
+    base().eq('status', 'approved'),
+    base().eq('status', 'spam'),
+    base().eq('status', 'rejected'),
+    sb.from('blog_post_likes').select('id', { count: 'exact', head: true }).eq('site_id', SITE_ID),
+    sb
+      .from('blog_post_comments')
+      .select('blog_post_id')
+      .eq('site_id', SITE_ID)
+      .eq('status', 'pending')
+      .is('deleted_at', null),
+  ]);
+
+  const pendingPostIds = new Set((pendingPostsRes.data || []).map((r) => r.blog_post_id));
+
+  return {
+    totalComments: total.count ?? 0,
+    pending: pending.count ?? 0,
+    approved: approved.count ?? 0,
+    spam: spam.count ?? 0,
+    rejected: rejected.count ?? 0,
+    totalLikes: likesRes.count ?? 0,
+    postsWithPending: pendingPostIds.size,
+  };
+}
+
+export async function listCommentsPage({
+  cursor = null,
+  limit = 25,
+  status = 'all',
+  postLegacyId = null,
+  timeRange = 'all',
+  q = '',
+} = {}) {
+  const safeLimit = Math.min(Math.max(Number(limit) || 25, 1), 100);
+  const sb = admin();
+
+  let query = sb
+    .from('blog_post_comments')
+    .select(
+      'id, legacy_id, author_name, author_email, body, status, created_at, blog_post_id, blog_posts!inner(title, slug, legacy_id)',
+      { count: 'exact' },
+    )
+    .eq('site_id', SITE_ID)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(safeLimit + 1);
+
+  if (status && status !== 'all') {
+    query = query.eq('status', status);
+  }
+
+  if (postLegacyId != null && postLegacyId !== '' && postLegacyId !== 'all') {
+    const legacy = Number(postLegacyId);
+    if (Number.isFinite(legacy)) {
+      const { data: postRow } = await sb
+        .from('blog_posts')
+        .select('id')
+        .eq('site_id', SITE_ID)
+        .eq('legacy_id', legacy)
+        .is('deleted_at', null)
+        .maybeSingle();
+      if (!postRow) {
+        return { items: [], nextCursor: null, total: 0 };
+      }
+      query = query.eq('blog_post_id', postRow.id);
+    }
+  }
+
+  const since = timeRangeStart(timeRange);
+  if (since) {
+    query = query.gte('created_at', since);
+  }
+
+  const term = String(q || '').trim();
+  if (term.length >= 2) {
+    const escaped = term.replace(/%/g, '').replace(/,/g, '');
+    const pattern = `%${escaped}%`;
+    query = query.or(`author_name.ilike.${pattern},author_email.ilike.${pattern},body.ilike.${pattern}`);
+  }
+
+  if (cursor) {
+    const parts = String(cursor).split('|');
+    if (parts.length === 2 && parts[0] && parts[1]) {
+      const [createdAt, id] = parts;
+      query = query.or(`created_at.lt."${createdAt}",and(created_at.eq."${createdAt}",id.lt."${id}")`);
+    }
+  }
+
+  const { data, error, count } = await query;
+  if (error) throw error;
+
+  const rows = data || [];
+  const hasMore = rows.length > safeLimit;
+  const page = hasMore ? rows.slice(0, safeLimit) : rows;
+  const nextCursor = hasMore
+    ? `${page[page.length - 1].created_at}|${page[page.length - 1].id}`
+    : null;
+
+  return {
+    items: page.map((row) => commentListFromRow(row as Parameters<typeof commentListFromRow>[0])),
+    nextCursor,
+    total: count ?? page.length,
+  };
+}
+
+export async function bulkUpdateCommentStatus(ids: string[], status: BlogCommentStatus) {
+  if (!ids.length) return { updated: 0 };
+  const sb = admin();
+  const { data, error } = await sb
+    .from('blog_post_comments')
+    .update({ status })
+    .eq('site_id', SITE_ID)
+    .in('id', ids)
+    .is('deleted_at', null)
+    .select('id');
+  if (error) throw error;
+  return { updated: data?.length ?? 0 };
+}
+
+export async function bulkSoftDeleteComments(ids: string[]) {
+  if (!ids.length) return { deleted: 0 };
+  const sb = admin();
+  const now = new Date().toISOString();
+  const { data, error } = await sb
+    .from('blog_post_comments')
+    .update({ deleted_at: now })
+    .eq('site_id', SITE_ID)
+    .in('id', ids)
+    .is('deleted_at', null)
+    .select('id');
+  if (error) throw error;
+  return { deleted: data?.length ?? 0 };
+}
+
+export type PostLikeSummary = {
+  legacyId: number | null;
+  title: string;
+  slug: string;
+  likeCount: number;
+  commentsEnabled: boolean;
+  likesEnabled: boolean;
+};
+
+export async function listPostsLikeSummary({ limit = 50, offset = 0 } = {}) {
+  const sb = admin();
+  const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 200);
+  const safeOffset = Math.max(Number(offset) || 0, 0);
+
+  const { data: posts, error: postsError } = await sb
+    .from('blog_posts')
+    .select('id, legacy_id, title, slug, comments_enabled, likes_enabled')
+    .eq('site_id', SITE_ID)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false });
+  if (postsError) throw postsError;
+
+  const { data: likes, error: likesError } = await sb
+    .from('blog_post_likes')
+    .select('blog_post_id')
+    .eq('site_id', SITE_ID);
+  if (likesError) throw likesError;
+
+  const likeCounts = new Map<string, number>();
+  for (const row of likes || []) {
+    likeCounts.set(row.blog_post_id, (likeCounts.get(row.blog_post_id) || 0) + 1);
+  }
+
+  const summaries: PostLikeSummary[] = (posts || []).map((p) => ({
+    legacyId: p.legacy_id,
+    title: p.title,
+    slug: p.slug,
+    likeCount: likeCounts.get(p.id) || 0,
+    commentsEnabled: p.comments_enabled !== false,
+    likesEnabled: p.likes_enabled !== false,
+  }));
+
+  summaries.sort((a, b) => b.likeCount - a.likeCount);
+
+  return {
+    items: summaries.slice(safeOffset, safeOffset + safeLimit),
+    total: summaries.length,
+  };
+}
+
+export async function clearLikesForPost(legacyId: string | number) {
+  const sb = admin();
+  const raw = String(legacyId || '').trim();
+  const legacyValue = /^\d+$/.test(raw) ? Number(raw) : raw;
+  const { data: post, error: postError } = await sb
+    .from('blog_posts')
+    .select('id')
+    .eq('site_id', SITE_ID)
+    .eq('legacy_id', legacyValue)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (postError) throw postError;
+  if (!post) {
+    const err = new Error('Blog post not found.');
+    err.status = 404;
+    throw err;
+  }
+
+  const { error } = await sb.from('blog_post_likes').delete().eq('blog_post_id', post.id);
+  if (error) throw error;
+  return { ok: true };
+}
