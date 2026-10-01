@@ -1906,6 +1906,10 @@ select.pa-filter-select:not(.pa-select-native):focus {
   grid-column: 1 / -1;
 }
 
+.pa-env-form.pa-settings-grid > .pa-env-actions-bar {
+  justify-self: end;
+}
+
 .pa-env-form .pa-env-intro {
   padding: 10px 16px;
   background: color-mix(in srgb, var(--pa-bg-card) 88%, var(--pa-orange) 4%);
@@ -1984,7 +1988,7 @@ select.pa-filter-select:not(.pa-select-native):focus {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--pa-card-gap);
-  font-size: var(--pa-fs-sm);
+  font-size: var(--pa-fs-xmd);
   color: var(--pa-text-mute);
   line-height: 1.55;
 }
@@ -2370,6 +2374,8 @@ select.pa-filter-select:not(.pa-select-native):focus {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
+  max-width: fit-content;
   gap: var(--pa-card-gap);
   margin-top: var(--pa-card-gap);
   padding: 10px 14px;
@@ -2377,11 +2383,12 @@ select.pa-filter-select:not(.pa-select-native):focus {
   border: 1px solid var(--pa-border);
   border-radius: var(--pa-radius);
   backdrop-filter: blur(10px);
-  box-shadow: 0 -8px 24px color-mix(in srgb, var(--pa-bg) 50%, transparent);
+  box-shadow: var(--pa-orange-dim) 0px 12px 48px 0px
 }
 
 .pa-env-actions-bar .pa-btn {
   margin-top: 0;
+  max-width: fit-content;
 }
 
 input.pa-form-input,
@@ -5553,6 +5560,9 @@ body.light .custom-theme-card.active {
   gap: var(--pa-card-gap);
   flex-wrap: wrap;
   margin-top: 14px;
+}
+.pa-env-actions-bar.pa-settings-actions {
+  margin: 2rem;
 }
 .pa-settings-actions .pa-btn {
   flex: 1 1;

@@ -226,11 +226,12 @@ function scanCollapseRoots(root: Node) {
 }
 
 let observerStarted = false;
+let collapseMutationObserver: MutationObserver | null = null;
 
 function startCollapseObserver() {
   if (observerStarted || typeof document === 'undefined') return;
   observerStarted = true;
-  const observer = new MutationObserver((mutations) => {
+  collapseMutationObserver = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       mutation.addedNodes.forEach((node) => {
         if (node instanceof HTMLElement) {
@@ -239,7 +240,7 @@ function startCollapseObserver() {
       });
     }
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  collapseMutationObserver.observe(document.documentElement, { childList: true, subtree: true });
 }
 
 export function initCollapseMotion(root: Node = document) {
