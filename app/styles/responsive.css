@@ -122,6 +122,10 @@
   }
 }
 @media (max-width: 960px) {
+  .pa-env-form .pa-env-intro-list {
+    grid-template-columns: 1fr;
+  }
+
   .pa-settings-grid {
     grid-template-columns: 1fr;
   }

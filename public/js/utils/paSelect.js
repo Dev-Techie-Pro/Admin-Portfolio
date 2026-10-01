@@ -10,17 +10,28 @@ const ENHANCE_SELECTOR = [
 ].join(", ");
 function resolveSelect(selectOrId) {
   if (!selectOrId) return null;
-  if (typeof selectOrId === "string") return $id(selectOrId);
-  return selectOrId;
+  if (typeof selectOrId === "string") {
+    const el = $id(selectOrId);
+    return el instanceof HTMLSelectElement ? el : null;
+  }
+  return selectOrId instanceof HTMLSelectElement ? selectOrId : null;
 }
-function closeAllPaSelects(exceptWrap) {
+function closeAllPaSelects(exceptWrap = null) {
   document.querySelectorAll(".pa-select-wrap.open").forEach((wrap) => {
-    if (wrap !== exceptWrap) wrap.classList.remove("open");
+    if (wrap === exceptWrap) return;
+    const select = wrap.querySelector("select.pa-select-native");
+    const state = select instanceof HTMLSelectElement ? REGISTRY.get(select) : null;
+    if (state?.setOpen) {
+      void state.setOpen(false);
+      return;
+    }
+    wrap.classList.remove("open");
   });
 }
 function applyTriggerLabel(trigger, select) {
   const opt = select.options[select.selectedIndex];
   const valueEl = trigger.querySelector(".pa-select-value");
+  if (!valueEl) return;
   if (!opt) {
     valueEl.textContent = "Select\u2026";
     valueEl.classList.add("is-placeholder");
@@ -49,8 +60,8 @@ function rebuildOptions(state) {
       select.value = btn.dataset.value;
       select.dispatchEvent(new Event("change", { bubbles: true }));
       syncPaSelect(select);
-      wrap.classList.remove("open");
-      trigger.setAttribute("aria-expanded", "false");
+      const st = REGISTRY.get(select);
+      if (st?.setOpen) void st.setOpen(false);
     });
     list.appendChild(btn);
   });
@@ -82,7 +93,7 @@ function initPaSelect(selectOrId) {
   if (ariaLabel) trigger.setAttribute("aria-label", ariaLabel);
   trigger.innerHTML = `<span class="pa-select-value"></span><i class="ri-arrow-down-s-line pa-select-chevron" aria-hidden="true"></i>`;
   const panel = document.createElement("div");
-  panel.className = "pa-select-panel";
+  panel.className = "pa-select-panel pa-collapse-panel pa-collapse-panel--dropdown";
   panel.setAttribute("role", "listbox");
   const list = document.createElement("div");
   list.className = "pa-select-list";
@@ -95,10 +106,20 @@ function initPaSelect(selectOrId) {
   const state = { wrap, trigger, panel, list, select };
   REGISTRY.set(select, state);
   const setOpen = (open) => {
-    wrap.classList.toggle("open", open);
-    trigger.setAttribute("aria-expanded", String(open));
-    if (open) closeAllPaSelects(wrap);
+    const isOpen = wrap.classList.contains("open");
+    if (open === isOpen) return;
+    if (open) {
+      closeAllPaSelects(wrap);
+      wrap.classList.add("open");
+      panel.classList.add("is-pa-collapse-open");
+      trigger.setAttribute("aria-expanded", "true");
+    } else {
+      panel.classList.remove("is-pa-collapse-open");
+      wrap.classList.remove("open");
+      trigger.setAttribute("aria-expanded", "false");
+    }
   };
+  state.setOpen = setOpen;
   trigger.addEventListener("click", (e) => {
     e.stopPropagation();
     if (select.disabled) return;
@@ -123,7 +144,8 @@ function initPaSelect(selectOrId) {
   if (!window.__paSelectDocBound) {
     window.__paSelectDocBound = true;
     document.addEventListener("click", (e) => {
-      if (!e.target.closest(".pa-select-wrap")) closeAllPaSelects();
+      const target = e.target;
+      if (!(target instanceof Element) || !target.closest(".pa-select-wrap")) closeAllPaSelects();
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeAllPaSelects();
@@ -142,7 +164,9 @@ function refreshPaSelect(selectOrId) {
 }
 function initAllPaSelects(root = document) {
   root.querySelectorAll(ENHANCE_SELECTOR).forEach((select) => {
-    if (!select.matches(SKIP_SELECTOR)) initPaSelect(select);
+    if (select instanceof HTMLSelectElement && !select.matches(SKIP_SELECTOR)) {
+      initPaSelect(select);
+    }
   });
 }
 export {

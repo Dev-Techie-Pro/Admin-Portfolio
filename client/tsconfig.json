@@ -8,5 +8,5 @@
     "noEmit": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"]
   },
-  "include": ["./**/*.ts"]
+  "include": ["./**/*.ts", "../global.d.ts"]
 }

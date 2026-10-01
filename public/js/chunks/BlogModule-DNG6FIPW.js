@@ -1,6 +1,6 @@
 import {
   syncPaSelect
-} from "./chunk-DWHWK43L.js";
+} from "./chunk-LJDI6IOR.js";
 import {
   addChip,
   getChipValues,
@@ -284,14 +284,6 @@ var BlogPostWorkspace = class {
       this.blog.on(btn, "click", () => {
         const mode = btn.getAttribute("data-ws-mode");
         if (mode) this.setEditorMode(mode);
-      });
-    });
-    $all("[data-ws-panel-toggle]").forEach((btn) => {
-      this.blog.on(btn, "click", () => {
-        const panel = btn.closest("[data-ws-panel]");
-        if (!panel) return;
-        const isOpen = panel.classList.toggle("is-collapsed");
-        btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
       });
     });
     this.blog.on($id("blogWsTitle"), "input", (e) => {

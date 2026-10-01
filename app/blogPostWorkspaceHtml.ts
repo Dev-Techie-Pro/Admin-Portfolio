@@ -67,12 +67,12 @@ export const BLOG_POST_WORKSPACE_HTML = `
     </div>
 
     <aside class="pa-blog-ws-sidebar" aria-label="Post settings">
-      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel>
-        <button type="button" class="pa-blog-ws-panel-head" data-ws-panel-toggle aria-expanded="true">
+      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel data-pa-collapse data-pa-collapse-inverted data-pa-collapse-class="is-collapsed">
+        <button type="button" class="pa-blog-ws-panel-head pa-collapse-trigger" data-ws-panel-toggle data-pa-collapse-trigger aria-expanded="true">
           <span class="pa-blog-ws-panel-head-left"><i class="ri-upload-cloud-2-line"></i> Publish</span>
           <i class="ri-arrow-down-s-line pa-blog-ws-panel-chevron" aria-hidden="true"></i>
         </button>
-        <div class="pa-blog-ws-panel-body">
+        <div class="pa-blog-ws-panel-body pa-collapse-panel" data-pa-collapse-panel>
           <div class="pa-form-group">
             <label class="pa-form-label" for="blogWsStatus">Status</label>
             <select class="pa-form-select" id="blogWsStatus">
@@ -119,12 +119,12 @@ export const BLOG_POST_WORKSPACE_HTML = `
         </div>
       </section>
 
-      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel>
-        <button type="button" class="pa-blog-ws-panel-head" data-ws-panel-toggle aria-expanded="true">
+      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel data-pa-collapse data-pa-collapse-inverted data-pa-collapse-class="is-collapsed">
+        <button type="button" class="pa-blog-ws-panel-head pa-collapse-trigger" data-ws-panel-toggle data-pa-collapse-trigger aria-expanded="true">
           <span class="pa-blog-ws-panel-head-left"><i class="ri-text-snippet"></i> Excerpt &amp; tags</span>
           <i class="ri-arrow-down-s-line pa-blog-ws-panel-chevron" aria-hidden="true"></i>
         </button>
-        <div class="pa-blog-ws-panel-body">
+        <div class="pa-blog-ws-panel-body pa-collapse-panel" data-pa-collapse-panel>
           <div class="pa-form-group">
             <label class="pa-form-label" for="blogWsExcerpt">Excerpt <span class="pa-form-required">*</span></label>
             <textarea class="pa-form-textarea" id="blogWsExcerpt" maxlength="160" rows="3" placeholder="Short summary for cards and previews"></textarea>
@@ -142,12 +142,12 @@ export const BLOG_POST_WORKSPACE_HTML = `
         </div>
       </section>
 
-      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel>
-        <button type="button" class="pa-blog-ws-panel-head" data-ws-panel-toggle aria-expanded="true">
+      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel data-pa-collapse data-pa-collapse-inverted data-pa-collapse-class="is-collapsed">
+        <button type="button" class="pa-blog-ws-panel-head pa-collapse-trigger" data-ws-panel-toggle data-pa-collapse-trigger aria-expanded="true">
           <span class="pa-blog-ws-panel-head-left"><i class="ri-image-add-line"></i> Media</span>
           <i class="ri-arrow-down-s-line pa-blog-ws-panel-chevron" aria-hidden="true"></i>
         </button>
-        <div class="pa-blog-ws-panel-body">
+        <div class="pa-blog-ws-panel-body pa-collapse-panel" data-pa-collapse-panel>
           <div class="pa-form-group">
             <div class="pa-form-label-row">
               <label class="pa-form-label">Featured image</label>
@@ -171,12 +171,12 @@ export const BLOG_POST_WORKSPACE_HTML = `
         </div>
       </section>
 
-      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel>
-        <button type="button" class="pa-blog-ws-panel-head" data-ws-panel-toggle aria-expanded="true">
+      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel data-pa-collapse data-pa-collapse-inverted data-pa-collapse-class="is-collapsed">
+        <button type="button" class="pa-blog-ws-panel-head pa-collapse-trigger" data-ws-panel-toggle data-pa-collapse-trigger aria-expanded="true">
           <span class="pa-blog-ws-panel-head-left"><i class="ri-search-line"></i> SEO</span>
           <i class="ri-arrow-down-s-line pa-blog-ws-panel-chevron" aria-hidden="true"></i>
         </button>
-        <div class="pa-blog-ws-panel-body">
+        <div class="pa-blog-ws-panel-body pa-collapse-panel" data-pa-collapse-panel>
           <div class="pa-form-group">
             <label class="pa-form-label" for="blogWsMetaTitle">Meta title</label>
             <input class="pa-form-input" type="text" id="blogWsMetaTitle" maxlength="70" placeholder="Defaults to post title" />
@@ -190,25 +190,25 @@ export const BLOG_POST_WORKSPACE_HTML = `
         </div>
       </section>
 
-      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel id="paBlogWsRevisionsPanel">
-        <button type="button" class="pa-blog-ws-panel-head" data-ws-panel-toggle aria-expanded="false">
+      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel id="paBlogWsRevisionsPanel" data-pa-collapse data-pa-collapse-inverted data-pa-collapse-class="is-collapsed">
+        <button type="button" class="pa-blog-ws-panel-head pa-collapse-trigger" data-ws-panel-toggle data-pa-collapse-trigger aria-expanded="false">
           <span class="pa-blog-ws-panel-head-left"><i class="ri-history-line"></i> Version history</span>
           <i class="ri-arrow-down-s-line pa-blog-ws-panel-chevron" aria-hidden="true"></i>
         </button>
-        <div class="pa-blog-ws-panel-body">
+        <div class="pa-blog-ws-panel-body pa-collapse-panel" data-pa-collapse-panel>
           <p class="pa-blog-ws-engagement-hint">Up to 10 snapshots are saved before each save. Restore replaces the editor with a past version (save to persist).</p>
           <ul class="pa-blog-ws-revisions-list" id="paBlogWsRevisionsList" aria-live="polite"></ul>
           <p class="pa-blog-ws-revisions-empty" id="paBlogWsRevisionsEmpty" hidden>No revisions yet. Save the post to create snapshots.</p>
         </div>
       </section>
 
-      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel id="paBlogWsEngagementPanel">
-        <button type="button" class="pa-blog-ws-panel-head" data-ws-panel-toggle aria-expanded="true">
+      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel id="paBlogWsEngagementPanel" data-pa-collapse data-pa-collapse-inverted data-pa-collapse-class="is-collapsed">
+        <button type="button" class="pa-blog-ws-panel-head pa-collapse-trigger" data-ws-panel-toggle data-pa-collapse-trigger aria-expanded="true">
           <span class="pa-blog-ws-panel-head-left"><i class="ri-chat-3-line"></i> Comments &amp; likes</span>
           <span class="pa-blog-ws-engagement-badge" id="paBlogWsEngagementBadge" hidden></span>
           <i class="ri-arrow-down-s-line pa-blog-ws-panel-chevron" aria-hidden="true"></i>
         </button>
-        <div class="pa-blog-ws-panel-body">
+        <div class="pa-blog-ws-panel-body pa-collapse-panel" data-pa-collapse-panel>
           <p class="pa-blog-ws-engagement-hint">Shown on your public portfolio site. Save the post after changing toggles.</p>
           <div class="pa-form-group">
             <label class="pa-form-label" for="blogWsCommentsEnabled">Comments</label>

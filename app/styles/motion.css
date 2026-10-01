@@ -1,0 +1,202 @@
+.pa-motion-stagger > .pa-env-card,
+.pa-motion-stagger > .pa-card-settings,
+.pa-motion-stagger > .pa-bkp-summary-card {
+  opacity: 0;
+  animation: paCardIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.pa-motion-stagger > *:nth-child(1) { animation-delay: 0.04s; }
+.pa-motion-stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.pa-motion-stagger > *:nth-child(3) { animation-delay: 0.16s; }
+.pa-motion-stagger > *:nth-child(4) { animation-delay: 0.22s; }
+.pa-motion-stagger > *:nth-child(5) { animation-delay: 0.28s; }
+.pa-motion-stagger > *:nth-child(6) { animation-delay: 0.34s; }
+
+.pa-motion-stagger.is-motion-ready > .pa-env-card,
+.pa-motion-stagger.is-motion-ready > .pa-card-settings,
+.pa-motion-stagger.is-motion-ready > .pa-bkp-summary-card {
+  opacity: 1;
+  animation: none;
+}
+
+.pa-motion-stagger.pa-motion-controlled > * {
+  animation: none;
+  opacity: 1;
+}
+
+.pa-surface-interactive {
+  transition:
+    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+@media (hover: hover) {
+  .pa-surface-interactive:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.pa-border-glow {
+  position: relative;
+  isolation: isolate;
+}
+
+.pa-border-glow::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--pa-border-glow-angle, 0deg),
+    transparent 0deg,
+    color-mix(in srgb, var(--pa-orange) 55%, transparent) 90deg,
+    transparent 180deg,
+    color-mix(in srgb, var(--pa-orange) 35%, transparent) 270deg,
+    transparent 360deg
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: -1;
+  animation: paBorderGlowSpin 4s linear infinite;
+}
+
+.pa-border-glow:hover::before,
+.pa-border-glow:focus-within::before {
+  opacity: 1;
+}
+
+@keyframes paBorderGlowSpin {
+  to {
+    --pa-border-glow-angle: 360deg;
+  }
+}
+
+@property --pa-border-glow-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.pa-shimmer-line {
+  position: relative;
+  overflow: hidden;
+  background: var(--pa-bg-input);
+}
+
+.pa-shimmer-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--pa-text) 6%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: paBodyLoaderShimmer 1.4s ease-in-out infinite;
+}
+
+/* Universal collapse timing (see collapse-motion.ts) */
+:root {
+  --pa-collapse-duration: 0.45s;
+  --pa-collapse-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --pa-select-panel-max: 300px;
+}
+
+.pa-collapse-root,
+.pa-collapse-details,
+.pa-env-card,
+.pa-env-intro-tips,
+.pa-env-field-more {
+  --pa-env-expand-duration: var(--pa-collapse-duration);
+  --pa-env-expand-ease: var(--pa-collapse-ease);
+  --pa-env-fade-duration: 0.38s;
+}
+
+/* Class-driven collapse (JS clears inline styles after motion) */
+.pa-collapse-panel:not(.pa-collapse-panel--dropdown):not(.is-pa-collapse-open) {
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pa-collapse-panel:not(.pa-collapse-panel--dropdown).is-pa-collapse-open {
+  height: auto;
+  opacity: 1;
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.pa-collapse-panel.is-pa-collapse-animating {
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pa-collapse-panel--dropdown {
+  height: auto;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition:
+    max-height var(--pa-collapse-duration) var(--pa-collapse-ease),
+    opacity var(--pa-env-fade-duration, 0.38s) var(--pa-collapse-ease);
+}
+
+.pa-collapse-panel--dropdown.is-pa-collapse-open {
+  max-height: var(--pa-select-panel-max);
+  opacity: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pa-env-card,
+  .pa-env-intro-tips,
+  .pa-env-field-more {
+    --pa-env-expand-duration: 0.001ms;
+    --pa-env-fade-duration: 0.001ms;
+  }
+
+  .pa-env-card-body,
+  .pa-env-intro-tips-body,
+  .pa-env-field-more > .pa-env-field-help {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .pa-env-field-more[open] .pa-env-field-details li,
+  .pa-env-intro-tips[open] .pa-env-intro-list-item {
+    animation: none !important;
+  }
+
+  .pa-motion-stagger > * {
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .pa-surface-interactive,
+  .pa-surface-interactive:hover {
+    transform: none !important;
+  }
+
+  .pa-border-glow::before {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+
+  .pa-shimmer-line::after {
+    animation: none !important;
+  }
+}

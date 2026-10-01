@@ -1,3 +1,5 @@
+/// <reference path="../global.d.ts" />
+
 import { getCurrentPage } from './core/router.js';
 
 import { bodyLoader } from './core/BodyLoader.js';
@@ -32,6 +34,8 @@ import { bootstrapAppearanceFromCache } from './utils/appearanceCache.js';
 
 import { initAllPaSelects } from './utils/paSelect.js';
 
+import { initCollapseMotion } from './utils/collapse-motion.js';
+
 import { initPasswordToggles } from './utils/password-toggle.js';
 
 import { applyCapabilityGatedElements, getAccessCapabilities } from './core/access.js';
@@ -39,8 +43,6 @@ import { applyCapabilityGatedElements, getAccessCapabilities } from './core/acce
 
 
 const AUTH_PAGES = new Set(['login', 'forgot-password', 'reset-password']);
-
-/** Keys each page module reads during load() — synced via public/js/prefetch-config.js */
 
 const PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
 
@@ -174,6 +176,8 @@ function bindGlobalPanelChrome() {
 
   $all('.pa-panel-tab').forEach((btn) => {
 
+    if (!(btn instanceof HTMLElement)) return;
+
     btn.addEventListener('click', () => {
 
       activateTab(btn.dataset.panel, btn.dataset.tab);
@@ -184,7 +188,7 @@ function bindGlobalPanelChrome() {
 
   $id('paPanelOverlay')?.addEventListener('click', (e) => {
 
-    if (e.target.id === 'paPanelOverlay') closePanels();
+    if (e.target instanceof HTMLElement && e.target.id === 'paPanelOverlay') closePanels();
 
   });
 
@@ -208,13 +212,6 @@ async function bindQuickAddButton(pageModule: InstanceType<PageModuleClass>) {
 
 }
 
-
-
-/**
-
- * Load page data, hide loader, then paint DOM so charts are not blocked by overlay.
-
- */
 
 async function initPageModule(pageModule: InstanceType<PageModuleClass>) {
 
@@ -363,6 +360,8 @@ async function bootAppPage(ModuleClass: PageModuleClass, page: string) {
 
   initAllPaSelects();
 
+  initCollapseMotion();
+
   bindGlobalPanelChrome();
 
   if (page === 'dashboard') void bindQuickAddButton(pageModule);
@@ -448,9 +447,6 @@ async function runBoot() {
 }
 
 
-
-/** Tear down the active page module before a client-side route swap. */
-
 export function teardownPortfolioApp(options: { keepShell?: boolean } = {}) {
 
   const keepShell = options.keepShell ?? false;
@@ -497,9 +493,6 @@ export function teardownPortfolioApp(options: { keepShell?: boolean } = {}) {
 
 }
 
-
-
-/** Boot (or re-boot) the legacy module for the current URL. */
 
 export function bootPortfolioApp() {
 

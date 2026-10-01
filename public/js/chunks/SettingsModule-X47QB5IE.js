@@ -3,8 +3,9 @@ import {
   applyUserDisplay,
   renderPreviewAvatar,
   setCoverImage,
+  staggerReveal,
   syncSettingsNavTab
-} from "./chunk-7GVCCFBK.js";
+} from "./chunk-IZTYDAAE.js";
 import {
   setupAllPasswordToggles
 } from "./chunk-6SMWR5OB.js";
@@ -603,7 +604,10 @@ var SystemManager = class {
     document.querySelectorAll('.pa-view-btn[data-panel="system-section"]').forEach((btn) => {
       this.on(btn, "click", () => {
         const tab = btn.dataset.tab;
-        if (tab) activateTab("system-section", tab);
+        if (tab) {
+          activateTab("system-section", tab);
+          if (tab === "env") this.initEnvTabMotion();
+        }
       });
     });
     const refreshBtn = $id("systemBackupRefreshBtn");
@@ -907,11 +911,15 @@ var SystemManager = class {
       const warnings = Array.isArray(ops.warnings) ? ops.warnings : [];
       const warnHtml = warnings.length ? `<ul class="pa-system-ops-warnings">${warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join("")}</ul>` : '<p class="pa-text-mute fs-sm mb-0">No additional warnings.</p>';
       el.innerHTML = `
-        <ul class="pa-system-ops-checks">${checkHtml}</ul>
-        <div class="pa-info-box mt-16">
-          <p class="mb-8"><strong>Manual steps</strong> (Supabase Dashboard): disable public email sign-ups; promote staff via invite or SQL.</p>
-          ${warnHtml}
+        <div class="pa-motion-stagger pa-system-ops-motion">
+          <ul class="pa-system-ops-checks">${checkHtml}</ul>
+          <div class="pa-info-box mt-16">
+            <p class="mb-8"><strong>Manual steps</strong> (Supabase Dashboard): disable public email sign-ups; promote staff via invite or SQL.</p>
+            ${warnHtml}
+          </div>
         </div>`;
+      const motionRoot = el.querySelector(".pa-system-ops-motion");
+      staggerReveal(motionRoot, ":scope > *");
     } catch (err) {
       el.innerHTML = `<div class="pa-info-box pa-system-ops-error">${escapeHtml(err.message || "Could not load deployment status.")}</div>`;
     }
@@ -1505,6 +1513,19 @@ var SystemManager = class {
     if (!meta || !config) return;
     const source = config.source === "database" ? "Stored in database (site_runtime_config)" : "Runtime settings loaded";
     meta.innerHTML = `<i class="ri-information-line"></i> ${escapeHtml(source)}`;
+  }
+  initEnvTabMotion() {
+    const form = $id("systemEnvForm");
+    if (!form) return;
+    const panel = document.querySelector(
+      '.pa-tab-panel[data-panel="system-section"][data-content="env"]'
+    );
+    if (!panel?.classList.contains("active")) return;
+    requestAnimationFrame(() => {
+      form.querySelectorAll(".pa-motion-stagger").forEach((col) => {
+        staggerReveal(col, ".pa-env-card");
+      });
+    });
   }
   async loadEnvironment() {
     try {

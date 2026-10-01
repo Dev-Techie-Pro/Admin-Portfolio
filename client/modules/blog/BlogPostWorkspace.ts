@@ -49,15 +49,6 @@ export class BlogPostWorkspace {
       });
     });
 
-    $all('[data-ws-panel-toggle]').forEach((btn) => {
-      this.blog.on(btn, 'click', () => {
-        const panel = btn.closest('[data-ws-panel]');
-        if (!panel) return;
-        const isOpen = panel.classList.toggle('is-collapsed');
-        btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      });
-    });
-
     this.blog.on($id('blogWsTitle'), 'input', (e) => {
       const el = e.target as HTMLInputElement;
       this.updateTitleCount();

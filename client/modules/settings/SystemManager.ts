@@ -4,6 +4,7 @@ import { requestConfirm } from '../shell/confirm.js';
 import { closeAllCardMenus, toggleCardMenu } from '../shell/cardMenu.js';
 import { setupAllPasswordToggles } from '../../utils/password-toggle.js';
 import { activateTab } from '../shell/panels.js';
+import { staggerReveal } from '../../utils/motion.js';
 
 const UNCHANGED_SECRET = '__UNCHANGED__';
 
@@ -217,7 +218,10 @@ export class SystemManager {
     document.querySelectorAll('.pa-view-btn[data-panel="system-section"]').forEach((btn) => {
       this.on(btn, 'click', () => {
         const tab = (btn as HTMLElement).dataset.tab;
-        if (tab) activateTab('system-section', tab);
+        if (tab) {
+          activateTab('system-section', tab);
+          if (tab === 'env') this.initEnvTabMotion();
+        }
       });
     });
 
@@ -538,11 +542,15 @@ export class SystemManager {
         ? `<ul class="pa-system-ops-warnings">${warnings.map((w: string) => `<li>${escapeHtml(w)}</li>`).join('')}</ul>`
         : '<p class="pa-text-mute fs-sm mb-0">No additional warnings.</p>';
       el.innerHTML = `
-        <ul class="pa-system-ops-checks">${checkHtml}</ul>
-        <div class="pa-info-box mt-16">
-          <p class="mb-8"><strong>Manual steps</strong> (Supabase Dashboard): disable public email sign-ups; promote staff via invite or SQL.</p>
-          ${warnHtml}
+        <div class="pa-motion-stagger pa-system-ops-motion">
+          <ul class="pa-system-ops-checks">${checkHtml}</ul>
+          <div class="pa-info-box mt-16">
+            <p class="mb-8"><strong>Manual steps</strong> (Supabase Dashboard): disable public email sign-ups; promote staff via invite or SQL.</p>
+            ${warnHtml}
+          </div>
         </div>`;
+      const motionRoot = el.querySelector('.pa-system-ops-motion') as HTMLElement | null;
+      staggerReveal(motionRoot, ':scope > *');
     } catch (err) {
       el.innerHTML = `<div class="pa-info-box pa-system-ops-error">${escapeHtml((err as Error).message || 'Could not load deployment status.')}</div>`;
     }
@@ -1228,6 +1236,21 @@ export class SystemManager {
       ? 'Stored in database (site_runtime_config)'
       : 'Runtime settings loaded';
     meta.innerHTML = `<i class="ri-information-line"></i> ${escapeHtml(source)}`;
+  }
+
+  initEnvTabMotion() {
+    const form = $id('systemEnvForm');
+    if (!form) return;
+    const panel = document.querySelector(
+      '.pa-tab-panel[data-panel="system-section"][data-content="env"]',
+    );
+    if (!panel?.classList.contains('active')) return;
+
+    requestAnimationFrame(() => {
+      form.querySelectorAll<HTMLElement>('.pa-motion-stagger').forEach((col) => {
+        staggerReveal(col, '.pa-env-card');
+      });
+    });
   }
 
   async loadEnvironment() {

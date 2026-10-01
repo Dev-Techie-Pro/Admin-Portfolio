@@ -1,6 +1,6 @@
 import {
   syncPaSelect
-} from "./chunk-DWHWK43L.js";
+} from "./chunk-LJDI6IOR.js";
 import {
   CATEGORY_META_PROJECTS
 } from "./chunk-YIP75QFM.js";
