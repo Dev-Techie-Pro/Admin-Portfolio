@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { NextResponse } from 'next/server';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { ADMIN_ROLES, STAFF_ROLES } from './constants';
@@ -10,6 +11,36 @@ import {
   getSessionDeadlineMs,
   isDashboardSessionExpired,
 } from './session-lifetime';
+
+export type StaffProfileRow = {
+  role: string;
+  full_name: string | null;
+  email: string | null;
+  username: string | null;
+  avatar_url: string | null;
+};
+
+export type GuardFailure = { ok: false; response: NextResponse };
+
+export type GuardAuthSuccess = {
+  ok: true;
+  user: User;
+  supabase: SupabaseClient;
+};
+
+export type GuardStaffSuccess = GuardAuthSuccess & {
+  profile: StaffProfileRow;
+  elevatedUntil: string | null;
+  capabilities: AccessCapabilities;
+};
+
+export type GuardAdminSuccess = GuardAuthSuccess & {
+  profile: StaffProfileRow;
+};
+
+function guardFail(response: NextResponse): GuardFailure {
+  return { ok: false, response };
+}
 
 /** Deduplicate getUser() within a single server request. */
 export const getRequestUser = cache(async () => {
@@ -41,10 +72,10 @@ export const getRequestStaffAccess = cache(async (userId: string) => {
   return { profile, elevatedUntil, capabilities };
 });
 
-export async function guardAuthenticated() {
+export async function guardAuthenticated(): Promise<GuardFailure | GuardAuthSuccess> {
   const session = await getRequestUser();
   if (!session) {
-    return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
+    return guardFail(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
   }
 
   if (isDashboardSessionExpired(session.user)) {
@@ -54,7 +85,7 @@ export async function guardAuthenticated() {
       { status: 401 },
     );
     clearSessionDeadlineCookie(response);
-    return { ok: false, response };
+    return guardFail(response);
   }
 
   return { ok: true, user: session.user, supabase: session.supabase };
@@ -67,14 +98,14 @@ export function getAuthenticatedSessionMeta(user) {
   };
 }
 
-export async function guardStaff() {
+export async function guardStaff(): Promise<GuardFailure | GuardStaffSuccess> {
   const auth = await guardAuthenticated();
-  if (!auth.ok) return auth;
+  if (auth.ok === false) return auth;
 
   const access = await getRequestStaffAccess(auth.user.id);
   const profile = access.profile;
   if (!profile || !STAFF_ROLES.includes(profile.role)) {
-    return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
+    return guardFail(NextResponse.json({ error: 'Forbidden' }, { status: 403 }));
   }
 
   return {
@@ -87,25 +118,25 @@ export async function guardStaff() {
   };
 }
 
-export async function guardAdmin() {
+export async function guardAdmin(): Promise<GuardFailure | GuardAdminSuccess> {
   const auth = await guardAuthenticated();
-  if (!auth.ok) return auth;
+  if (auth.ok === false) return auth;
 
   const profile = await getRequestStaffProfile(auth.user.id);
   if (!profile || !ADMIN_ROLES.includes(profile.role)) {
-    return { ok: false, response: NextResponse.json({ error: 'Forbidden — admin access required' }, { status: 403 }) };
+    return guardFail(NextResponse.json({ error: 'Forbidden — admin access required' }, { status: 403 }));
   }
 
   return { ok: true, user: auth.user, profile, supabase: auth.supabase };
 }
 
 /** Staff with write access — blocks read-only viewer unless temporarily elevated. */
-export async function guardEditor() {
+export async function guardEditor(): Promise<GuardFailure | GuardStaffSuccess> {
   const auth = await guardStaff();
-  if (!auth.ok) return auth;
+  if (auth.ok === false) return auth;
 
   if (!auth.capabilities.canManageContent) {
-    return { ok: false, response: NextResponse.json({ error: 'Forbidden — read-only access' }, { status: 403 }) };
+    return guardFail(NextResponse.json({ error: 'Forbidden — read-only access' }, { status: 403 }));
   }
 
   return auth;

@@ -5,7 +5,7 @@ import {
   notifyCredentialsEmailStatus,
   populateStaffRoleSelect,
   showUserCredentialsPanel
-} from "./chunks/chunk-Q6RNHVYH.js";
+} from "./chunks/chunk-MQRQDIUU.js";
 import {
   applyRoleBasedAccess,
   applyUserDisplay,
@@ -17,13 +17,16 @@ import {
   previewUserAvatar,
   showNavFlyout,
   syncSidebarGroupNav
-} from "./chunks/chunk-UJ6CC25P.js";
+} from "./chunks/chunk-VUMRLWDK.js";
 import {
   initPasswordToggles
 } from "./chunks/chunk-6SMWR5OB.js";
 import {
   authService
 } from "./chunks/chunk-XHRTAOVO.js";
+import {
+  debounce
+} from "./chunks/chunk-SVZQZYTF.js";
 import {
   getThemeBackground,
   updateFavicon
@@ -40,7 +43,7 @@ import {
   getCurrentPage,
   getLoginPath,
   getSettingsTabFromPath
-} from "./chunks/chunk-VBVCMLV7.js";
+} from "./chunks/chunk-YQW5T2D3.js";
 import {
   closeAllCardMenus
 } from "./chunks/chunk-UUTTVH4R.js";
@@ -79,7 +82,7 @@ import {
   requestLogout,
   storage,
   writeAppearanceCache
-} from "./chunks/chunk-CCUO7KDD.js";
+} from "./chunks/chunk-2KLDEWPL.js";
 import {
   $all,
   $id,
@@ -1276,6 +1279,83 @@ function syncElevationBanner() {
   }
 }
 
+// client/modules/shell/globalSearch.ts
+var listEl = null;
+var inputEl = null;
+function ensureResultsList() {
+  if (!inputEl) return null;
+  let wrap = inputEl.closest(".pa-search");
+  if (!wrap) return null;
+  let panel = wrap.querySelector(".pa-global-search-results");
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.className = "pa-global-search-results";
+    panel.setAttribute("role", "listbox");
+    panel.hidden = true;
+    wrap.appendChild(panel);
+  }
+  listEl = panel;
+  return panel;
+}
+function renderResults(results) {
+  const panel = ensureResultsList();
+  if (!panel) return;
+  if (!results.length) {
+    panel.innerHTML = '<div class="pa-global-search-empty">No matches</div>';
+    panel.hidden = false;
+    return;
+  }
+  panel.innerHTML = results.map(
+    (item) => `<a class="pa-global-search-item" role="option" href="${item.href}">
+        <span class="pa-global-search-item-title">${item.title}</span>
+        <span class="pa-global-search-item-meta">${item.type}${item.subtitle ? ` \xB7 ${item.subtitle}` : ""}</span>
+      </a>`
+  ).join("");
+  panel.hidden = false;
+}
+async function runSearch(query) {
+  const q = query.trim();
+  if (q.length < 2) {
+    if (listEl) listEl.hidden = true;
+    return;
+  }
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=12`, { credentials: "include" });
+    if (!res.ok) return;
+    const data = await res.json();
+    renderResults(data.results || []);
+  } catch {
+  }
+}
+var debouncedSearch = debounce((value) => {
+  void runSearch(value);
+}, 280);
+function ensureHeaderSearchInput() {
+  const left = document.querySelector(".pa-header-top-left");
+  if (!left || left.querySelector(".pa-search input")) return;
+  const wrap = document.createElement("div");
+  wrap.className = "pa-search pa-global-search";
+  wrap.innerHTML = '<i class="ri-search-line" aria-hidden="true"></i><input type="search" placeholder="Search CMS\u2026" aria-label="Search CMS">';
+  left.appendChild(wrap);
+}
+function initGlobalSearch() {
+  ensureHeaderSearchInput();
+  inputEl = document.querySelector(".pa-header-top .pa-global-search input, .pa-header-top .pa-search input");
+  if (!inputEl || inputEl.dataset.paGlobalSearchBound === "1") return;
+  inputEl.dataset.paGlobalSearchBound = "1";
+  inputEl.setAttribute("autocomplete", "off");
+  inputEl.addEventListener("input", () => debouncedSearch(inputEl?.value || ""));
+  inputEl.addEventListener("focus", () => {
+    if ((inputEl?.value || "").trim().length >= 2) debouncedSearch(inputEl?.value || "");
+  });
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!inputEl?.closest(".pa-search")?.contains(target) && listEl && !listEl.contains(target)) {
+      listEl.hidden = true;
+    }
+  });
+}
+
 // client/modules/shell/ShellModule.ts
 var KNOWN_NAV_LABELS = [
   "Projects",
@@ -1328,6 +1408,7 @@ var ShellModule = class extends Module {
     initSettingsNav();
     initSidebarGroupNav();
     initSidebarCollapse();
+    initGlobalSearch();
   }
   async loadUserSession() {
     try {
@@ -1808,47 +1889,47 @@ var PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
 async function loadPageModuleClass(page) {
   switch (page) {
     case "dashboard":
-      return (await import("./chunks/DashboardModule-7W6O6KW5.js")).DashboardModule;
+      return (await import("./chunks/DashboardModule-APN3X54C.js")).DashboardModule;
     case "projects":
-      return (await import("./chunks/ProjectsModule-JUYBP3KM.js")).ProjectsModule;
+      return (await import("./chunks/ProjectsModule-JBRW4TRC.js")).ProjectsModule;
     case "categories":
-      return (await import("./chunks/CategoriesModule-UYGGDSW7.js")).CategoriesModule;
+      return (await import("./chunks/CategoriesModule-P7NALVZX.js")).CategoriesModule;
     case "tags":
-      return (await import("./chunks/TagsModule-GBOT2GRJ.js")).TagsModule;
+      return (await import("./chunks/TagsModule-JMZOS6AZ.js")).TagsModule;
     case "technologies":
-      return (await import("./chunks/TechnologiesModule-U3YGRKP2.js")).TechnologiesModule;
+      return (await import("./chunks/TechnologiesModule-JEZ3WFXB.js")).TechnologiesModule;
     case "tool-categories":
-      return (await import("./chunks/ToolCategoriesModule-3FY433F5.js")).ToolCategoriesModule;
+      return (await import("./chunks/ToolCategoriesModule-VHALRDJ7.js")).ToolCategoriesModule;
     case "blog-categories":
-      return (await import("./chunks/BlogCategoriesModule-X545KZDC.js")).BlogCategoriesModule;
+      return (await import("./chunks/BlogCategoriesModule-Y76VNBWD.js")).BlogCategoriesModule;
     case "tools":
-      return (await import("./chunks/ToolsModule-NVOAKKIT.js")).ToolsModule;
+      return (await import("./chunks/ToolsModule-MNMW5KGQ.js")).ToolsModule;
     case "media":
-      return (await import("./chunks/MediaModule-V4SXMBLQ.js")).MediaModule;
+      return (await import("./chunks/MediaModule-RH33Z3CN.js")).MediaModule;
     case "testimonials":
-      return (await import("./chunks/TestimonialsModule-TWA7KFE3.js")).TestimonialsModule;
+      return (await import("./chunks/TestimonialsModule-I2HYLXYY.js")).TestimonialsModule;
     case "blogposts":
-      return (await import("./chunks/BlogModule-4IBZ6IJ4.js")).BlogModule;
+      return (await import("./chunks/BlogModule-7JL6AN4F.js")).BlogModule;
     case "experience":
-      return (await import("./chunks/ExperienceModule-KDMEZ3UD.js")).ExperienceModule;
+      return (await import("./chunks/ExperienceModule-YIBACEW2.js")).ExperienceModule;
     case "contact-messages":
-      return (await import("./chunks/ContactMessagesModule-PIQTTSYL.js")).ContactMessagesModule;
+      return (await import("./chunks/ContactMessagesModule-KWZ64YSV.js")).ContactMessagesModule;
     case "blog-engagement":
-      return (await import("./chunks/BlogEngagementModule-X6DMNPVT.js")).BlogEngagementModule;
+      return (await import("./chunks/BlogEngagementModule-YINVIW3S.js")).BlogEngagementModule;
     case "access-requests":
-      return (await import("./chunks/AccessRequestsModule-RW57A6FQ.js")).AccessRequestsModule;
+      return (await import("./chunks/AccessRequestsModule-MR5ID66X.js")).AccessRequestsModule;
     case "users":
-      return (await import("./chunks/UsersModule-YXCNSCSD.js")).UsersModule;
+      return (await import("./chunks/UsersModule-T7BA6TL2.js")).UsersModule;
     case "recent-activities":
-      return (await import("./chunks/RecentActivitiesModule-J5OH7UIG.js")).RecentActivitiesModule;
+      return (await import("./chunks/RecentActivitiesModule-IU2XQMLZ.js")).RecentActivitiesModule;
     case "settings":
-      return (await import("./chunks/SettingsModule-RMJHSO2X.js")).SettingsModule;
+      return (await import("./chunks/SettingsModule-T2S4YEN3.js")).SettingsModule;
     case "login":
-      return (await import("./chunks/LoginModule-MPJ4QMAY.js")).LoginModule;
+      return (await import("./chunks/LoginModule-C3XXJPKX.js")).LoginModule;
     case "forgot-password":
-      return (await import("./chunks/ForgotPasswordModule-F2SJM2IW.js")).ForgotPasswordModule;
+      return (await import("./chunks/ForgotPasswordModule-G5LPAMAO.js")).ForgotPasswordModule;
     case "reset-password":
-      return (await import("./chunks/ResetPasswordModule-LP23INIZ.js")).ResetPasswordModule;
+      return (await import("./chunks/ResetPasswordModule-5WA2PO2G.js")).ResetPasswordModule;
     default:
       return null;
   }
@@ -1871,7 +1952,7 @@ function bindGlobalPanelChrome() {
 var quickAddModule = null;
 async function bindQuickAddButton(pageModule) {
   if (quickAddModule) return;
-  const { QuickAddModule } = await import("./chunks/QuickAddModule-RP3QAEBE.js");
+  const { QuickAddModule } = await import("./chunks/QuickAddModule-ATO5T7MR.js");
   quickAddModule = new QuickAddModule(pageModule);
   quickAddModule.bindEvents();
 }

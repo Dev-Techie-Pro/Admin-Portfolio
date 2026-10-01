@@ -170,6 +170,26 @@ export const SYSTEM_TAB_HTML = `
                 </section>
                 </div>
 
+                <div class="pa-tab-panel" data-panel="system-section" data-content="ops">
+                <section class="pa-system-ops-section" id="systemOpsSection">
+                    <div class="pa-bkp-header pa-bkp-layout-head mb-16">
+                        <div class="pa-bkp-header-copy">
+                            <div class="pa-bkp-header-icon" aria-hidden="true"><i class="ri-shield-check-line"></i></div>
+                            <div>
+                                <h2 class="pa-bkp-title">Deployment readiness</h2>
+                                <p class="pa-bkp-subtitle">Production checks for migrations, cron, CORS, captcha, and preview tokens. See <code>docs/DEPLOYMENT_CHECKLIST.md</code> in the repo.</p>
+                            </div>
+                        </div>
+                        <div class="pa-bkp-header-actions">
+                            <button class="pa-btn pa-btn-secondary flex-0-auto" type="button" id="systemOpsRefreshBtn" title="Refresh status"><i class="ri-refresh-line"></i> Refresh</button>
+                        </div>
+                    </div>
+                    <div id="systemOpsReadiness" class="pa-system-ops-readiness" aria-live="polite">
+                        <div class="pa-bkp-loading"><span class="pa-spinner"></span> Loading deployment status…</div>
+                    </div>
+                </section>
+                </div>
+
                 <div class="pa-tab-panel" data-panel="system-section" data-content="env">
                 <div class="pa-info-box mt-10 mb-16" id="systemEnvMeta">Loading environment settings…</div>
                 ${SYSTEM_ENV_FORM_HTML}

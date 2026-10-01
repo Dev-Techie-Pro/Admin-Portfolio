@@ -194,6 +194,8 @@ export async function saveRuntimeConfig(updates: Record<string, unknown>, userId
   if (error) throw error;
 
   invalidateRuntimeConfigCache();
+  const { invalidateRedirectsCache } = await import('@/lib/config/redirects');
+  invalidateRedirectsCache();
   await warmRuntimeSettings();
 }
 

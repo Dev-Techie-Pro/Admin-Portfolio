@@ -8,8 +8,6 @@ const SETTINGS_ROUTE_TABS = [
   'profile',
   'security',
   'notifications',
-  'integrations',
-  'logs',
   'system',
 ];
 

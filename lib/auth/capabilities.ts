@@ -31,10 +31,15 @@ export type AccessCapabilities = {
   elevatedUntil: string | null;
 };
 
+const ADMIN_SETTINGS_TABS = ['system'] as const;
+
 export function canAccessSettingsTab(
   tab: string,
-  capabilities: Pick<AccessCapabilities, 'canManageContent' | 'isViewer'>,
+  capabilities: Pick<AccessCapabilities, 'canManageContent' | 'isViewer' | 'isAdmin'>,
 ): boolean {
+  if ((ADMIN_SETTINGS_TABS as readonly string[]).includes(tab)) {
+    return capabilities.isAdmin;
+  }
   if (capabilities.canManageContent) return true;
   return (VIEWER_SETTINGS_TABS as readonly string[]).includes(tab);
 }

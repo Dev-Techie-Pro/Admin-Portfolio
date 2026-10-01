@@ -14,6 +14,16 @@ const nextConfig = {
         destination: '/blog-post?open=:id',
         permanent: false,
       },
+      {
+        source: '/settings/integrations',
+        destination: '/settings/system',
+        permanent: false,
+      },
+      {
+        source: '/settings/logs',
+        destination: '/settings/general',
+        permanent: false,
+      },
     ];
   },
   async headers() {
@@ -21,7 +31,35 @@ const nextConfig = {
     const staticCache = isProd
       ? 'public, max-age=31536000, immutable'
       : 'public, max-age=0, must-revalidate';
+    const securityHeaders = [
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+    ];
+    if (isProd) {
+      securityHeaders.push({
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubDomains; preload',
+      });
+    }
+    securityHeaders.push({
+      key: 'Content-Security-Policy',
+      value: [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' https://fonts.gstatic.com data:",
+        "img-src 'self' data: blob: https:",
+        "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
+        "frame-src https://challenges.cloudflare.com",
+      ].join('; '),
+    });
     return [
+      {
+        source: '/:path*',
+        headers: securityHeaders,
+      },
       {
         source: '/js/chunks/:path*',
         headers: [{ key: 'Cache-Control', value: staticCache }],
@@ -51,10 +89,11 @@ const nextConfig = {
     ];
   },
   typescript: {
-    // Gradual migration: type errors are fixed incrementally after the JS → TS rename.
+    // Production builds still compile; run `npm run typecheck` in CI to track remaining errors.
     ignoreBuildErrors: true,
   },
   eslint: {
+    // Run `npm run lint` in CI; keep builds unblocked during incremental cleanup.
     ignoreDuringBuilds: true,
   },
   webpack: (config) => {

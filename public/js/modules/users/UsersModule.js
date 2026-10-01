@@ -141,9 +141,39 @@ class UsersModule extends CrudCardModule {
   }
   async load() {
     if (!await this.ensureAdminAccess()) return;
+    this.ensureInviteButton();
     const data = await this.fetchJson("/api/users");
     this.store.set("records", Array.isArray(data.users) ? data.users : []);
     this.populateRoleFilter();
+  }
+  ensureInviteButton() {
+    const addBtn = $id("paUserAddNewBtn");
+    if (!addBtn || $id("paUserInviteBtn")) return;
+    const btn = document.createElement("button");
+    btn.id = "paUserInviteBtn";
+    btn.type = "button";
+    btn.className = "pa-btn pa-btn-cancel";
+    btn.innerHTML = '<i class="ri-mail-send-line"></i> Invite by email';
+    addBtn.parentElement?.insertBefore(btn, addBtn);
+    this.on(btn, "click", () => {
+      void this.inviteStaff();
+    });
+  }
+  async inviteStaff() {
+    const email = window.prompt("Email address to invite:");
+    if (!email?.trim()) return;
+    const role = (window.prompt("Role: editor or viewer", "editor") || "editor").trim().toLowerCase();
+    try {
+      await this.fetchJson("/api/admin/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), role })
+      });
+      window.alert("Invite sent. The user will receive a Supabase invitation email.");
+      await this.load();
+    } catch (err) {
+      window.alert(err?.message || "Invite failed.");
+    }
   }
   async persist() {
   }

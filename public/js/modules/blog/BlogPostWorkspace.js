@@ -35,6 +35,9 @@ class BlogPostWorkspace {
     this.blog.on($id("paBlogWsPublishNowBtn"), "click", () => {
       void this.publishNow();
     });
+    this.blog.on($id("paBlogWsCopyPreviewLinkBtn"), "click", () => {
+      void this.copyPublicPreviewLink();
+    });
     this.blog.on($id("paBlogWsDeleteBtn"), "click", () => this.requestDelete());
     $all("#paBlogWsModeToggle .pa-view-btn").forEach((btn) => {
       this.blog.on(btn, "click", () => {
@@ -136,6 +139,7 @@ class BlogPostWorkspace {
     $id("paBlogWsDeleteBtn")?.removeAttribute("hidden");
     this.engagementPostId = id;
     void this.loadEngagement(id);
+    void this.loadRevisions(id);
     if (mode !== "preview") setTimeout(() => $id("blogWsTitle")?.focus(), 420);
   }
   close() {
@@ -502,6 +506,76 @@ class BlogPostWorkspace {
       void this.blog.refreshEngagementSummaries();
     } catch {
       this.blog.toast("Could not update comment", "danger");
+    }
+  }
+  async copyPublicPreviewLink() {
+    const id = this.blog.currentEditId;
+    if (id == null || !canManageContent()) return;
+    try {
+      const res = await fetch(`/api/blog-posts/${encodeURIComponent(String(id))}/preview-token`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { Accept: "application/json" }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not create preview link");
+      const url = data.previewUrl;
+      if (!url) throw new Error("No preview URL returned");
+      await navigator.clipboard.writeText(url);
+      this.blog.toast("Preview API URL copied (1h)", "success");
+    } catch (err) {
+      this.blog.toast(err.message || "Could not copy preview link", "danger");
+    }
+  }
+  async loadRevisions(postId) {
+    const list = $id("paBlogWsRevisionsList");
+    const empty = $id("paBlogWsRevisionsEmpty");
+    if (!list || !empty) return;
+    list.innerHTML = "";
+    if (postId == null) {
+      empty.hidden = false;
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/content-revisions?entityType=blog_post&legacyId=${encodeURIComponent(String(postId))}`,
+        { credentials: "same-origin" }
+      );
+      if (!res.ok) throw new Error("load failed");
+      const data = await res.json();
+      const revisions = Array.isArray(data.revisions) ? data.revisions : [];
+      empty.hidden = revisions.length > 0;
+      list.innerHTML = revisions.map((row) => {
+        const when = new Date(row.created_at).toLocaleString();
+        return `<li class="pa-blog-ws-revision-item"><span>${escapeHtml(when)}</span><button type="button" class="pa-btn pa-btn-cancel" data-revision-restore="${escapeHtml(row.id)}">Restore</button></li>`;
+      }).join("");
+      list.querySelectorAll("[data-revision-restore]").forEach((btn) => {
+        this.blog.on(btn, "click", () => {
+          const id = btn.getAttribute("data-revision-restore");
+          void this.restoreRevision(id);
+        });
+      });
+    } catch {
+      empty.hidden = false;
+    }
+  }
+  async restoreRevision(revisionId) {
+    if (!revisionId || !canManageContent()) return;
+    if (!window.confirm("Restore this version into the editor? Click Save to persist changes.")) return;
+    try {
+      const res = await fetch(`/api/content-revisions/${encodeURIComponent(revisionId)}/restore`, {
+        method: "POST",
+        credentials: "same-origin"
+      });
+      if (!res.ok) throw new Error("restore failed");
+      const data = await res.json();
+      const id = data.legacyId ?? this.blog.currentEditId;
+      if (id != null) {
+        this.openEdit(id);
+        this.blog.toast("Revision restored \u2014 review and save", "success");
+      }
+    } catch {
+      this.blog.toast("Could not restore revision", "danger");
     }
   }
 }

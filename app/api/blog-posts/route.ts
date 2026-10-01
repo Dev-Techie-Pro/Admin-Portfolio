@@ -5,6 +5,8 @@ import { blogMediaUrlsChanged } from '@/lib/cms/media-reconcile';
 import { guardStaff, guardEditor } from '@/lib/auth/guard';
 import { withStaffGet } from '@/lib/api/with-staff-get';
 import { logArrayEntityChanges } from '@/lib/cms/activity-events';
+import { firePublishWebhooks } from '@/lib/cms/publish-webhook';
+import { saveBlogPostRevisionsFromPut } from '@/lib/cms/blog-revision-helper';
 
 export async function GET(request) {
   const full = new URL(request.url).searchParams.get('full') === '1';
@@ -17,7 +19,29 @@ export async function PUT(request) {
   try {
     const before = await getBlogPostActivitySnapshots();
     const records = await request.json();
+    const beforeByLegacy = new Map((before || []).map((row) => [String(row.id), row]));
+    const beforeLegacyIds = new Set((before || []).map((row) => String(row.id)));
+
+    await saveBlogPostRevisionsFromPut(records, beforeLegacyIds, auth.user.id);
+
     await saveBlogPosts(records, { reconcileMedia: blogMediaUrlsChanged(before, records) });
+
+    const newlyPublished = (records || []).filter((record) => {
+      const key = String(record?.legacyId ?? record?.id ?? '');
+      const prev = beforeByLegacy.get(key);
+      return record?.status === 'Published' && prev?.status !== 'Published';
+    });
+    if (newlyPublished.length) {
+      await firePublishWebhooks(
+        newlyPublished.map((record) => ({
+          id: String(record.id),
+          legacyId: record.legacyId,
+          title: record.title,
+          slug: record.slug,
+          status: record.status,
+        })),
+      );
+    }
     await logArrayEntityChanges({
       auth,
       request,

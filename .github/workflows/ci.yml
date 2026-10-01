@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run build:client
+      - run: npm run test:ci
+      - run: npm run lint
+        continue-on-error: true
+      - run: npm run typecheck:audit
+      - run: npm run typecheck
+        continue-on-error: true

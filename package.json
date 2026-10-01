@@ -11,6 +11,10 @@
     "start": "next start",
     "lint": "next lint",
     "lint:css": "stylelint \"app/**/*.css\"",
+    "typecheck": "tsc --noEmit",
+    "typecheck:audit": "tsc -p tsconfig.audit.json --noEmit",
+    "verify:deployment": "node scripts/verify-deployment-env.mjs",
+    "test:ci": "node scripts/test-api-guards.mjs && node scripts/test-prefetch-sync.mjs && node scripts/verify-deployment-env.mjs && node scripts/test-preview-token.mjs && node scripts/test-guard-smoke.mjs",
     "db:push": "supabase db push",
     "db:status": "supabase migration list",
     "db:types": "supabase gen types typescript --linked > lib/supabase/database.types.ts"

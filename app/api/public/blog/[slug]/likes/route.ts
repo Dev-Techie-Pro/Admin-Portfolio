@@ -1,4 +1,5 @@
 import { publicCorsJson, publicCorsOptions } from '@/lib/api/public-cors';
+import { checkRateLimit, rateLimitResponse } from '@/lib/api/rate-limit';
 import { togglePublicLike } from '@/lib/cms/blog-engagement';
 
 export async function OPTIONS(request) {
@@ -6,6 +7,12 @@ export async function OPTIONS(request) {
 }
 
 export async function POST(request, { params }) {
+  const limit = await checkRateLimit(request, 'public_blog_like', params?.slug);
+  if (!limit.allowed) {
+    const { status, headers } = rateLimitResponse(limit.retryAfterSec);
+    return publicCorsJson(request, { error: 'Too many requests. Please try again later.' }, { status, headers });
+  }
+
   try {
     const slug = decodeURIComponent(params.slug || '').trim();
     if (!slug) {

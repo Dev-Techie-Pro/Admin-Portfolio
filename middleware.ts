@@ -6,6 +6,8 @@ import {
   isDashboardSessionExpired,
   mergeResponseCookies,
 } from '@/lib/auth/session-lifetime';
+import { getRuntimeRedirects } from '@/lib/config/redirects';
+import { adminMustCompleteMfa } from '@/lib/auth/admin-mfa-policy';
 
 function isPublicPath(pathname) {
   if (pathname.startsWith('/auth/callback')) return true;
@@ -25,6 +27,14 @@ function isAuthPage(pathname) {
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
+
+  const redirects = await getRuntimeRedirects();
+  const redirectHit = redirects.find((row) => row.from === pathname);
+  if (redirectHit) {
+    const url = request.nextUrl.clone();
+    url.pathname = redirectHit.to;
+    return NextResponse.redirect(url, redirectHit.permanent ? 308 : 307);
+  }
 
   if (isPublicPath(pathname)) {
     return NextResponse.next();
@@ -65,7 +75,21 @@ export async function middleware(request) {
 
   const mfaAllowedPath = isAuthPage(pathname)
     || pathname.startsWith('/api/auth/mfa/')
-    || pathname.startsWith('/api/auth/logout');
+    || pathname.startsWith('/api/auth/logout')
+    || pathname.startsWith('/settings/security');
+
+  if (user && !needsMfa) {
+    const adminMfaBlock = await adminMustCompleteMfa(supabase, user.id);
+    if (adminMfaBlock && !mfaAllowedPath) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: adminMfaBlock, needsMfa: true }, { status: 403 });
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.searchParams.set('mfa', 'required');
+      return NextResponse.redirect(url);
+    }
+  }
 
   if (user && needsMfa && !mfaAllowedPath) {
     if (pathname.startsWith('/api/')) {

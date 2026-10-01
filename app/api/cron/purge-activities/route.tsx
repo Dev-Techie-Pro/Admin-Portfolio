@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { authorizeCronRequest } from '@/lib/api/cron-auth';
 import { purgeExpiredRecentActivities } from '@/lib/cms/activity-retention';
 
 /**
@@ -6,12 +7,8 @@ import { purgeExpiredRecentActivities } from '@/lib/cms/activity-retention';
  * Set CRON_SECRET in env and call with: Authorization: Bearer <CRON_SECRET>
  */
 export async function GET(request) {
-  const cronSecret = process.env.CRON_SECRET;
-  const authHeader = request.headers.get('authorization');
-
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const denied = authorizeCronRequest(request);
+  if (denied) return denied;
 
   try {
     const ok = await purgeExpiredRecentActivities();

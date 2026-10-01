@@ -220,9 +220,10 @@ a {
 }
 
 ::selection {
-  background: var(--pa-orange-dim);
+  background: var(--pa-orange);
   color: var(--pa-text);
 }
+
 ::-webkit-scrollbar {
   width: 0;
   height: 0;

@@ -617,7 +617,6 @@ a.pa-sidebar-brand.pa-logo-link,
   display: flex;
   flex-direction: column;
   -ms-overflow-style: none;
-  scrollbar-width: thin;
 }
 
 .pa-nav {

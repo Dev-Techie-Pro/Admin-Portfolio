@@ -36,13 +36,13 @@ The same deployment also exposes **CORS-enabled public APIs** under `/api/public
 
 - **Dashboard** — overview stats, ApexCharts charts, and quick-add wizards for common content types
 - **CMS modules** — projects, project tags, categories, blog categories, technologies, tools, tool categories, blog posts (rich editor workspace, SEO meta fields), experience, testimonials, and media library
-- **Blog engagement** — per-post likes and comments (public API + admin moderation), list-level engagement summaries, and toggles for comments/likes/auto-approve
+- **Blog engagement** — two admin surfaces: per-post tab in `/blog-post` (flags + moderation) and the **Comments & Likes** module at `/blog-engagement` (bulk comment moderation, like management, stats). Public portfolio sites use CORS-enabled `/api/public/blog/*`; list summaries use `/api/blog-posts/engagement`
 - **Contact messages** — inbox with threaded replies (SMTP), configurable column visibility, and status workflow
 - **User management** — staff user CRUD, role assignment, and credential reset emails (`/users`)
-- **Role access requests** — editors/viewers can request elevated access from administrators (email + in-app notifications)
+- **Access elevation** — viewers request temporary CMS access (Settings → Security); admins approve or reject at `/access-requests`. Approval sets `profiles.role` to `editor` until `elevated_until` (default **3 hours**, max **72 hours**), then lazy revert. Email + in-app notifications; elevation banner in the shell (`GET /api/auth/access-elevation`)
 - **Recent activities** — audit trail of user actions with retention policies and cron purge
 - **Notifications** — in-app notification inbox with per-user preference controls
-- **Settings** — general site config, profile, security (MFA + backup codes), notifications, and system admin tools
+- **Settings** — general site config, profile, security (MFA + backup codes + role request), notifications, and system admin tools (SQL export, **runtime config** in `site_runtime_config` — SMTP, retention, performance)
 - **Appearance / customization** — global theme and UI panel (stored in `site_settings.appearance_settings`)
 - **System admin** — SQL database export with table stats, environment config viewer, backup snapshot audit log
 - **Authentication** — Supabase Auth with login, MFA (TOTP), forgot/reset password, 24-hour session lifetime, and login activity
@@ -144,8 +144,10 @@ Portfolio-Admin-main/
 │   ├── media-library/
 │   ├── testimonials/
 │   ├── blog-post/
+│   ├── blog-engagement/          # Comments & Likes moderation
 │   ├── experience/
 │   ├── contact-messages/
+│   ├── access-requests/          # Admin: approve temporary CMS access
 │   ├── users/
 │   ├── recent-activities/
 │   └── settings/                 # /settings → redirect; /settings/[tab]
@@ -185,7 +187,7 @@ Portfolio-Admin-main/
 │   └── images/                   # Favicons, manifest
 │
 ├── supabase/
-│   ├── migrations/               # PostgreSQL schema migrations (45 files)
+│   ├── migrations/               # PostgreSQL schema migrations (52 files)
 │   └── README.md                 # Detailed database documentation
 │
 ├── scripts/                      # Optional dev utilities (not runtime)
@@ -276,13 +278,23 @@ Set these in `.env.local` or your hosting provider (Vercel, etc.). They are **no
 | `NEXT_PUBLIC_SITE_URL`          | Recommended | Public admin URL (e.g. `http://localhost:3000` in dev)          |
 | `PORTFOLIO_PUBLIC_ORIGINS`      | Recommended | Comma-separated origins allowed to call `/api/public/*` (no trailing slashes) |
 | `NEXT_PUBLIC_PORTFOLIO_URL`     | Optional    | Fallback single origin for public CORS if `PORTFOLIO_PUBLIC_ORIGINS` is unset |
-| `CRON_SECRET`                   | Optional    | Bearer token for `/api/cron/purge-activities` and `/api/cron/prune-sessions` |
+| `CRON_SECRET`                   | **Required in production** | Bearer token for `/api/cron/*` (purge activities, prune sessions, publish scheduled posts). Cron routes return `503` if unset when `NODE_ENV=production`. |
 
 ### Runtime settings (database)
 
 SMTP, session/login retention, CMS performance toggles, and email branding are stored in **`site_runtime_config`** and edited under **Settings → System → Environment**. They are **not** read from host environment variables at runtime (only built-in code defaults apply when a key is unset in the database). **Import from env file** uploads a local `.env` file from your machine and merges recognized runtime keys into the database.
 
+Notable runtime keys (Integrations / public surface): `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` (Cloudflare Turnstile on `/api/public/contact` and blog comments), `CONTACT_AUTO_REPLY_*` (optional ack email), `REDIRECTS_JSON` (301/302 map applied in middleware), `REQUIRE_MFA_ADMINS=true` (block admin roles until MFA is enrolled), `WEBHOOK_PUBLISH_URL` (HTTPS POST on blog publish). Portfolio reads `turnstileSiteKey` from **`GET /api/public/config`**.
+
+**Publish webhook payload** (`WEBHOOK_PUBLISH_URL`): JSON body `{ "event": "blog.published", "timestamp": "<ISO>", "post": { "id", "legacyId", "title", "slug", "status" } }` — one request per post, no automatic retries.
+
+**Draft preview:** set `PREVIEW_TOKEN_SECRET` (or `CRON_SECRET`) in host env; editors use **Copy preview API URL** in the blog workspace. Portfolio fetches `GET /api/public/preview?token=…` (CORS) for draft content.
+
 > **Security:** Never commit `.env` or `.env.local`. These paths are listed in `.gitignore`.
+
+**Auth signup:** Disable public self-registration in the Supabase Dashboard (**Authentication → Providers → Email → “Enable sign ups”**) so only invited staff receive accounts. Promote the first `super_admin` via SQL (see [Setup](#setup--installation)); additional staff can be invited from **Users → Invite by email** (`POST /api/admin/invites`).
+
+**Contact forms:** After migration `20261005120000_public_api_hardening.sql`, portfolio sites must submit messages via **`POST /api/public/contact`** (CORS). Direct `contact_messages` inserts with the anon key are no longer allowed.
 
 ---
 
@@ -290,15 +302,15 @@ SMTP, session/login retention, CMS performance toggles, and email branding are s
 
 The PostgreSQL schema covers:
 
-- **Core** — `sites`, `profiles`, `site_settings`, `site_runtime_config`, `notification_preferences`, `security_settings`, `two_factor_backup_codes`, `login_activity`, `user_sessions`, `backup_snapshots`, `user_notifications`
+- **Core** — `sites`, `profiles`, `site_settings`, `site_runtime_config` (runtime SMTP/retention/performance JSON), `notification_preferences`, `security_settings`, `two_factor_backup_codes`, `login_activity`, `user_sessions`, `backup_snapshots`, `user_notifications`, `access_elevation_requests`
 - **CMS** — `categories`, `projects`, `project_tags`, `project_gallery_images`, `technologies`, `tool_categories`, `tool_items`, `blog_categories`, `blog_posts` (incl. `meta_title`, `meta_description`, engagement flags), `blog_post_tags`, `blog_post_comments`, `blog_post_likes`, `media_assets`, `testimonials`, `experience_entries`, `contact_messages`, `contact_message_replies`
 - **Activity** — `recent_activities`
 - **Views** — `dashboard_stats` (with caching helpers in later migrations)
-- **Storage** — public `media` bucket (size/MIME limits enforced in app + migrations)
+- **Storage** — public `media` bucket (10 MB object limit; MIME types include images, PDF, Office docs, zip, and web fonts — see migration `20260925140000_storage_upload_mime_types.sql`)
 
-Theme and UI customization live in `site_settings.appearance_settings` (JSON). Contact inbox column visibility is in `site_settings.contact_message_columns`. The legacy `integrations` table was removed in migration `20260925160000_drop_integrations_table.sql`.
+Theme and UI customization live in `site_settings.appearance_settings` (JSON). Contact inbox column visibility is in `site_settings.contact_message_columns`. **Removed features:** `integrations` table (`20260925160000_drop_integrations_table.sql`), content-agent learning table `agent_suggestion_feedback` (`20260930120000_drop_content_agent_learning.sql`).
 
-Migrations are in `supabase/migrations/` (**45 files**) and should be applied in filename order. For tables, RLS policies, roles, and RPCs, see [supabase/README.md](supabase/README.md).
+Migrations are in `supabase/migrations/` (**52 files**) and should be applied in filename order. For tables, RLS policies, roles, and RPCs, see [supabase/README.md](supabase/README.md).
 
 **npm database scripts:**
 
@@ -321,6 +333,8 @@ Migrations are in `supabase/migrations/` (**45 files**) and should be applied in
 | `npm run start`        | Serve production build                                                      |
 | `npm run lint`         | Run Next.js ESLint                                                          |
 | `npm run lint:css`     | Run Stylelint on `app/**/*.css`                                             |
+| `npm run typecheck`    | TypeScript check (`tsc --noEmit`)                                           |
+| `npm run test:ci`      | API guard + prefetch config sync smoke tests                                |
 
 **Development:**
 
@@ -355,8 +369,10 @@ npm run start
 | `/testimonials`           | `testimonials`      | Client testimonials                     |
 | `/blog-post`              | `blogposts`         | Blog post list + workspace (engagement tab when editing) |
 | `/blog-post/view/:id`     | —                   | Redirects to `/blog-post?open=:id` (`next.config.mjs`) |
+| `/blog-engagement`        | `blog-engagement`   | Comments & Likes — bulk moderation (editor+) |
 | `/experience`             | `experience`        | Work experience entries                 |
 | `/contact-messages`       | `contact-messages`  | Inbound contact form messages           |
+| `/access-requests`        | `access-requests`   | Approve/reject temporary CMS access (admin) |
 | `/users`                  | `users`             | Staff user management (admin)           |
 | `/recent-activities`      | `recent-activities` | Activity audit log                      |
 | `/settings`               | `settings`          | Redirects to default settings tab       |
@@ -369,7 +385,7 @@ npm run start
 | `/forget-password`        | `forgot-password`   | Password reset request (public)         |
 | `/reset-password`         | `reset-password`    | Password reset form (public)            |
 
-Route-to-module mapping is defined in `client/core/router.ts` (compiled to `public/js/core/router.js`). **Settings tabs** exposed in the UI and Next.js static params are `general`, `profile`, `security`, `notifications`, and `system` (`lib/settings/page-meta.ts` and `app/sidebarHtml.tsx`). Each CMS page module extends the base `Module` class in `client/core/Module.ts`.
+Route-to-module mapping is defined in `client/core/router.ts` (compiled to `public/js/core/router.js`). **Settings tabs** are `general`, `profile`, `security`, `notifications`, and `system` (admin-only; see `app/sidebarHtml.tsx`). Each CMS page module extends the base `Module` class in `client/core/Module.ts`.
 
 ---
 
@@ -396,7 +412,11 @@ Staff CMS routes require an authenticated user with role `super_admin`, `admin`,
 | `/api/blog-posts`             | GET, PUT               | Blog posts                         |
 | `/api/blog-posts/[id]`        | GET                    | Single blog post                   |
 | `/api/blog-posts/engagement`  | GET                    | Like/comment counts by legacy post id (`?ids=`) |
-| `/api/blog-posts/[id]/engagement` | GET, PATCH, DELETE | Staff engagement detail; moderate or delete comments |
+| `/api/blog-posts/[id]/engagement` | GET, PATCH, DELETE | Per-post engagement in blog workspace |
+| `/api/blog-engagement/stats`  | GET                    | Dashboard stats for Comments & Likes module |
+| `/api/blog-engagement/comments` | GET, PATCH           | Paginated comments; bulk status or soft-delete (`ids`, optional `delete: true`) |
+| `/api/blog-engagement/posts`  | GET                    | Posts with engagement summaries (paginated) |
+| `/api/blog-engagement/posts/[id]/likes` | DELETE       | Clear likes for a post (legacy id) |
 | `/api/experience`             | GET, PUT               | Experience entries                 |
 | `/api/contact-messages`       | GET, PUT, DELETE       | Contact messages                   |
 | `/api/contact-messages/reply` | POST, PUT, DELETE      | Send, edit, or delete SMTP replies |
@@ -429,7 +449,8 @@ Staff CMS routes require an authenticated user with role `super_admin`, `admin`,
 | `/api/auth/delete-account`          | POST    | Delete own account              |
 | `/api/auth/login-activity`          | GET     | Login history                   |
 | `/api/auth/security-settings`       | GET     | Security flags                  |
-| `/api/auth/role-request`            | POST    | Request elevated staff role     |
+| `/api/auth/role-request`            | POST    | Submit access elevation request (viewers) |
+| `/api/auth/access-elevation`        | GET     | Current user elevation status (`elevatedUntil`, capabilities) |
 | `/api/auth/mfa/enroll`              | POST    | Start MFA enrollment            |
 | `/api/auth/mfa/verify-enroll`       | POST    | Confirm MFA enrollment          |
 | `/api/auth/mfa/verify-login`        | POST    | Complete MFA login step         |
@@ -445,9 +466,17 @@ Staff CMS routes require an authenticated user with role `super_admin`, `admin`,
 | `/api/users/[id]/reset-credentials` | POST              | Reset password + email credentials |
 | `/api/admin/database-backup`        | GET, POST, DELETE | SQL export + snapshot audit        |
 | `/api/admin/environment`            | GET, PUT          | Runtime env config (admin)         |
+| `/api/admin/environment/import-env` | POST              | Upload `.env` file; merge recognized keys into `site_runtime_config` |
+| `/api/admin/access-requests`        | GET               | List elevation requests (admin)    |
+| `/api/admin/access-requests/[id]`   | PATCH             | Approve or reject a request (admin) |
 | `/api/cron/purge-activities`        | GET               | Scheduled activity cleanup         |
 | `/api/cron/prune-sessions`          | GET               | Prune old `user_sessions` and `login_activity` rows |
-| `/api/health/supabase`              | GET               | Database connectivity check        |
+| `/api/cron/publish-scheduled`       | GET               | Publish blog posts when `published_at` is due |
+| `/api/health/supabase`              | GET               | Public connectivity probe; add `?detailed=1` when signed in for stats |
+| `/api/search`                       | GET               | Staff global CMS search (`?q=`)    |
+| `/api/admin/invites`                | GET, POST         | List / send staff email invites (admin) |
+| `/api/content-revisions`            | GET               | List revisions (`entityType`, `legacyId` or `entityId`) |
+| `/api/content-revisions/[id]/restore` | POST            | Restore a blog revision snapshot |
 
 ### Public portfolio (CORS)
 
@@ -458,8 +487,17 @@ These routes are unauthenticated. They require a permitted `Origin` (see `PORTFO
 | `/api/public/blog/[slug]/engagement`       | GET     | Published post engagement (`?visitorKey=`)   |
 | `/api/public/blog/[slug]/likes`            | POST    | Toggle like for a visitor key                |
 | `/api/public/blog/[slug]/comments`         | POST    | Submit a comment (may be pending moderation) |
+| `/api/public/contact`                      | POST    | Submit contact form (honeypot, rate limit, optional Turnstile) |
+| `/api/public/config`                       | GET     | Public analytics integration metadata       |
+| `/api/public/content/[resource]`           | GET     | Read-only lists: `projects`, `blog`, `testimonials`, `experience` |
+| `/api/public/sitemap`                      | GET     | XML sitemap for portfolio URLs |
+| `/api/public/rss`                          | GET     | RSS feed of published blog posts |
+| `/api/public/preview`                      | GET     | Draft blog preview (`?token=` from staff **Copy preview API URL**) |
+| `/api/blog-posts/[id]/preview-token`       | POST    | Issue signed preview token (editor) |
 
 Client-side storage keys map to these routes in `client/core/StorageService.ts` (`REMOTE_ROUTES`). Per-route prefetch keys are in `client/prefetch-config.ts` (keep in sync with `lib/cms/prefetch-config.ts`).
+
+**Blog engagement APIs:** use `/api/blog-posts/engagement` for lightweight counts on the blog list; `/api/blog-posts/[id]/engagement` inside the post workspace; `/api/blog-engagement/*` for the dedicated Comments & Likes module.
 
 ---
 
@@ -467,6 +505,7 @@ Client-side storage keys map to these routes in `client/core/StorageService.ts` 
 
 - **Middleware** (`middleware.ts`) validates Supabase sessions on every request, enforces MFA when required, and signs users out when the dashboard session deadline passes. Unauthenticated users are redirected to `/login`; authenticated users on auth pages are redirected to `/`.
 - **API guards** (`lib/auth/guard.ts` → `lib/auth/request-cache.tsx`): `guardAuthenticated()`, `guardStaff()`, `guardAdmin()`, and `guardEditor()` enforce access on route handlers.
+- **Capabilities** (`lib/auth/capabilities.ts`, mirrored in `client/core/access.ts`) derive UI and effective write access: `canManageContent`, `canAccessBlogEngagement`, viewer read-only CMS (`client/core/cms-access.ts`), and temporary elevation merging into `isEditor` / `canManageContent` when `elevated_until` is active.
 - **Session lifetime** — 24 hours from sign-in (`SESSION_LIFETIME_SECONDS` in `lib/auth/constants.ts`), tracked via `pa_sess_deadline` cookie and `last_sign_in_at`.
 - **MFA** — TOTP enrollment and verification via `/api/auth/mfa/*`; backup codes in `two_factor_backup_codes`.
 - **Roles** (stored in `profiles.role`):
@@ -476,7 +515,9 @@ Client-side storage keys map to these routes in `client/core/StorageService.ts` 
 | `super_admin` | Full access, user management, all admin features                   |
 | `admin`       | Site settings, SQL exports, user management, all CMS                |
 | `editor`      | CMS content CRUD (writes blocked for `viewer`)                     |
-| `viewer`      | Read-only dashboard; may submit role access requests                |
+| `viewer`      | Read-only dashboard; may submit access elevation requests           |
+
+**Access elevation vs permanent role change:** `POST /api/auth/role-request` creates an `access_elevation_requests` row. Admin approval (`PATCH /api/admin/access-requests/[id]`) temporarily sets `profiles.role` to `editor` until `elevated_until`, then reverts (see `lib/auth/elevation.ts`). Permanent role changes are done on `/users` by admins only.
 
 New users receive default rows in `profiles`, `notification_preferences`, and `security_settings` via database triggers. Passwords are managed by Supabase Auth — not stored in application tables.
 
@@ -538,6 +579,8 @@ Deleting `scripts/` does not affect `npm run dev`, `build`, or `start`.
 
 ## Deployment
 
+See [docs/DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md) for a full production checklist.
+
 This is a standard Next.js 14 application. Deploy to any Node-compatible host (e.g. Vercel, Railway, Docker):
 
 1. Set all [environment variables](#environment-variables) in the hosting provider.
@@ -545,9 +588,10 @@ This is a standard Next.js 14 application. Deploy to any Node-compatible host (e
 3. Set `NEXT_PUBLIC_SITE_URL` to your production admin URL.
 4. Set `PORTFOLIO_PUBLIC_ORIGINS` (or `NEXT_PUBLIC_PORTFOLIO_URL`) so your live portfolio site can call `/api/public/blog/*`.
 5. Configure runtime retention and SMTP under **Settings → System → Environment** (stored in `site_runtime_config`).
-6. Configure `CRON_SECRET` and schedule:
+6. Configure `CRON_SECRET` and schedule (see `vercel.json`):
    - `/api/cron/purge-activities` for activity retention
    - `/api/cron/prune-sessions` for old session and login-activity rows
+   - `/api/cron/publish-scheduled` for due blog `published_at` dates
 7. Build and start:
 
 ```bash

@@ -17,3 +17,18 @@ export function getSiteUrl(request: Request): string {
 
   return 'http://localhost:3000';
 }
+
+export function getSiteUrlFromEnv() {
+  return process.env.NEXT_PUBLIC_SITE_URL?.trim()?.replace(/\/$/, '') || 'http://localhost:3000';
+}
+
+/** Base URL for portfolio-facing links (sitemap/RSS). */
+export function getPortfolioPublicBaseUrl() {
+  const fromList = process.env.PORTFOLIO_PUBLIC_ORIGINS?.split(',')
+    .map((s) => s.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+  if (fromList?.[0]) return fromList[0];
+  const single = process.env.NEXT_PUBLIC_PORTFOLIO_URL?.trim()?.replace(/\/$/, '');
+  if (single) return single;
+  return getSiteUrlFromEnv();
+}

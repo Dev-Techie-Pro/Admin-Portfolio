@@ -20,7 +20,7 @@ const ROUTES = [
   ["/forget-password", "forgot-password"],
   ["/reset-password", "reset-password"]
 ];
-const SETTINGS_TABS = ["general", "profile", "security", "notifications", "integrations", "logs", "system"];
+const SETTINGS_TABS = ["general", "profile", "security", "notifications", "system"];
 const SETTINGS_PAGE_META = {
   general: {
     title: "General Settings",
@@ -37,14 +37,6 @@ const SETTINGS_PAGE_META = {
   notifications: {
     title: "Notifications",
     subtitle: "Email alerts, channels, and quiet hours"
-  },
-  integrations: {
-    title: "Integrations",
-    subtitle: "Connect third-party services and API credentials"
-  },
-  logs: {
-    title: "Activity Logs",
-    subtitle: "Audit trail, traffic events, and system messages"
   },
   system: {
     title: "System",

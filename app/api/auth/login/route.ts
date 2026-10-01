@@ -8,6 +8,8 @@ import { logUserLogin } from '@/lib/cms/activity-events';
 import { ensureProfileForUser } from '@/lib/auth/profile';
 import { getMfaAssuranceLevel, listTotpFactors, needsMfaVerification } from '@/lib/auth/mfa';
 import { applySessionDeadlineCookie } from '@/lib/auth/session-lifetime';
+import { checkRateLimit, rateLimitResponse } from '@/lib/api/rate-limit';
+import { acceptStaffInviteForUser } from '@/lib/auth/staff-invites';
 
 async function logFailedAttempt(email, failureReason, request) {
   try {
@@ -27,6 +29,15 @@ async function logFailedAttempt(email, failureReason, request) {
 
 export async function POST(request) {
   try {
+    const limit = await checkRateLimit(request, 'auth_login');
+    if (!limit.allowed) {
+      const { status, headers } = rateLimitResponse(limit.retryAfterSec);
+      return NextResponse.json(
+        { error: 'Too many login attempts. Please try again later.' },
+        { status, headers },
+      );
+    }
+
     const { email, password } = await request.json();
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
@@ -68,6 +79,15 @@ export async function POST(request) {
         .maybeSingle()
         .then(({ data }) => data);
     }
+
+    await acceptStaffInviteForUser(data.user.id, email);
+
+    profileRow = await admin
+      .from('profiles')
+      .select('role, full_name, email, username, avatar_url')
+      .eq('id', data.user.id)
+      .maybeSingle()
+      .then(({ data }) => data);
 
     const profile = profileRow;
 

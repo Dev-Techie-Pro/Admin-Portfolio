@@ -107,6 +107,11 @@ export const BLOG_POST_WORKSPACE_HTML = `
             <label class="pa-form-label" for="blogWsSortOrder">Sort order</label>
             <input class="pa-form-input" type="number" min="0" id="blogWsSortOrder" placeholder="0" />
           </div>
+          <div class="pa-form-group">
+            <label class="pa-form-label">Portfolio preview</label>
+            <p class="pa-text-mute fs-sm mb-8">Signed link for draft posts (expires in 1 hour). Use on your portfolio site via <code>GET /api/public/preview?token=…</code>.</p>
+            <button type="button" class="pa-btn pa-btn-secondary pa-btn-sm w-full" id="paBlogWsCopyPreviewLinkBtn"><i class="ri-link"></i> Copy preview API URL</button>
+          </div>
           <div class="pa-blog-ws-publish-actions">
             <button type="button" class="pa-btn pa-btn-primary pa-blog-ws-publish-now" id="paBlogWsPublishNowBtn">Publish now</button>
             <button type="button" class="pa-btn pa-btn-cancel" id="paBlogWsSaveDraftBtn">Save draft</button>
@@ -182,6 +187,18 @@ export const BLOG_POST_WORKSPACE_HTML = `
             <textarea class="pa-form-textarea" id="blogWsMetaDesc" maxlength="160" rows="3" placeholder="Defaults to excerpt"></textarea>
             <div class="pa-char-count"><span id="blogWsMetaDescCount">0</span>/160</div>
           </div>
+        </div>
+      </section>
+
+      <section class="pa-blog-ws-panel is-collapsed" data-ws-panel id="paBlogWsRevisionsPanel">
+        <button type="button" class="pa-blog-ws-panel-head" data-ws-panel-toggle aria-expanded="false">
+          <span class="pa-blog-ws-panel-head-left"><i class="ri-history-line"></i> Version history</span>
+          <i class="ri-arrow-down-s-line pa-blog-ws-panel-chevron" aria-hidden="true"></i>
+        </button>
+        <div class="pa-blog-ws-panel-body">
+          <p class="pa-blog-ws-engagement-hint">Up to 10 snapshots are saved before each save. Restore replaces the editor with a past version (save to persist).</p>
+          <ul class="pa-blog-ws-revisions-list" id="paBlogWsRevisionsList" aria-live="polite"></ul>
+          <p class="pa-blog-ws-revisions-empty" id="paBlogWsRevisionsEmpty" hidden>No revisions yet. Save the post to create snapshots.</p>
         </div>
       </section>
 

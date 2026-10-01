@@ -29,6 +29,7 @@ import {
 } from './mobileHeaderSearch.js';
 import { maybeShowRoleAccessModal } from './roleAccessModal.js';
 import { syncElevationBanner } from './elevationBanner.js';
+import { initGlobalSearch } from './globalSearch.js';
 const KNOWN_NAV_LABELS = [
   'Projects', 'Categories', 'Tags', 'Technologies', 'Tool Categories', 'Tools', 'Media Library',
   'Testimonials', 'Blog Posts', 'Blog Categories', 'Experience', 'Dashboard', 'Contact Messages',
@@ -68,6 +69,7 @@ export class ShellModule extends Module {
     initSettingsNav();
     initSidebarGroupNav();
     initSidebarCollapse();
+    initGlobalSearch();
   }
 
   async loadUserSession() {

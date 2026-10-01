@@ -1,0 +1,25 @@
+.pa-blog-ws-revisions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pa-gap-sm);
+}
+
+.pa-blog-ws-revision-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pa-card-gap);
+  padding: var(--pa-card-padding);
+  border: 1px solid var(--pa-border-soft);
+  border-radius: var(--pa-radius);
+  font-size: var(--pa-fs-sm);
+}
+
+.pa-blog-ws-revisions-empty {
+  font-size: var(--pa-fs-sm);
+  opacity: 0.75;
+  margin: 0;
+}

@@ -29,6 +29,7 @@ import {
 } from "./mobileHeaderSearch.js";
 import { maybeShowRoleAccessModal } from "./roleAccessModal.js";
 import { syncElevationBanner } from "./elevationBanner.js";
+import { initGlobalSearch } from "./globalSearch.js";
 const KNOWN_NAV_LABELS = [
   "Projects",
   "Categories",
@@ -80,6 +81,7 @@ class ShellModule extends Module {
     initSettingsNav();
     initSidebarGroupNav();
     initSidebarCollapse();
+    initGlobalSearch();
   }
   async loadUserSession() {
     try {

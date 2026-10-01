@@ -5,27 +5,20 @@ import { closeAllCardMenus, toggleCardMenu } from "../shell/cardMenu.js";
 import { setupAllPasswordToggles } from "../../utils/password-toggle.js";
 import { activateTab } from "../shell/panels.js";
 const UNCHANGED_SECRET = "__UNCHANGED__";
-const SECRET_FIELDS = /* @__PURE__ */ new Set([
-  "SMTP_PASS"
-]);
-const ENV_FORM_KEYS = [
-  "SESSION_PRUNE_KEEP_DAYS",
-  "LOGIN_ACTIVITY_RETENTION_DAYS",
-  "LOGIN_ACTIVITY_PER_USER_CAP",
-  "CMS_BATCH_WRITES",
-  "MEDIA_FULL_RECONCILE",
-  "SMTP_HOST",
-  "SMTP_PORT",
-  "SMTP_USER",
-  "SMTP_PASS",
-  "SMTP_FROM",
-  "EMAIL_BRAND_NAME",
-  "EMAIL_BRAND_ROLE",
-  "EMAIL_PORTFOLIO_LABEL",
-  "EMAIL_PORTFOLIO_URL",
-  "EMAIL_GITHUB_URL",
-  "EMAIL_LINKEDIN_URL"
-];
+function listEnvFormKeys() {
+  const form = $id("systemEnvForm");
+  if (!form) return [];
+  const names = /* @__PURE__ */ new Set();
+  form.querySelectorAll("[name]").forEach((el) => {
+    const name = el.getAttribute("name")?.trim();
+    if (name) names.add(name);
+  });
+  return [...names];
+}
+function isSecretEnvField(el) {
+  if (el instanceof HTMLInputElement && el.type === "password") return true;
+  return el.getAttribute("data-env-secret") === "1";
+}
 const TABLE_META = {
   sites: { desc: "Site configuration records", category: "system", icon: "ri-global-line", tone: "tone-blue" },
   profiles: { desc: "User profile data", category: "auth", icon: "ri-user-line", tone: "tone-green" },
@@ -158,6 +151,10 @@ class SystemManager {
     const refreshBtn = $id("systemBackupRefreshBtn");
     if (refreshBtn) this.on(refreshBtn, "click", () => {
       void this.loadTables();
+    });
+    const opsRefreshBtn = $id("systemOpsRefreshBtn");
+    if (opsRefreshBtn) this.on(opsRefreshBtn, "click", () => {
+      void this.loadOpsReadiness();
     });
     const searchInput = $id("systemTableSearch");
     if (searchInput) {
@@ -423,8 +420,43 @@ class SystemManager {
     this.populateCategoryFilter();
     await Promise.all([
       this.loadTables(),
-      this.loadEnvironment()
+      this.loadEnvironment(),
+      this.loadOpsReadiness()
     ]);
+  }
+  async loadOpsReadiness() {
+    const el = $id("systemOpsReadiness");
+    if (!el) return;
+    el.innerHTML = '<div class="pa-bkp-loading"><span class="pa-spinner"></span> Loading deployment status\u2026</div>';
+    try {
+      const data = await this.fetchJson("/api/health/supabase?detailed=1");
+      const ops = data.ops;
+      if (!ops) {
+        el.innerHTML = '<div class="pa-info-box">No deployment data returned.</div>';
+        return;
+      }
+      const checks = [
+        { ok: ops.migrationPublicApiHardening, label: "Public API hardening migration (rate limits + contact API)" },
+        { ok: ops.cronSecretConfigured, label: "CRON_SECRET configured (host env)" },
+        { ok: ops.portfolioOriginsConfigured, label: "PORTFOLIO_PUBLIC_ORIGINS or portfolio URL (host env)" },
+        { ok: ops.previewTokenSecretConfigured, label: "PREVIEW_TOKEN_SECRET or CRON_SECRET (host env)" },
+        { ok: ops.turnstileConfigured, label: "Turnstile keys (System \u2192 Environment)" }
+      ];
+      const checkHtml = checks.map((row) => {
+        const icon = row.ok ? "ri-checkbox-circle-fill pa-system-ops-ok" : "ri-error-warning-fill pa-system-ops-warn";
+        return `<li class="pa-system-ops-check"><i class="${icon}" aria-hidden="true"></i><span>${escapeHtml(row.label)}</span></li>`;
+      }).join("");
+      const warnings = Array.isArray(ops.warnings) ? ops.warnings : [];
+      const warnHtml = warnings.length ? `<ul class="pa-system-ops-warnings">${warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join("")}</ul>` : '<p class="pa-text-mute fs-sm mb-0">No additional warnings.</p>';
+      el.innerHTML = `
+        <ul class="pa-system-ops-checks">${checkHtml}</ul>
+        <div class="pa-info-box mt-16">
+          <p class="mb-8"><strong>Manual steps</strong> (Supabase Dashboard): disable public email sign-ups; promote staff via invite or SQL.</p>
+          ${warnHtml}
+        </div>`;
+    } catch (err) {
+      el.innerHTML = `<div class="pa-info-box pa-system-ops-error">${escapeHtml(err.message || "Could not load deployment status.")}</div>`;
+    }
   }
   populateCategoryFilter() {
     const select = $id("systemTableCategoryFilter");
@@ -984,13 +1016,13 @@ class SystemManager {
     return form.querySelector(`[name="${key}"]`);
   }
   hydrateEnvironmentForm(values = {}) {
-    for (const key of ENV_FORM_KEYS) {
+    for (const key of listEnvFormKeys()) {
       const el = this.getEnvFormField(key);
       if (!el) continue;
       const value = values[key] ?? "";
-      if (SECRET_FIELDS.has(key)) {
+      if (isSecretEnvField(el)) {
         el.value = "";
-        el.placeholder = value ? `Configured (${value})` : "Leave blank to keep current value";
+        el.placeholder = value ? "Configured \u2014 leave blank to keep current value" : "Leave blank to keep current value";
       } else {
         el.value = value;
       }
@@ -998,11 +1030,11 @@ class SystemManager {
   }
   collectEnvironmentUpdates() {
     const updates = {};
-    for (const key of ENV_FORM_KEYS) {
+    for (const key of listEnvFormKeys()) {
       const el = this.getEnvFormField(key);
       if (!el) continue;
       const value = el.value.trim();
-      if (SECRET_FIELDS.has(key)) {
+      if (isSecretEnvField(el)) {
         updates[key] = value ? value : UNCHANGED_SECRET;
       } else {
         updates[key] = value;
