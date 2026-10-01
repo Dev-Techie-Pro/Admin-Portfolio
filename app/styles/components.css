@@ -8142,6 +8142,10 @@ body.light .custom-theme-card.active {
   color: var(--pa-text-mute);
 }
 
+.pa-system-ops-readiness .pa-info-box {
+  padding: 10px 20px;
+}
+
 .pa-int-summary-item {
   background: var(--pa-bg-input);
   border: 1px solid var(--pa-border-soft);

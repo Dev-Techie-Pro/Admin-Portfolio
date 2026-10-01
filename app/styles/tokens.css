@@ -90,9 +90,9 @@
   --pa-font-body:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --pa-font-mono:    "JetBrains Mono", monospace;
 
-  --pa-fs-xm: 8px;
-  --pa-fs-sm:  10px;
-  --pa-fs-xmd: 12px;
+  --pa-fs-xm: 10px;
+  --pa-fs-sm:  11px;
+  --pa-fs-xmd: 13px;
   --pa-fs-md:  14px;
   --pa-fs-lg:  16px;
   --pa-fs-xl:  22px;
