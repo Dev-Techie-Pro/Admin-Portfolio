@@ -17,7 +17,7 @@ import {
   CrudCardModule,
   setStatTrend,
   setStatValue
-} from "./chunk-O7SJP42B.js";
+} from "./chunk-7XBGSWWF.js";
 import {
   listActionBtn
 } from "./chunk-7EBYGU7Z.js";
@@ -29,7 +29,7 @@ import {
 } from "./chunk-3FVVIY3E.js";
 import {
   storage
-} from "./chunk-2KLDEWPL.js";
+} from "./chunk-UULQLYO3.js";
 import {
   $id,
   escapeHtml

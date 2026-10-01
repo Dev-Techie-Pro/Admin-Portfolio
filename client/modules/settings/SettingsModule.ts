@@ -349,7 +349,7 @@ export class SettingsModule extends Module {
   }
 
   applySettingsAccess(role) {
-    const siteSettingsReadOnly = !getAccessCapabilities().canManageContent;
+    const siteSettingsReadOnly = !getAccessCapabilities().canManageSiteSettings;
     document.body.classList.toggle('pa-settings-site-readonly', siteSettingsReadOnly);
 
     ['general', 'other'].forEach((section) => {
@@ -888,7 +888,7 @@ export class SettingsModule extends Module {
   }
 
   async saveGeneralSettings() {
-    if (!this.isAdminRole(this.store.get('profile')?.role)) {
+    if (!getAccessCapabilities().canManageSiteSettings) {
       showToast('Only administrators can change site settings.', 'danger');
       return;
     }
@@ -927,7 +927,7 @@ export class SettingsModule extends Module {
   }
 
   async saveOtherSettings() {
-    if (!this.isAdminRole(this.store.get('profile')?.role)) {
+    if (!getAccessCapabilities().canManageSiteSettings) {
       showToast('Only administrators can change site settings.', 'danger');
       return;
     }

@@ -48,13 +48,19 @@ export async function checkRateLimit(
       p_max_hits: maxHits,
     });
     if (error) {
-      console.warn('[rate-limit] rpc failed, allowing request:', error.message);
+      console.warn('[rate-limit] rpc failed:', error.message);
+      if (process.env.NODE_ENV === 'production') {
+        return { allowed: false, retryAfterSec: windowSec };
+      }
       return { allowed: true };
     }
     if (data === true) return { allowed: true };
     return { allowed: false, retryAfterSec: windowSec };
   } catch (err) {
-    console.warn('[rate-limit] error, allowing request:', (err as Error).message);
+    console.warn('[rate-limit] error:', (err as Error).message);
+    if (process.env.NODE_ENV === 'production') {
+      return { allowed: false, retryAfterSec: windowSec };
+    }
     return { allowed: true };
   }
 }

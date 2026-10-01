@@ -2,7 +2,7 @@ import {
   closePanels,
   openPanel,
   registerPanel
-} from "./chunk-2KLDEWPL.js";
+} from "./chunk-UULQLYO3.js";
 import {
   $id,
   showToast

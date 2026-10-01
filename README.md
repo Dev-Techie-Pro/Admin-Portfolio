@@ -187,7 +187,7 @@ Portfolio-Admin-main/
 │   └── images/                   # Favicons, manifest
 │
 ├── supabase/
-│   ├── migrations/               # PostgreSQL schema migrations (52 files)
+│   ├── migrations/               # PostgreSQL schema migrations (53 files)
 │   └── README.md                 # Detailed database documentation
 │
 ├── scripts/                      # Optional dev utilities (not runtime)
@@ -310,7 +310,7 @@ The PostgreSQL schema covers:
 
 Theme and UI customization live in `site_settings.appearance_settings` (JSON). Contact inbox column visibility is in `site_settings.contact_message_columns`. **Removed features:** `integrations` table (`20260925160000_drop_integrations_table.sql`), content-agent learning table `agent_suggestion_feedback` (`20260930120000_drop_content_agent_learning.sql`).
 
-Migrations are in `supabase/migrations/` (**52 files**) and should be applied in filename order. For tables, RLS policies, roles, and RPCs, see [supabase/README.md](supabase/README.md).
+Migrations are in `supabase/migrations/` (**53 files**) and should be applied in filename order. For tables, RLS policies, roles, and RPCs, see [supabase/README.md](supabase/README.md).
 
 **npm database scripts:**
 
@@ -334,7 +334,7 @@ Migrations are in `supabase/migrations/` (**52 files**) and should be applied in
 | `npm run lint`         | Run Next.js ESLint                                                          |
 | `npm run lint:css`     | Run Stylelint on `app/**/*.css`                                             |
 | `npm run typecheck`    | TypeScript check (`tsc --noEmit`)                                           |
-| `npm run test:ci`      | API guard + prefetch config sync smoke tests                                |
+| `npm run test:ci`      | API guard, prefetch sync, deployment env, preview token, public API hardening smoke tests |
 
 **Development:**
 
@@ -418,7 +418,7 @@ Staff CMS routes require an authenticated user with role `super_admin`, `admin`,
 | `/api/blog-engagement/posts`  | GET                    | Posts with engagement summaries (paginated) |
 | `/api/blog-engagement/posts/[id]/likes` | DELETE       | Clear likes for a post (legacy id) |
 | `/api/experience`             | GET, PUT               | Experience entries                 |
-| `/api/contact-messages`       | GET, PUT, DELETE       | Contact messages                   |
+| `/api/contact-messages`       | GET, PUT               | Contact messages                   |
 | `/api/contact-messages/reply` | POST, PUT, DELETE      | Send, edit, or delete SMTP replies |
 | `/api/recent-activities`      | GET, DELETE            | Activity log                       |
 | `/api/bootstrap`              | GET                    | Prefetch bundle for current page   |
@@ -505,7 +505,7 @@ Client-side storage keys map to these routes in `client/core/StorageService.ts` 
 
 - **Middleware** (`middleware.ts`) validates Supabase sessions on every request, enforces MFA when required, and signs users out when the dashboard session deadline passes. Unauthenticated users are redirected to `/login`; authenticated users on auth pages are redirected to `/`.
 - **API guards** (`lib/auth/guard.ts` → `lib/auth/request-cache.tsx`): `guardAuthenticated()`, `guardStaff()`, `guardAdmin()`, and `guardEditor()` enforce access on route handlers.
-- **Capabilities** (`lib/auth/capabilities.ts`, mirrored in `client/core/access.ts`) derive UI and effective write access: `canManageContent`, `canAccessBlogEngagement`, viewer read-only CMS (`client/core/cms-access.ts`), and temporary elevation merging into `isEditor` / `canManageContent` when `elevated_until` is active.
+- **Capabilities** (`lib/auth/capabilities.ts`, mirrored in `client/core/access.ts`) derive UI and effective write access: `canManageContent` (CMS / `guardEditor`), `canManageSiteSettings` (settings, appearance, contact columns / `guardAdmin`), `canAccessBlogEngagement`, viewer read-only CMS (`client/core/cms-access.ts`), and temporary elevation merging into `isEditor` / `canManageContent` when `elevated_until` is active.
 - **Session lifetime** — 24 hours from sign-in (`SESSION_LIFETIME_SECONDS` in `lib/auth/constants.ts`), tracked via `pa_sess_deadline` cookie and `last_sign_in_at`.
 - **MFA** — TOTP enrollment and verification via `/api/auth/mfa/*`; backup codes in `two_factor_backup_codes`.
 - **Roles** (stored in `profiles.role`):

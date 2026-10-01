@@ -6,7 +6,7 @@ For Next.js setup, environment variables, API routes, and deployment, see the ro
 
 ## Migrations
 
-All schema changes live in `supabase/migrations/` (**52** timestamped SQL files). Apply them in **filename order**.
+All schema changes live in `supabase/migrations/` (**53** timestamped SQL files). Apply them in **filename order**.
 
 ### Quick start
 
@@ -113,6 +113,7 @@ SMTP, retention windows, and similar **runtime** settings live in `site_runtime_
 | `20261002120000_site_runtime_config.sql` | `site_runtime_config` (settings + secrets JSON, admin RLS) |
 | `20261003120000_access_elevation_requests.sql` | `access_elevation_requests` table + indexes |
 | `20261004120000_access_elevation_role_duration.sql` | Elevation duration columns; approve sets `profiles.role` until `elevated_until` |
+| `20261005120000_public_api_hardening.sql` | `api_rate_limits` + `pa_rate_limit_allow`; drop anon `contact_messages` insert; `content_revisions`, `staff_invites` |
 
 ### Thematic groups
 
@@ -126,6 +127,7 @@ SMTP, retention windows, and similar **runtime** settings live in `site_runtime_
 - **Integrations (removed)** — `20260912120000` through provider tweaks; dropped in `20260925160000`
 - **Blog SEO & engagement** — `20260928220000`, `20260929120000`
 - **Runtime & access** — `site_runtime_config`, `access_elevation_requests` (`20261002120000`–`20261004120000`)
+- **Public API hardening** — rate limits, contact RLS, blog revisions, staff invites (`20261005120000`)
 
 Required for access elevation (referenced in app error messages):
 
@@ -133,6 +135,12 @@ Required for access elevation (referenced in app error messages):
 - `supabase/migrations/20261004120000_access_elevation_role_duration.sql`
 
 Run `npm run db:push` if either is missing.
+
+Required for public contact forms and rate limiting:
+
+- `supabase/migrations/20261005120000_public_api_hardening.sql`
+
+Run `npm run test:ci` (includes `scripts/test-public-api-hardening.mjs`) or check **Settings → System** ops readiness (`GET /api/health/supabase?detailed=1`) for `contactMessagesAnonInsertBlocked`.
 
 ---
 
@@ -154,6 +162,9 @@ Run `npm run db:push` if either is missing.
 | `backup_snapshots` | SQL export audit metadata (System tab; files not stored on disk) |
 | `user_notifications` | In-app notification inbox |
 | `access_elevation_requests` | Temporary CMS access requests; approval sets `profiles.role` to `editor` until `elevated_until` |
+| `content_revisions` | Blog post (and future entity) JSON snapshots; staff API + blog workspace restore |
+| `staff_invites` | Admin-created invite tokens; consumed on first staff login |
+| `api_rate_limits` | Rate-limit buckets for `pa_rate_limit_allow` (service role only; no direct client access) |
 | `dashboard_stats` | **View** — aggregated counts for dashboard home (with cache helpers in later migrations) |
 
 > **Removed:** standalone per-user `user_preferences` / `appearance_settings` tables (`20260922120000`). Theme data is in `site_settings.appearance_settings`.
@@ -235,7 +246,7 @@ Store the public URL in `media_assets.url` and the bucket object path in `media_
 | Projects, tech, experience, testimonials, media | Yes | Yes | — |
 | Blog posts | Published only | Yes (all statuses) | — |
 | Blog comments / likes | Approved comments & like rows on published posts with flags enabled | Via API (staff) | — |
-| Contact messages | Insert only | Manage | — |
+| Contact messages | — (use `/api/public/contact`) | Manage | — |
 | Site settings | Yes | — | Write |
 | `site_runtime_config` | — | — | Yes |
 | Backups metadata | — | — | Yes |

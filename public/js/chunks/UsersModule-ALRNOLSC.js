@@ -2,7 +2,7 @@ import {
   notifyCredentialsEmailStatus,
   populateStaffRoleSelect,
   showUserCredentialsPanel
-} from "./chunk-MQRQDIUU.js";
+} from "./chunk-IYYC7CL6.js";
 import {
   authService
 } from "./chunk-XHRTAOVO.js";
@@ -17,9 +17,9 @@ import {
   CrudCardModule,
   setStatTrend,
   setStatValue
-} from "./chunk-O7SJP42B.js";
+} from "./chunk-7XBGSWWF.js";
 import "./chunk-A5DY2KK7.js";
-import "./chunk-5GYID3MB.js";
+import "./chunk-EKAJOOVQ.js";
 import {
   applyListGridClasses,
   renderListTableShell,
@@ -33,7 +33,7 @@ import "./chunk-UUTTVH4R.js";
 import {
   closePanels,
   requestConfirm
-} from "./chunk-2KLDEWPL.js";
+} from "./chunk-UULQLYO3.js";
 import {
   $id,
   escapeHtml

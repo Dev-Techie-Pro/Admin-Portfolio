@@ -3,7 +3,7 @@ import {
 } from "./chunk-6SMWR5OB.js";
 import {
   Module
-} from "./chunk-2KLDEWPL.js";
+} from "./chunk-UULQLYO3.js";
 import {
   $id,
   showToast

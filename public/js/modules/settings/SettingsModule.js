@@ -308,7 +308,7 @@ class SettingsModule extends Module {
     return ["super_admin", "admin"].includes(role);
   }
   applySettingsAccess(role) {
-    const siteSettingsReadOnly = !getAccessCapabilities().canManageContent;
+    const siteSettingsReadOnly = !getAccessCapabilities().canManageSiteSettings;
     document.body.classList.toggle("pa-settings-site-readonly", siteSettingsReadOnly);
     ["general", "other"].forEach((section) => {
       const saveBtn = asHtmlButton(document.querySelector(`[data-save="${section}"]`));
@@ -793,7 +793,7 @@ class SettingsModule extends Module {
     this.applySettingsPage(getSettingsTabFromPath(path));
   }
   async saveGeneralSettings() {
-    if (!this.isAdminRole(this.store.get("profile")?.role)) {
+    if (!getAccessCapabilities().canManageSiteSettings) {
       showToast("Only administrators can change site settings.", "danger");
       return;
     }
@@ -827,7 +827,7 @@ class SettingsModule extends Module {
     }
   }
   async saveOtherSettings() {
-    if (!this.isAdminRole(this.store.get("profile")?.role)) {
+    if (!getAccessCapabilities().canManageSiteSettings) {
       showToast("Only administrators can change site settings.", "danger");
       return;
     }

@@ -5,7 +5,7 @@ import {
   applyCapabilityGatedElements,
   deriveAccessCapabilities,
   setAccessCapabilities
-} from "./chunk-2KLDEWPL.js";
+} from "./chunk-UULQLYO3.js";
 
 // client/modules/shell/sidebarCollapse.ts
 var STORAGE_KEY = "pa_sidebar_collapsed";

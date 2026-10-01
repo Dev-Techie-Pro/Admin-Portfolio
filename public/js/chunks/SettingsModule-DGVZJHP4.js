@@ -4,7 +4,7 @@ import {
   renderPreviewAvatar,
   setCoverImage,
   syncSettingsNavTab
-} from "./chunk-VUMRLWDK.js";
+} from "./chunk-7GVCCFBK.js";
 import {
   setupAllPasswordToggles
 } from "./chunk-6SMWR5OB.js";
@@ -37,7 +37,7 @@ import {
   requestBrowserNotificationPermission,
   requestConfirm,
   storage
-} from "./chunk-2KLDEWPL.js";
+} from "./chunk-UULQLYO3.js";
 import {
   $field,
   $id,
@@ -1998,7 +1998,7 @@ var SettingsModule = class extends Module {
     return ["super_admin", "admin"].includes(role);
   }
   applySettingsAccess(role) {
-    const siteSettingsReadOnly = !getAccessCapabilities().canManageContent;
+    const siteSettingsReadOnly = !getAccessCapabilities().canManageSiteSettings;
     document.body.classList.toggle("pa-settings-site-readonly", siteSettingsReadOnly);
     ["general", "other"].forEach((section) => {
       const saveBtn = asHtmlButton(document.querySelector(`[data-save="${section}"]`));
@@ -2483,7 +2483,7 @@ var SettingsModule = class extends Module {
     this.applySettingsPage(getSettingsTabFromPath(path));
   }
   async saveGeneralSettings() {
-    if (!this.isAdminRole(this.store.get("profile")?.role)) {
+    if (!getAccessCapabilities().canManageSiteSettings) {
       showToast("Only administrators can change site settings.", "danger");
       return;
     }
@@ -2517,7 +2517,7 @@ var SettingsModule = class extends Module {
     }
   }
   async saveOtherSettings() {
-    if (!this.isAdminRole(this.store.get("profile")?.role)) {
+    if (!getAccessCapabilities().canManageSiteSettings) {
       showToast("Only administrators can change site settings.", "danger");
       return;
     }

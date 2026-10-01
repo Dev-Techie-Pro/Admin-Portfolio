@@ -17,8 +17,5 @@ jobs:
       - run: npm ci
       - run: npm run build:client
       - run: npm run test:ci
-      - run: npm run lint
-        continue-on-error: true
+      - run: npm run lint:css
       - run: npm run typecheck:audit
-      - run: npm run typecheck
-        continue-on-error: true

@@ -3,7 +3,7 @@ import {
 } from "./chunk-SVZQZYTF.js";
 import {
   BulkSelectController
-} from "./chunk-5GYID3MB.js";
+} from "./chunk-EKAJOOVQ.js";
 import {
   closeAllCardMenus,
   toggleCardMenu
@@ -13,7 +13,7 @@ import {
   getAccessCapabilities,
   requestDelete,
   storage
-} from "./chunk-2KLDEWPL.js";
+} from "./chunk-UULQLYO3.js";
 import {
   $id,
   escapeHtml

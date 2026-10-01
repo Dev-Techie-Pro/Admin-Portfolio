@@ -3,7 +3,8 @@ import { storage } from "./StorageService.js";
 import { StateStore } from "./StateStore.js";
 import { $, $all } from "../utils/dom.js";
 import { showToast, showStatusToast } from "../modules/shell/toast.js";
-import { canManageContent } from "./cms-access.js";
+import { canManageContent, canManageSiteSettings } from "./cms-access.js";
+import { isSiteSettingsStorageKey } from "../../lib/auth/capabilities.js";
 import { addNotification } from "../modules/shell/notifications.js";
 class Module {
   constructor({ name, storageKey = null, initialState = {} } = {}) {
@@ -50,8 +51,17 @@ class Module {
   }
   async saveRecords(data, { feedback = true } = {}) {
     if (!this.storageKey) throw new Error(`${this.name}: saveRecords() requires storageKey`);
-    if (!canManageContent()) {
-      showStatusToast("You do not have permission to change this content.", "warning");
+    if (this.storageKey && isSiteSettingsStorageKey(this.storageKey)) {
+      if (!canManageSiteSettings()) {
+        if (feedback) {
+          showStatusToast("Only administrators can change site settings.", "warning");
+        }
+        return;
+      }
+    } else if (!canManageContent()) {
+      if (feedback) {
+        showStatusToast("You do not have permission to change this content.", "warning");
+      }
       return;
     }
     if (feedback) showStatusToast("Saving changes\u2026", "info", 12e4);

@@ -12,6 +12,10 @@ export function canManageContent(): boolean {
   return getAccessCapabilities().canManageContent;
 }
 
+export function canManageSiteSettings(): boolean {
+  return getAccessCapabilities().canManageSiteSettings;
+}
+
 const CMS_WRITE_HIDDEN_ATTR = 'data-pa-cms-write-hidden';
 
 /**

@@ -1,6 +1,8 @@
 import { writeAppearanceCache } from "../utils/appearanceCache.js";
 import { persistentCache, isEntryStale } from "./PersistentCache.js";
 import { eventBus } from "./EventBus.js";
+import { canManageSiteSettings } from "./cms-access.js";
+import { isSiteSettingsStorageKey } from "../../lib/auth/capabilities.js";
 class StorageQuotaError extends Error {
   constructor(key, detail) {
     super(detail || `Storage request failed for "${key}"`);
@@ -232,6 +234,9 @@ class StorageService {
   async set(key, value) {
     const route = REMOTE_ROUTES[key];
     if (!route) throw new Error(`Unknown storage key: ${key}`);
+    if (isSiteSettingsStorageKey(key) && !canManageSiteSettings()) {
+      throw new StorageQuotaError(key, "Only administrators can change site settings.");
+    }
     this._cache.set(key, value);
     if (key === "appearance_settings_v2") writeAppearanceCache(value);
     try {

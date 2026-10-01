@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAppearance, saveAppearance } from '@/lib/cms/repository';
-import { guardStaff, guardAdmin } from '@/lib/auth/guard';
+import { guardAdmin, isGuardFailure } from '@/lib/auth/guard';
 import { withStaffGet } from '@/lib/api/with-staff-get';
 import { recordUserAction } from '@/lib/cms/activity-log';
 
@@ -9,8 +9,8 @@ export async function GET() {
 }
 
 export async function PUT(request) {
-  const auth = await guardStaff();
-  if (!auth.ok) return auth.response;
+  const auth = await guardAdmin();
+  if (isGuardFailure(auth)) return auth.response;
   try {
     await saveAppearance(await request.json());
     await recordUserAction({

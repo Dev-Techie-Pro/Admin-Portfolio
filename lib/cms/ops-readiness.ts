@@ -1,8 +1,10 @@
+import { createClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { warmRuntimeSettings, getRuntimeSettingSync } from '@/lib/config/runtime-settings';
 
 export type OpsReadinessReport = {
   migrationPublicApiHardening: boolean;
+  contactMessagesAnonInsertBlocked: boolean | null;
   cronSecretConfigured: boolean;
   portfolioOriginsConfigured: boolean;
   previewTokenSecretConfigured: boolean;
@@ -13,6 +15,7 @@ export type OpsReadinessReport = {
 export async function getOpsReadinessReport(): Promise<OpsReadinessReport> {
   const warnings: string[] = [];
   let migrationPublicApiHardening = false;
+  let contactMessagesAnonInsertBlocked: boolean | null = null;
 
   try {
     const sb = createAdminClient();
@@ -30,6 +33,34 @@ export async function getOpsReadinessReport(): Promise<OpsReadinessReport> {
     }
   } catch {
     warnings.push('Could not verify database migration state.');
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  if (migrationPublicApiHardening && supabaseUrl && anonKey) {
+    try {
+      const admin = createAdminClient();
+      const { data: site } = await admin.from('sites').select('id').eq('slug', 'default').maybeSingle();
+      if (site?.id) {
+        const anon = createClient(supabaseUrl, anonKey, { auth: { persistSession: false } });
+        const { error } = await anon.from('contact_messages').insert({
+          site_id: site.id,
+          legacy_id: 999999992,
+          sender_name: 'Ops probe',
+          sender_email: 'ops-probe@example.com',
+          subject: 'Probe',
+          body: 'RLS probe — must be denied.',
+          status: 'new',
+        });
+        contactMessagesAnonInsertBlocked = Boolean(error);
+        if (!error) {
+          warnings.push('Anon can still INSERT contact_messages — re-apply migration 20261005120000.');
+        }
+      }
+    } catch {
+      contactMessagesAnonInsertBlocked = null;
+      warnings.push('Could not verify anon contact_messages insert is blocked.');
+    }
   }
 
   const cronSecretConfigured = Boolean(process.env.CRON_SECRET?.trim());
@@ -71,6 +102,7 @@ export async function getOpsReadinessReport(): Promise<OpsReadinessReport> {
 
   return {
     migrationPublicApiHardening,
+    contactMessagesAnonInsertBlocked,
     cronSecretConfigured,
     portfolioOriginsConfigured,
     previewTokenSecretConfigured,

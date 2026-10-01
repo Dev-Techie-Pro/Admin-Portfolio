@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getContactColumnVisibility, saveContactColumnVisibility } from '@/lib/cms/repository';
-import { guardStaff, guardEditor } from '@/lib/auth/guard';
+import { guardAdmin, isGuardFailure } from '@/lib/auth/guard';
 import { withStaffGet } from '@/lib/api/with-staff-get';
 
 export async function GET() {
@@ -8,8 +8,8 @@ export async function GET() {
 }
 
 export async function PUT(request) {
-  const auth = await guardEditor();
-  if (!auth.ok) return auth.response;
+  const auth = await guardAdmin();
+  if (isGuardFailure(auth)) return auth.response;
   try {
     await saveContactColumnVisibility(await request.json());
     return NextResponse.json({ ok: true });

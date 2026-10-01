@@ -16,6 +16,12 @@ const mustGuardStaff = [
   'app/api/health/supabase/route.ts',
 ];
 
+const mustGuardAdminPut = [
+  'app/api/settings/route.ts',
+  'app/api/appearance/route.ts',
+  'app/api/preferences/contact-columns/route.ts',
+];
+
 function read(rel) {
   return fs.readFileSync(path.join(root, rel), 'utf8');
 }
@@ -29,6 +35,26 @@ for (const rel of mustGuardEditor) {
   if (!/\bisGuardFailure\b/.test(text) && !/auth\.ok === false/.test(text)) {
     console.warn(`warn: ${rel} may not narrow guard failure (isGuardFailure recommended)`);
   }
+}
+
+for (const rel of mustGuardAdminPut) {
+  const text = read(rel);
+  if (!/\bguardAdmin\b/.test(text)) {
+    console.error(`Expected guardAdmin in ${rel}`);
+    process.exit(1);
+  }
+}
+
+const settingsModule = read('client/modules/settings/SettingsModule.ts');
+if (!/\bcanManageSiteSettings\b/.test(settingsModule)) {
+  console.error('Expected canManageSiteSettings in client/modules/settings/SettingsModule.ts');
+  process.exit(1);
+}
+
+const capabilities = read('lib/auth/capabilities.ts');
+if (!/\bcanManageSiteSettings:\s*isAdmin\b/.test(capabilities)) {
+  console.error('Expected canManageSiteSettings derived from isAdmin in lib/auth/capabilities.ts');
+  process.exit(1);
 }
 
 const health = read('app/api/health/supabase/route.ts');

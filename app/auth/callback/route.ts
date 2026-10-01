@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { STAFF_ROLES } from '@/lib/auth/constants';
 import { applySessionDeadlineCookie } from '@/lib/auth/session-lifetime';
 
 export async function GET(request) {
@@ -9,8 +11,19 @@ export async function GET(request) {
 
   if (code) {
     const supabase = createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error && data.user) {
+      const { data: profile } = await createAdminClient()
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+      if (!profile || !STAFF_ROLES.includes(profile.role)) {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(`${origin}/login?error=no_dashboard_access`);
+      }
+
       const redirect = NextResponse.redirect(`${origin}${next}`);
       applySessionDeadlineCookie(redirect);
       return redirect;

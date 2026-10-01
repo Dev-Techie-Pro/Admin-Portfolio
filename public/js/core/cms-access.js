@@ -10,6 +10,9 @@ import { showPermissionDeniedDialog } from "../modules/shell/confirm.js";
 function canManageContent() {
   return getAccessCapabilities().canManageContent;
 }
+function canManageSiteSettings() {
+  return getAccessCapabilities().canManageSiteSettings;
+}
 const CMS_WRITE_HIDDEN_ATTR = "data-pa-cms-write-hidden";
 function hideForViewer(el) {
   if (!el || el.hasAttribute(CMS_WRITE_HIDDEN_ATTR)) return;
@@ -125,6 +128,7 @@ function installViewerWriteGuard() {
 }
 export {
   canManageContent,
+  canManageSiteSettings,
   installViewerWriteGuard,
   restoreCmsWriteControls,
   stripCmsWriteControls
