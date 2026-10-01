@@ -2,6 +2,7 @@ import { animate } from "motion";
 import { prefersReducedMotion } from "./motion.js";
 const PA_COLLAPSE_DURATION = 0.45;
 const PA_COLLAPSE_EASE = [0.22, 1, 0.36, 1];
+const animateDomKeyframes = animate;
 const BOUND = "data-pa-collapse-bound";
 const ANIMATING = "data-pa-collapse-animating";
 function measureCollapsePanel(panel) {
@@ -41,19 +42,25 @@ async function animateCollapsePanel(panel, open) {
     const target = measureCollapsePanel(panel);
     panel.style.opacity = "0";
     panel.style.height = "0px";
-    const controls = animate(
-      panel,
-      { height: ["0px", `${target}px`], opacity: [0, 1] },
-      { duration: PA_COLLAPSE_DURATION, easing: PA_COLLAPSE_EASE }
-    );
+    const keyframes = {
+      height: ["0px", `${target}px`],
+      opacity: [0, 1]
+    };
+    const controls = animateDomKeyframes(panel, keyframes, {
+      duration: PA_COLLAPSE_DURATION,
+      easing: PA_COLLAPSE_EASE
+    });
     await controls.finished;
   } else {
     const current = panel.getBoundingClientRect().height || measureCollapsePanel(panel);
-    const controls = animate(
-      panel,
-      { height: [`${current}px`, "0px"], opacity: [1, 0] },
-      { duration: PA_COLLAPSE_DURATION, easing: PA_COLLAPSE_EASE }
-    );
+    const keyframes = {
+      height: [`${current}px`, "0px"],
+      opacity: [1, 0]
+    };
+    const controls = animateDomKeyframes(panel, keyframes, {
+      duration: PA_COLLAPSE_DURATION,
+      easing: PA_COLLAPSE_EASE
+    });
     await controls.finished;
   }
   clearCollapseInlineStyles(panel);
@@ -181,10 +188,11 @@ function scanCollapseRoots(root) {
   root.querySelectorAll('details:not([data-pa-collapse="off"])').forEach(bindDetailsCollapse);
 }
 let observerStarted = false;
+let collapseMutationObserver = null;
 function startCollapseObserver() {
   if (observerStarted || typeof document === "undefined") return;
   observerStarted = true;
-  const observer = new MutationObserver((mutations) => {
+  collapseMutationObserver = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       mutation.addedNodes.forEach((node) => {
         if (node instanceof HTMLElement) {
@@ -193,7 +201,7 @@ function startCollapseObserver() {
       });
     }
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  collapseMutationObserver.observe(document.documentElement, { childList: true, subtree: true });
 }
 function initCollapseMotion(root = document) {
   scanCollapseRoots(root);

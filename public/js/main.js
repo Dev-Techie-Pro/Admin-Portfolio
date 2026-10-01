@@ -35,7 +35,7 @@ import {
 } from "./chunks/chunk-4MPBDRPZ.js";
 import {
   initAllPaSelects
-} from "./chunks/chunk-LJDI6IOR.js";
+} from "./chunks/chunk-DDVQMWRL.js";
 import {
   handleFileValidation,
   uploadCmsFileWithPreview
@@ -1888,6 +1888,7 @@ async function initAuthAppearance() {
 // client/utils/collapse-motion.ts
 var PA_COLLAPSE_DURATION = 0.45;
 var PA_COLLAPSE_EASE = [0.22, 1, 0.36, 1];
+var animateDomKeyframes = animate;
 var BOUND = "data-pa-collapse-bound";
 var ANIMATING = "data-pa-collapse-animating";
 function measureCollapsePanel(panel) {
@@ -1927,19 +1928,25 @@ async function animateCollapsePanel(panel, open) {
     const target = measureCollapsePanel(panel);
     panel.style.opacity = "0";
     panel.style.height = "0px";
-    const controls = animate(
-      panel,
-      { height: ["0px", `${target}px`], opacity: [0, 1] },
-      { duration: PA_COLLAPSE_DURATION, easing: PA_COLLAPSE_EASE }
-    );
+    const keyframes = {
+      height: ["0px", `${target}px`],
+      opacity: [0, 1]
+    };
+    const controls = animateDomKeyframes(panel, keyframes, {
+      duration: PA_COLLAPSE_DURATION,
+      easing: PA_COLLAPSE_EASE
+    });
     await controls.finished;
   } else {
     const current = panel.getBoundingClientRect().height || measureCollapsePanel(panel);
-    const controls = animate(
-      panel,
-      { height: [`${current}px`, "0px"], opacity: [1, 0] },
-      { duration: PA_COLLAPSE_DURATION, easing: PA_COLLAPSE_EASE }
-    );
+    const keyframes = {
+      height: [`${current}px`, "0px"],
+      opacity: [1, 0]
+    };
+    const controls = animateDomKeyframes(panel, keyframes, {
+      duration: PA_COLLAPSE_DURATION,
+      easing: PA_COLLAPSE_EASE
+    });
     await controls.finished;
   }
   clearCollapseInlineStyles(panel);
@@ -2067,10 +2074,11 @@ function scanCollapseRoots(root) {
   root.querySelectorAll('details:not([data-pa-collapse="off"])').forEach(bindDetailsCollapse);
 }
 var observerStarted = false;
+var collapseMutationObserver = null;
 function startCollapseObserver() {
   if (observerStarted || typeof document === "undefined") return;
   observerStarted = true;
-  const observer = new MutationObserver((mutations) => {
+  collapseMutationObserver = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       mutation.addedNodes.forEach((node) => {
         if (node instanceof HTMLElement) {
@@ -2079,7 +2087,7 @@ function startCollapseObserver() {
       });
     }
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  collapseMutationObserver.observe(document.documentElement, { childList: true, subtree: true });
 }
 function initCollapseMotion(root = document) {
   scanCollapseRoots(root);
@@ -2092,7 +2100,7 @@ var PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
 async function loadPageModuleClass(page) {
   switch (page) {
     case "dashboard":
-      return (await import("./chunks/DashboardModule-FN4743U7.js")).DashboardModule;
+      return (await import("./chunks/DashboardModule-KHOHKU2G.js")).DashboardModule;
     case "projects":
       return (await import("./chunks/ProjectsModule-JSV3VE2W.js")).ProjectsModule;
     case "categories":
@@ -2112,13 +2120,13 @@ async function loadPageModuleClass(page) {
     case "testimonials":
       return (await import("./chunks/TestimonialsModule-KCA3NPYU.js")).TestimonialsModule;
     case "blogposts":
-      return (await import("./chunks/BlogModule-DNG6FIPW.js")).BlogModule;
+      return (await import("./chunks/BlogModule-COPRNUTD.js")).BlogModule;
     case "experience":
       return (await import("./chunks/ExperienceModule-EVEYQOMN.js")).ExperienceModule;
     case "contact-messages":
       return (await import("./chunks/ContactMessagesModule-GNSODYYP.js")).ContactMessagesModule;
     case "blog-engagement":
-      return (await import("./chunks/BlogEngagementModule-3YBGLHEO.js")).BlogEngagementModule;
+      return (await import("./chunks/BlogEngagementModule-AUCM2OC2.js")).BlogEngagementModule;
     case "access-requests":
       return (await import("./chunks/AccessRequestsModule-OXGWAIGQ.js")).AccessRequestsModule;
     case "users":
@@ -2126,7 +2134,7 @@ async function loadPageModuleClass(page) {
     case "recent-activities":
       return (await import("./chunks/RecentActivitiesModule-YR6KH3VW.js")).RecentActivitiesModule;
     case "settings":
-      return (await import("./chunks/SettingsModule-X47QB5IE.js")).SettingsModule;
+      return (await import("./chunks/SettingsModule-UHFKFBFF.js")).SettingsModule;
     case "login":
       return (await import("./chunks/LoginModule-JQGH4VDG.js")).LoginModule;
     case "forgot-password":

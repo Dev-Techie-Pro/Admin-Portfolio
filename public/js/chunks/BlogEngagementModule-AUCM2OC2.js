@@ -3,7 +3,7 @@ import {
 } from "./chunk-SVZQZYTF.js";
 import {
   syncPaSelect
-} from "./chunk-LJDI6IOR.js";
+} from "./chunk-DDVQMWRL.js";
 import {
   BulkSelectController
 } from "./chunk-EKAJOOVQ.js";

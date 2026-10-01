@@ -931,13 +931,15 @@ class SystemManager {
   setBackupStatus(message, tone = "info") {
     const box = $id("systemBackupStatus");
     if (!box) return;
+    const baseClass = "pa-info-box mb-16 pa-bkp-layout-status";
     if (!message) {
       box.hidden = true;
       box.textContent = "";
+      box.className = baseClass;
       return;
     }
     box.hidden = false;
-    box.className = `pa-info-box mb-16 ${tone === "danger" ? "pa-info-box-danger" : ""}`.trim();
+    box.className = `${baseClass}${tone === "danger" ? " pa-info-box-danger" : ""}`;
     box.innerHTML = `<i class="ri-information-line"></i> ${escapeHtml(message)}`;
   }
   setExportRunning(running) {

@@ -33,8 +33,11 @@ function closeAllPaSelects(exceptWrap = null) {
     wrap.classList.remove("open");
   });
 }
+function optionText(opt) {
+  return (opt.textContent ?? "").trim();
+}
 function applyTriggerLabel(trigger, select) {
-  const opt = select.options[select.selectedIndex];
+  const opt = select.options.item(select.selectedIndex);
   const valueEl = trigger.querySelector(".pa-select-value");
   if (!valueEl) return;
   if (!opt) {
@@ -42,13 +45,16 @@ function applyTriggerLabel(trigger, select) {
     valueEl.classList.add("is-placeholder");
     return;
   }
-  valueEl.textContent = opt.textContent.trim();
-  valueEl.classList.toggle("is-placeholder", opt.value === "" && opt.textContent.trim().toLowerCase().startsWith("select"));
+  const label = optionText(opt);
+  valueEl.textContent = label;
+  valueEl.classList.toggle("is-placeholder", opt.value === "" && label.toLowerCase().startsWith("select"));
 }
 function rebuildOptions(state) {
   const { list, select, trigger, wrap } = state;
   list.replaceChildren();
-  Array.from(select.options).forEach((opt) => {
+  const options = select.options;
+  for (let i = 0; i < options.length; i++) {
+    const opt = options[i];
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "pa-select-option";
@@ -58,18 +64,18 @@ function rebuildOptions(state) {
     btn.setAttribute("role", "option");
     btn.setAttribute("aria-selected", String(opt.selected));
     if (opt.disabled) btn.disabled = true;
-    btn.innerHTML = `<span class="pa-select-option-label">${escapeHtml(opt.textContent.trim())}</span><i class="ri-check-line pa-select-option-check" aria-hidden="true"></i>`;
+    btn.innerHTML = `<span class="pa-select-option-label">${escapeHtml(optionText(opt))}</span><i class="ri-check-line pa-select-option-check" aria-hidden="true"></i>`;
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       if (btn.disabled) return;
-      select.value = btn.dataset.value;
+      select.value = btn.dataset.value ?? "";
       select.dispatchEvent(new Event("change", { bubbles: true }));
       syncPaSelect(select);
       const st = REGISTRY.get(select);
       if (st?.setOpen) void st.setOpen(false);
     });
     list.appendChild(btn);
-  });
+  }
   applyTriggerLabel(trigger, select);
   wrap.classList.toggle("error", select.classList.contains("error"));
   trigger.disabled = select.disabled;
@@ -78,6 +84,20 @@ function syncPicker(select) {
   const state = REGISTRY.get(select);
   if (!state) return;
   rebuildOptions(state);
+}
+function createPaSelectState(wrap, trigger, panel, list, select, setOpen) {
+  let state;
+  state = {
+    wrap,
+    trigger,
+    panel,
+    list,
+    select,
+    setOpen,
+    rebuildOptions: () => rebuildOptions(state),
+    mo: new MutationObserver(() => rebuildOptions(state))
+  };
+  return state;
 }
 function initPaSelect(selectOrId) {
   const select = resolveSelect(selectOrId);
@@ -108,8 +128,6 @@ function initPaSelect(selectOrId) {
   wrap.appendChild(select);
   wrap.appendChild(trigger);
   wrap.appendChild(panel);
-  const state = { wrap, trigger, panel, list, select };
-  REGISTRY.set(select, state);
   const setOpen = (open) => {
     const isOpen = wrap.classList.contains("open");
     if (open === isOpen) return;
@@ -124,7 +142,14 @@ function initPaSelect(selectOrId) {
       trigger.setAttribute("aria-expanded", "false");
     }
   };
-  state.setOpen = setOpen;
+  const state = createPaSelectState(wrap, trigger, panel, list, select, setOpen);
+  state.mo.observe(select, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["disabled", "class"]
+  });
+  REGISTRY.set(select, state);
   trigger.addEventListener("click", (e) => {
     e.stopPropagation();
     if (select.disabled) return;
@@ -137,15 +162,6 @@ function initPaSelect(selectOrId) {
     }
   });
   select.addEventListener("change", () => syncPaSelect(select));
-  const mo = new MutationObserver(() => rebuildOptions(state));
-  mo.observe(select, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ["disabled", "class"]
-  });
-  state.rebuildOptions = () => rebuildOptions(state);
-  state.mo = mo;
   if (!window.__paSelectDocBound) {
     window.__paSelectDocBound = true;
     document.addEventListener("click", (e) => {
