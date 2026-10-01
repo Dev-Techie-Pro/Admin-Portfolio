@@ -1,7 +1,7 @@
 import {
   canManageContent,
   requestBulkAction
-} from "./chunk-UULQLYO3.js";
+} from "./chunk-BTZM5XND.js";
 import {
   $id
 } from "./chunk-S5QBHCBR.js";

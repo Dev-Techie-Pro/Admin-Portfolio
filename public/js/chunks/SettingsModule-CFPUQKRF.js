@@ -5,7 +5,7 @@ import {
   setCoverImage,
   staggerReveal,
   syncSettingsNavTab
-} from "./chunk-IZTYDAAE.js";
+} from "./chunk-WSUELVGJ.js";
 import {
   setupAllPasswordToggles
 } from "./chunk-6SMWR5OB.js";
@@ -38,7 +38,7 @@ import {
   requestBrowserNotificationPermission,
   requestConfirm,
   storage
-} from "./chunk-UULQLYO3.js";
+} from "./chunk-BTZM5XND.js";
 import {
   $field,
   $id,

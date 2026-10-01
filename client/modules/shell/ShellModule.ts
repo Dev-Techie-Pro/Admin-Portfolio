@@ -237,9 +237,13 @@ export class ShellModule extends Module {
           showToast('You do not have permission to clear notifications.', 'warning', 2200);
           return;
         }
-        void clearNotifications().then(() => {
-          showToast('Notifications cleared', 'info', 1800);
-        });
+        void clearNotifications()
+          .then(() => {
+            showToast('Notifications cleared', 'info', 1800);
+          })
+          .catch((err) => {
+            showToast(err?.message || 'Could not clear notifications.', 'danger', 2200);
+          });
       });
 
       const notifList = $id('paNotifList');

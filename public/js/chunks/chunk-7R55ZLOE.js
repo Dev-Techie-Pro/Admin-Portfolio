@@ -4,7 +4,7 @@ import {
 } from "./chunk-A5DY2KK7.js";
 import {
   BulkSelectController
-} from "./chunk-EKAJOOVQ.js";
+} from "./chunk-P6P5EWLF.js";
 import {
   DEFAULT_LIST_COLUMNS,
   applyListGridClasses,
@@ -29,7 +29,7 @@ import {
   openPanel,
   registerPanel,
   requestDelete
-} from "./chunk-UULQLYO3.js";
+} from "./chunk-BTZM5XND.js";
 import {
   $all,
   $field,

@@ -233,6 +233,8 @@ class ShellModule extends Module {
         }
         void clearNotifications().then(() => {
           showToast("Notifications cleared", "info", 1800);
+        }).catch((err) => {
+          showToast(err?.message || "Could not clear notifications.", "danger", 2200);
         });
       });
       const notifList = $id("paNotifList");

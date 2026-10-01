@@ -122,20 +122,27 @@ async function addNotification(text, icon, options = {}) {
   return fallback;
 }
 async function clearNotifications() {
+  notifications = [];
+  unreadCount = 0;
+  renderNotifications();
+  eventBus.emit("notifications:updated", { notifications, unreadCount });
+  void storage.persistLocal("pa_notifications", { notifications: [], unreadCount: 0 });
   try {
-    await fetch("/api/notifications", {
+    const res = await fetch("/api/notifications", {
       method: "DELETE",
       headers: { Accept: "application/json", "Content-Type": "application/json" },
       credentials: "same-origin",
       body: JSON.stringify({ clearAll: true })
     });
+    if (!res.ok) {
+      const payload = await res.json().catch(() => ({}));
+      throw new Error(payload.error || "Could not clear notifications.");
+    }
+  } catch (err) {
     storage.invalidate("pa_notifications");
-  } catch {
+    await loadNotifications({ silent: true });
+    throw err;
   }
-  notifications = [];
-  unreadCount = 0;
-  renderNotifications();
-  eventBus.emit("notifications:updated", { notifications, unreadCount });
 }
 async function markNotificationRead(notificationId) {
   if (!notificationId) return;
