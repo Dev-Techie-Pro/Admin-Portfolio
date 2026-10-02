@@ -297,11 +297,17 @@ var AddUserManager = class {
     set("addUserEmail", "");
     populateStaffRoleSelect($id("addUserRole"), { selected: "editor" });
   }
-  async openAddUserPanel() {
-    if (!await this.ensureAdminAccess()) return;
+  openAddUserPanel() {
     this.resetAddUserForm();
     openPanel("paAddUserPanel", ["paUserCredentialsPanel"]);
     window.setTimeout(() => $id("addUserFullName")?.focus(), 120);
+    void this.guardAddUserPanelAccess();
+  }
+  async guardAddUserPanelAccess() {
+    if (this.isAdmin()) return;
+    if (!await this.ensureAdminAccess()) {
+      this.closeAddUserPanel();
+    }
   }
   closeAddUserPanel() {
     closePanels();
@@ -2167,7 +2173,7 @@ async function loadPageModuleClass(page) {
     case "access-requests":
       return (await import("./chunks/AccessRequestsModule-4ZDKDN7B.js")).AccessRequestsModule;
     case "users":
-      return (await import("./chunks/UsersModule-ZD3LWVW5.js")).UsersModule;
+      return (await import("./chunks/UsersModule-2J4W3LSS.js")).UsersModule;
     case "recent-activities":
       return (await import("./chunks/RecentActivitiesModule-PAOXYM6E.js")).RecentActivitiesModule;
     case "settings":

@@ -115,14 +115,12 @@ class UsersModule extends CrudCardModule {
     return data;
   }
   async ensureAdminAccess() {
+    if (ADMIN_ROLES.includes(this.actorRole)) return true;
     try {
-      const [profile, session] = await Promise.all([
-        authService.getProfile(),
-        authService.session().catch(() => null)
-      ]);
-      this.currentAuthUserId = profile?.id || session?.user?.id || null;
-      this.currentAuthEmail = profile?.email || session?.user?.email || null;
-      this.actorRole = profile?.role || session?.user?.role || null;
+      const profile = await authService.getProfile();
+      this.currentAuthUserId = profile?.id || null;
+      this.currentAuthEmail = profile?.email || null;
+      this.actorRole = profile?.role || null;
     } catch {
       this.currentAuthUserId = null;
       this.currentAuthEmail = null;
@@ -179,11 +177,17 @@ class UsersModule extends CrudCardModule {
     if (emailEl) emailEl.value = "";
     if (roleEl) roleEl.value = "editor";
   }
-  async openInvitePanel() {
-    if (!await this.ensureAdminAccess()) return;
+  openInvitePanel() {
     this.resetInviteForm();
     openPanel("paUserInvitePanel");
     window.setTimeout(() => $id("paInviteEmail")?.focus(), 120);
+    void this.guardInvitePanelAccess();
+  }
+  async guardInvitePanelAccess() {
+    if (ADMIN_ROLES.includes(this.actorRole)) return;
+    if (!await this.ensureAdminAccess()) {
+      this.closeInvitePanel();
+    }
   }
   closeInvitePanel() {
     closePanels();

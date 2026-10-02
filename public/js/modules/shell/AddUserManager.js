@@ -76,11 +76,17 @@ class AddUserManager {
     set("addUserEmail", "");
     populateStaffRoleSelect($id("addUserRole"), { selected: "editor" });
   }
-  async openAddUserPanel() {
-    if (!await this.ensureAdminAccess()) return;
+  openAddUserPanel() {
     this.resetAddUserForm();
     openPanel("paAddUserPanel", ["paUserCredentialsPanel"]);
     window.setTimeout(() => $id("addUserFullName")?.focus(), 120);
+    void this.guardAddUserPanelAccess();
+  }
+  async guardAddUserPanelAccess() {
+    if (this.isAdmin()) return;
+    if (!await this.ensureAdminAccess()) {
+      this.closeAddUserPanel();
+    }
   }
   closeAddUserPanel() {
     closePanels();
