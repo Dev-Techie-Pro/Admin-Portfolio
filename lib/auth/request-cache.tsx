@@ -46,7 +46,20 @@ function guardFail(response: NextResponse): GuardFailure {
 export const getRequestUser = cache(async () => {
   const supabase = createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
+  if (error) {
+    if (
+      error.code === 'refresh_token_not_found'
+      || /refresh token/i.test(error.message || '')
+    ) {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        /* ignore */
+      }
+    }
+    return null;
+  }
+  if (!user) return null;
   return { user, supabase };
 });
 

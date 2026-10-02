@@ -1,11 +1,12 @@
 import {
   clearUserCredentials,
   formatStaffRoleLabel,
+  initStaffInviteLinkModal,
   initUserCredentialsPanel,
   notifyCredentialsEmailStatus,
   populateStaffRoleSelect,
   showUserCredentialsPanel
-} from "./chunks/chunk-H35GZX3W.js";
+} from "./chunks/chunk-BFYYTQTV.js";
 import {
   animate,
   applyRoleBasedAccess,
@@ -19,7 +20,7 @@ import {
   previewUserAvatar,
   showNavFlyout,
   syncSidebarGroupNav
-} from "./chunks/chunk-WSUELVGJ.js";
+} from "./chunks/chunk-HZEWIQJT.js";
 import {
   initPasswordToggles
 } from "./chunks/chunk-6SMWR5OB.js";
@@ -84,7 +85,7 @@ import {
   requestLogout,
   storage,
   writeAppearanceCache
-} from "./chunks/chunk-BTZM5XND.js";
+} from "./chunks/chunk-LQZU2QLT.js";
 import {
   $all,
   $id,
@@ -1284,9 +1285,15 @@ function syncElevationBanner() {
 // client/modules/shell/globalSearch.ts
 var listEl = null;
 var inputEl = null;
+var documentClickBound = false;
+function findHeaderSearchInput() {
+  return document.querySelector(
+    ".pa-header-top-left .pa-global-search input, .pa-header-top .pa-global-search input, .pa-header-top-left .pa-search input"
+  );
+}
 function ensureResultsList() {
   if (!inputEl) return null;
-  let wrap = inputEl.closest(".pa-search");
+  const wrap = inputEl.closest(".pa-search");
   if (!wrap) return null;
   let panel = wrap.querySelector(".pa-global-search-results");
   if (!panel) {
@@ -1322,7 +1329,9 @@ async function runSearch(query) {
     return;
   }
   try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=12`, { credentials: "include" });
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=12`, {
+      credentials: "same-origin"
+    });
     if (!res.ok) return;
     const data = await res.json();
     renderResults(data.results || []);
@@ -1336,26 +1345,48 @@ function ensureHeaderSearchInput() {
   const left = document.querySelector(".pa-header-top-left");
   if (!left || left.querySelector(".pa-search input")) return;
   const wrap = document.createElement("div");
+  wrap.id = "paGlobalSearchWrap";
   wrap.className = "pa-search pa-global-search";
   wrap.innerHTML = '<i class="ri-search-line" aria-hidden="true"></i><input type="search" placeholder="Search CMS\u2026" aria-label="Search CMS">';
   left.appendChild(wrap);
 }
-function initGlobalSearch() {
-  ensureHeaderSearchInput();
-  inputEl = document.querySelector(".pa-header-top .pa-global-search input, .pa-header-top .pa-search input");
-  if (!inputEl || inputEl.dataset.paGlobalSearchBound === "1") return;
-  inputEl.dataset.paGlobalSearchBound = "1";
-  inputEl.setAttribute("autocomplete", "off");
-  inputEl.addEventListener("input", () => debouncedSearch(inputEl?.value || ""));
-  inputEl.addEventListener("focus", () => {
-    if ((inputEl?.value || "").trim().length >= 2) debouncedSearch(inputEl?.value || "");
-  });
+function bindDocumentDismiss() {
+  if (documentClickBound) return;
+  documentClickBound = true;
   document.addEventListener("click", (event) => {
     const target = event.target;
     if (!inputEl?.closest(".pa-search")?.contains(target) && listEl && !listEl.contains(target)) {
       listEl.hidden = true;
     }
   });
+}
+function bindSearchInput(input) {
+  inputEl = input;
+  if (input.dataset.paGlobalSearchBound === "1") return;
+  input.dataset.paGlobalSearchBound = "1";
+  input.setAttribute("autocomplete", "off");
+  input.addEventListener("input", () => debouncedSearch(input.value || ""));
+  input.addEventListener("focus", () => {
+    if ((input.value || "").trim().length >= 2) debouncedSearch(input.value || "");
+  });
+}
+function getGlobalSearchInput() {
+  ensureHeaderSearchInput();
+  return findHeaderSearchInput();
+}
+function focusGlobalSearch() {
+  const input = getGlobalSearchInput();
+  if (!input) return false;
+  bindSearchInput(input);
+  input.focus();
+  return true;
+}
+function initGlobalSearch() {
+  ensureHeaderSearchInput();
+  bindDocumentDismiss();
+  const input = findHeaderSearchInput();
+  if (!input) return;
+  bindSearchInput(input);
 }
 
 // client/modules/shell/ShellModule.ts
@@ -1404,7 +1435,7 @@ var ShellModule = class extends Module {
     await Promise.all([
       this.loadUserSession(),
       this.customization.init(),
-      loadNotifications()
+      loadNotifications({ force: true })
     ]);
     renderNotifications();
     initSettingsNav();
@@ -1545,13 +1576,15 @@ var ShellModule = class extends Module {
         if (notifWrap.classList.contains("open")) {
           userMenuWrap?.classList.remove("open");
           userMenuBtn?.setAttribute("aria-expanded", "false");
-          if (opening) void loadNotifications();
+          if (opening) void loadNotifications({ force: true });
         }
       });
       this.on(notifBtn, "keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
+          const opening = !notifWrap.classList.contains("open");
           notifWrap.classList.toggle("open");
+          if (opening) void loadNotifications({ force: true });
         }
       });
       this.on($id("paNotifClearBtn"), "click", (e) => {
@@ -1600,9 +1633,11 @@ var ShellModule = class extends Module {
     this.on(document, "keydown", (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key?.toLowerCase() === "k") {
         e.preventDefault();
-        const search = $id("paSearchInput") || $id("paCatSearchInput");
-        if (search && window.innerWidth <= 899) openMobileHeaderSearch();
-        else search?.focus();
+        if (window.innerWidth <= 899) {
+          if (!openMobileHeaderSearch()) focusGlobalSearch();
+        } else {
+          focusGlobalSearch();
+        }
       }
       if (e.key === "Escape") {
         if (isMobileHeaderSearchOpen()) {
@@ -2102,47 +2137,47 @@ var PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
 async function loadPageModuleClass(page) {
   switch (page) {
     case "dashboard":
-      return (await import("./chunks/DashboardModule-VOKWINLU.js")).DashboardModule;
+      return (await import("./chunks/DashboardModule-SPF23PGK.js")).DashboardModule;
     case "projects":
-      return (await import("./chunks/ProjectsModule-VISQBC22.js")).ProjectsModule;
+      return (await import("./chunks/ProjectsModule-SXJQHSYE.js")).ProjectsModule;
     case "categories":
-      return (await import("./chunks/CategoriesModule-PSVZ7343.js")).CategoriesModule;
+      return (await import("./chunks/CategoriesModule-X46CFEXL.js")).CategoriesModule;
     case "tags":
-      return (await import("./chunks/TagsModule-I64ZR4MG.js")).TagsModule;
+      return (await import("./chunks/TagsModule-42A3GU2Y.js")).TagsModule;
     case "technologies":
-      return (await import("./chunks/TechnologiesModule-FPJY5XDZ.js")).TechnologiesModule;
+      return (await import("./chunks/TechnologiesModule-U2VOAFKB.js")).TechnologiesModule;
     case "tool-categories":
-      return (await import("./chunks/ToolCategoriesModule-WQ7I7P34.js")).ToolCategoriesModule;
+      return (await import("./chunks/ToolCategoriesModule-FMHRGUSP.js")).ToolCategoriesModule;
     case "blog-categories":
-      return (await import("./chunks/BlogCategoriesModule-QKSFONVT.js")).BlogCategoriesModule;
+      return (await import("./chunks/BlogCategoriesModule-SSJPVLAW.js")).BlogCategoriesModule;
     case "tools":
-      return (await import("./chunks/ToolsModule-IG4TNHAS.js")).ToolsModule;
+      return (await import("./chunks/ToolsModule-3ISNZGOA.js")).ToolsModule;
     case "media":
-      return (await import("./chunks/MediaModule-DBU5WIZ4.js")).MediaModule;
+      return (await import("./chunks/MediaModule-CNFAHV6A.js")).MediaModule;
     case "testimonials":
-      return (await import("./chunks/TestimonialsModule-JKGFYBEL.js")).TestimonialsModule;
+      return (await import("./chunks/TestimonialsModule-XIEFMZGS.js")).TestimonialsModule;
     case "blogposts":
-      return (await import("./chunks/BlogModule-VAODEFQI.js")).BlogModule;
+      return (await import("./chunks/BlogModule-2VPXPB45.js")).BlogModule;
     case "experience":
-      return (await import("./chunks/ExperienceModule-U2P3J5BE.js")).ExperienceModule;
+      return (await import("./chunks/ExperienceModule-RVCREGR6.js")).ExperienceModule;
     case "contact-messages":
-      return (await import("./chunks/ContactMessagesModule-4ULTMGUX.js")).ContactMessagesModule;
+      return (await import("./chunks/ContactMessagesModule-75PPGYVK.js")).ContactMessagesModule;
     case "blog-engagement":
-      return (await import("./chunks/BlogEngagementModule-P3YSGOOZ.js")).BlogEngagementModule;
+      return (await import("./chunks/BlogEngagementModule-KDLCKGX3.js")).BlogEngagementModule;
     case "access-requests":
-      return (await import("./chunks/AccessRequestsModule-GYFYPXFR.js")).AccessRequestsModule;
+      return (await import("./chunks/AccessRequestsModule-4ZDKDN7B.js")).AccessRequestsModule;
     case "users":
-      return (await import("./chunks/UsersModule-QZEHRGJY.js")).UsersModule;
+      return (await import("./chunks/UsersModule-ZD3LWVW5.js")).UsersModule;
     case "recent-activities":
-      return (await import("./chunks/RecentActivitiesModule-IOMESC3E.js")).RecentActivitiesModule;
+      return (await import("./chunks/RecentActivitiesModule-PAOXYM6E.js")).RecentActivitiesModule;
     case "settings":
-      return (await import("./chunks/SettingsModule-CFPUQKRF.js")).SettingsModule;
+      return (await import("./chunks/SettingsModule-QGLYR6QW.js")).SettingsModule;
     case "login":
-      return (await import("./chunks/LoginModule-5ZKLGKZN.js")).LoginModule;
+      return (await import("./chunks/LoginModule-LBTELEEL.js")).LoginModule;
     case "forgot-password":
-      return (await import("./chunks/ForgotPasswordModule-NUDONJXL.js")).ForgotPasswordModule;
+      return (await import("./chunks/ForgotPasswordModule-EHXN33XH.js")).ForgotPasswordModule;
     case "reset-password":
-      return (await import("./chunks/ResetPasswordModule-BMR7L7XQ.js")).ResetPasswordModule;
+      return (await import("./chunks/ResetPasswordModule-3TM56TW5.js")).ResetPasswordModule;
     default:
       return null;
   }
@@ -2153,6 +2188,7 @@ var bootPromise = null;
 var appChromeInitialized = false;
 function bindGlobalPanelChrome() {
   initUserCredentialsPanel();
+  initStaffInviteLinkModal();
   $all(".pa-panel-tab").forEach((btn) => {
     if (!(btn instanceof HTMLElement)) return;
     btn.addEventListener("click", () => {
@@ -2166,7 +2202,7 @@ function bindGlobalPanelChrome() {
 var quickAddModule = null;
 async function bindQuickAddButton(pageModule) {
   if (quickAddModule) return;
-  const { QuickAddModule } = await import("./chunks/QuickAddModule-5BG6MN6W.js");
+  const { QuickAddModule } = await import("./chunks/QuickAddModule-RAVWFZON.js");
   quickAddModule = new QuickAddModule(pageModule);
   quickAddModule.bindEvents();
 }
@@ -2271,8 +2307,7 @@ async function runBoot() {
     throw err;
   }
 }
-function teardownPortfolioApp(options = {}) {
-  const keepShell = options.keepShell ?? false;
+function teardownPortfolioApp() {
   if (activePageModule?.destroy) {
     try {
       activePageModule.destroy();
@@ -2282,7 +2317,7 @@ function teardownPortfolioApp(options = {}) {
   }
   activePageModule = null;
   quickAddModule = null;
-  if (!keepShell && shellInstance) {
+  if (shellInstance) {
     shellInstance.destroy();
     shellInstance = null;
     appChromeInitialized = false;
@@ -2294,8 +2329,7 @@ function teardownPortfolioApp(options = {}) {
 function bootPortfolioApp() {
   if (bootPromise) return bootPromise;
   bootPromise = (async () => {
-    const keepShell = Boolean(window.__paBooted);
-    teardownPortfolioApp({ keepShell });
+    teardownPortfolioApp();
     window.__paBooted = true;
     if (typeof window.__paStartPrefetch === "function") {
       window.__paStartPrefetch(window.location.pathname);

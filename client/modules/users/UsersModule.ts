@@ -1,8 +1,9 @@
 import { CrudCardModule } from '../../core/CrudCardModule.js';
-import { escapeHtml, $id, $all } from '../../utils/dom.js';
+import { escapeHtml, $id, $all, asFormField } from '../../utils/dom.js';
 import { setStatTrend, setStatValue } from '../../utils/pageStats.js';
 import { sortByNewestFirst } from '../../utils/format.js';
-import { closePanels } from '../../modules/shell/panels.js';
+import { closePanels, openPanel, registerPanel } from '../../modules/shell/panels.js';
+import { showToast } from '../../modules/shell/toast.js';
 import { requestConfirm } from '../../modules/shell/confirm.js';
 import { authService } from '../../core/AuthService.js';
 import { populateStaffRoleSelect } from '../../utils/staffRoles.js';
@@ -17,6 +18,7 @@ import {
   notifyCredentialsEmailStatus,
   showUserCredentialsPanel,
 } from '../../utils/userCredentialsPanel.js';
+import { showStaffInviteLinkModal } from '../../utils/staffInviteLinkModal.js';
 
 const ADMIN_ROLES = ['super_admin', 'admin'];
 const PROTECTED_ROLES = ['super_admin', 'admin'];
@@ -96,15 +98,16 @@ export class UsersModule extends CrudCardModule {
     this.actorRole = null;
   }
 
-  async fetchJson(url, options) {
+  async fetchJson(url, options = {}) {
+    const { headers: extraHeaders, ...rest } = options;
     const res = await fetch(url, {
       credentials: 'same-origin',
+      ...rest,
       headers: {
         Accept: 'application/json',
-        ...(options?.body ? { 'Content-Type': 'application/json' } : {}),
-        ...(options?.headers || {}),
+        ...(rest.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(extraHeaders || {}),
       },
-      ...options,
     });
     if (res.status === 401) {
       window.location.href = '/login';
@@ -148,9 +151,14 @@ export class UsersModule extends CrudCardModule {
   async load() {
     if (!(await this.ensureAdminAccess())) return;
     this.ensureInviteButton();
+    await this.refreshUsersList();
+    this.populateRoleFilter();
+  }
+
+  async refreshUsersList() {
     const data = await this.fetchJson('/api/users');
     this.store.set('records', Array.isArray(data.users) ? data.users : []);
-    this.populateRoleFilter();
+    this.render();
   }
 
   ensureInviteButton() {
@@ -162,24 +170,85 @@ export class UsersModule extends CrudCardModule {
     btn.className = 'pa-btn pa-btn-cancel';
     btn.innerHTML = '<i class="ri-mail-send-line"></i> Invite by email';
     addBtn.parentElement?.insertBefore(btn, addBtn);
-    this.on(btn, 'click', () => { void this.inviteStaff(); });
+    this.on(btn, 'click', () => { void this.openInvitePanel(); });
   }
 
-  async inviteStaff() {
-    const email = window.prompt('Email address to invite:');
-    if (!email?.trim()) return;
-    const role = (window.prompt('Role: editor or viewer', 'editor') || 'editor').trim().toLowerCase();
-    try {
-      await this.fetchJson('/api/admin/invites', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), role }),
-      });
-      window.alert('Invite sent. The user will receive a Supabase invitation email.');
-      await this.load();
-    } catch (err) {
-      window.alert(err?.message || 'Invite failed.');
+  getInviteFormFields() {
+    const panel = $id('paUserInvitePanel');
+    if (!panel) return { emailEl: null, roleEl: null };
+    return {
+      emailEl: asFormField(panel.querySelector('#paInviteEmail')),
+      roleEl: asFormField(panel.querySelector('#paInviteRole')),
+    };
+  }
+
+  resetInviteForm() {
+    const { emailEl, roleEl } = this.getInviteFormFields();
+    if (emailEl) emailEl.value = '';
+    if (roleEl) roleEl.value = 'editor';
+  }
+
+  async openInvitePanel() {
+    if (!(await this.ensureAdminAccess())) return;
+    this.resetInviteForm();
+    openPanel('paUserInvitePanel');
+    window.setTimeout(() => $id('paInviteEmail')?.focus(), 120);
+  }
+
+  closeInvitePanel() {
+    closePanels();
+  }
+
+  async submitInvite() {
+    if (!(await this.ensureAdminAccess())) return;
+
+    const { emailEl, roleEl } = this.getInviteFormFields();
+    const email = emailEl?.value?.trim() || '';
+    const role = (roleEl?.value || 'editor').trim().toLowerCase();
+    if (!email) {
+      showToast('Email is required.', 'danger');
+      emailEl?.focus();
+      return;
     }
+    if (!['editor', 'viewer'].includes(role)) {
+      showToast('Role must be editor or viewer.', 'danger');
+      return;
+    }
+
+    const submitBtn = $id('paUserInviteSubmit');
+    submitBtn?.setAttribute('disabled', 'true');
+
+    try {
+      const data = await this.fetchJson('/api/admin/invites', {
+        method: 'POST',
+        body: JSON.stringify({ email, role }),
+      });
+      this.closeInvitePanel();
+      if (data.actionLink) {
+        showStaffInviteLinkModal(
+          { email, role, actionLink: String(data.actionLink) },
+          {
+            onClose: () => {
+              void this.refreshUsersList();
+            },
+          },
+        );
+      } else {
+        showToast('Invite sent. The user will receive a Supabase invitation email.', 'success', 3200);
+        await this.refreshUsersList();
+      }
+    } catch (err) {
+      showToast(err?.message || 'Invite failed.', 'danger', 3200);
+    } finally {
+      submitBtn?.removeAttribute('disabled');
+    }
+  }
+
+  bindInvitePanelEvents() {
+    registerPanel('paUserInvitePanel');
+    this.on($id('paUserInvitePanelClose'), 'click', () => this.closeInvitePanel());
+    this.on($id('paUserInviteCancel'), 'click', () => this.closeInvitePanel());
+    this.on($id('paUserInviteSubmit'), 'click', () => { void this.submitInvite(); });
   }
 
   async persist() {
@@ -427,6 +496,7 @@ export class UsersModule extends CrudCardModule {
 
   bindEvents() {
     super.bindEvents();
+    this.bindInvitePanelEvents();
 
     this.on($id('paUserEditResetCreds'), 'click', () => {
       if (this.currentEditId == null) return;

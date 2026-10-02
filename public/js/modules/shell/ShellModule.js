@@ -29,7 +29,7 @@ import {
 } from "./mobileHeaderSearch.js";
 import { maybeShowRoleAccessModal } from "./roleAccessModal.js";
 import { syncElevationBanner } from "./elevationBanner.js";
-import { initGlobalSearch } from "./globalSearch.js";
+import { focusGlobalSearch, initGlobalSearch } from "./globalSearch.js";
 const KNOWN_NAV_LABELS = [
   "Projects",
   "Categories",
@@ -75,7 +75,7 @@ class ShellModule extends Module {
     await Promise.all([
       this.loadUserSession(),
       this.customization.init(),
-      loadNotifications()
+      loadNotifications({ force: true })
     ]);
     renderNotifications();
     initSettingsNav();
@@ -216,13 +216,15 @@ class ShellModule extends Module {
         if (notifWrap.classList.contains("open")) {
           userMenuWrap?.classList.remove("open");
           userMenuBtn?.setAttribute("aria-expanded", "false");
-          if (opening) void loadNotifications();
+          if (opening) void loadNotifications({ force: true });
         }
       });
       this.on(notifBtn, "keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
+          const opening = !notifWrap.classList.contains("open");
           notifWrap.classList.toggle("open");
+          if (opening) void loadNotifications({ force: true });
         }
       });
       this.on($id("paNotifClearBtn"), "click", (e) => {
@@ -271,9 +273,11 @@ class ShellModule extends Module {
     this.on(document, "keydown", (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key?.toLowerCase() === "k") {
         e.preventDefault();
-        const search = $id("paSearchInput") || $id("paCatSearchInput");
-        if (search && window.innerWidth <= 899) openMobileHeaderSearch();
-        else search?.focus();
+        if (window.innerWidth <= 899) {
+          if (!openMobileHeaderSearch()) focusGlobalSearch();
+        } else {
+          focusGlobalSearch();
+        }
       }
       if (e.key === "Escape") {
         if (isMobileHeaderSearchOpen()) {

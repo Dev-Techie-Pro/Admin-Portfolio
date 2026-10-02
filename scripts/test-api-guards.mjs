@@ -6,7 +6,7 @@ const allowlist = new Set([
   'auth/login/route.ts',
   'auth/forgot-password/route.ts',
   'auth/reset-password/route.ts',
-  'auth/callback/route.ts',
+  'api/auth/callback/complete/route.ts',
   'health/supabase/route.ts',
   'appearance/public/route.ts',
   'public/contact/route.ts',

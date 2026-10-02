@@ -8,6 +8,7 @@ export default function Page() {
     <StaffLegacyBody
       html={BODY_HTML}
       includeAddUserPanel
+      includeInviteUserPanel
       requireAdmin
       authBody={false}
       needsCanvasJs={false}

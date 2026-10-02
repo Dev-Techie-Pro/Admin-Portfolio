@@ -148,7 +148,7 @@ export function buildSidebarInnerHtml(capabilities: AccessCapabilities) {
           ${railBtn('projects', 'ri-layout-grid-line', 'Projects')}
           ${railBtn('tools', 'ri-tools-line', 'Tech & Tools')}
           ${railBtn('content', 'ri-article-line', 'Content & Media')}
-          ${railBtn('settings', 'ri-folder-3-line', 'Settings')}
+          ${railBtn('settings', 'ri-settings-3-line', 'Settings')}
         </div>
         <div class="pa-rail-collapse-wrap">
           <div class="pa-sidebar-collapse-host" id="paSidebarCollapseHost"></div>

@@ -13,6 +13,7 @@ import { $id, $all, clearDomCache } from './utils/dom.js';
 import { initConfirmDialog } from './modules/shell/confirm.js';
 
 import { initUserCredentialsPanel } from './utils/userCredentialsPanel.js';
+import { initStaffInviteLinkModal } from './utils/staffInviteLinkModal.js';
 
 import { closePanels, activateTab } from './modules/shell/panels.js';
 
@@ -173,6 +174,7 @@ let appChromeInitialized = false;
 function bindGlobalPanelChrome() {
 
   initUserCredentialsPanel();
+  initStaffInviteLinkModal();
 
   $all('.pa-panel-tab').forEach((btn) => {
 
@@ -447,11 +449,7 @@ async function runBoot() {
 }
 
 
-export function teardownPortfolioApp(options: { keepShell?: boolean } = {}) {
-
-  const keepShell = options.keepShell ?? false;
-
-
+export function teardownPortfolioApp() {
 
   if (activePageModule?.destroy) {
 
@@ -473,7 +471,7 @@ export function teardownPortfolioApp(options: { keepShell?: boolean } = {}) {
 
 
 
-  if (!keepShell && shellInstance) {
+  if (shellInstance) {
 
     shellInstance.destroy();
 
@@ -502,9 +500,7 @@ export function bootPortfolioApp() {
 
   bootPromise = (async () => {
 
-    const keepShell = Boolean(window.__paBooted);
-
-    teardownPortfolioApp({ keepShell });
+    teardownPortfolioApp();
 
     window.__paBooted = true;
 

@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-
-function siteOrigin(request) {
-  return process.env.NEXT_PUBLIC_SITE_URL
-    || request.headers.get('origin')
-    || 'http://localhost:3000';
-}
+import { buildAuthCallbackUrl } from '@/lib/auth/callback-url';
+import { getSiteUrl } from '@/lib/site-url';
 
 export async function POST(request) {
   try {
@@ -15,9 +11,8 @@ export async function POST(request) {
     }
 
     const supabase = createClient();
-    const origin = siteOrigin(request);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}/auth/callback?next=/reset-password`,
+      redirectTo: buildAuthCallbackUrl(getSiteUrl(request), '/reset-password'),
     });
 
     if (error) {

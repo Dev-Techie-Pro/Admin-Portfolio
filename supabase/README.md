@@ -53,6 +53,13 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
+In **Supabase Dashboard → Authentication → URL configuration**, set **Site URL** to the same value as `NEXT_PUBLIC_SITE_URL` and add a **Redirect URL** wildcard for your admin app, for example:
+
+- `http://localhost:3000/**` (local dev)
+- `https://your-admin-domain.com/**` (production)
+
+Staff invite emails use `redirectTo` `…/auth/callback` (no query string). The callback is a **client page** that reads `?code=`, `?token_hash=`, or `#access_token=` from the invite link, then finishes via `/api/auth/callback/complete`. Allow `http://localhost:3000/**` and `/auth/callback` in Redirect URLs. If redirects are too strict, links fail with `otp_expired` or `access_denied`.
+
 SMTP, retention windows, and similar **runtime** settings live in `site_runtime_config` and are edited under **Settings → System → Environment** in the admin UI.
 
 ---
@@ -163,7 +170,7 @@ Run `npm run test:ci` (includes `scripts/test-public-api-hardening.mjs`) or chec
 | `user_notifications` | In-app notification inbox |
 | `access_elevation_requests` | Temporary CMS access requests; approval sets `profiles.role` to `editor` until `elevated_until` |
 | `content_revisions` | Blog post (and future entity) JSON snapshots; staff API + blog workspace restore |
-| `staff_invites` | Admin-created invite tokens; consumed on first staff login |
+| `staff_invites` | Admin-created invite tokens; row removed when the user accepts the invite |
 | `api_rate_limits` | Rate-limit buckets for `pa_rate_limit_allow` (service role only; no direct client access) |
 | `dashboard_stats` | **View** — aggregated counts for dashboard home (with cache helpers in later migrations) |
 

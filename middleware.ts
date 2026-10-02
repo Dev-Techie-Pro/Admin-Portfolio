@@ -41,7 +41,15 @@ export async function middleware(request) {
   }
 
   const { supabase, supabaseResponse } = createMiddlewareClient(request);
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (
+    authError
+    && (authError.code === 'refresh_token_not_found'
+      || /refresh token/i.test(authError.message || ''))
+  ) {
+    await supabase.auth.signOut();
+    return supabaseResponse;
+  }
 
   if (user) {
     const deadlineCookie = request.cookies.get(SESSION_DEADLINE_COOKIE)?.value;

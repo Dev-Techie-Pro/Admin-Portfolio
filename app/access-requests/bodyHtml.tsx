@@ -11,6 +11,7 @@ export const BODY_HTML = `<div class="pa-toast-wrap" id="paToastWrap" role="stat
     </div>
   </div>
 </div>
+<div class="pa-panel-overlay" id="paPanelOverlay"></div>
 <div class="pa-sidebar-overlay" id="paSidebarOverlay"></div>
 <div class="pa-shell">
   <aside class="pa-sidebar" id="paSidebar"></aside>

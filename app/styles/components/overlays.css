@@ -137,3 +137,113 @@
 .pa-toast.danger i.pa-toast-icon {
   color: var(--pa-red);
 }
+
+.pa-invite-link-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: var(--pa-overlay-faint);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.pa-invite-link-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.pa-invite-link-dialog {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: min(90vh, 720px);
+  overflow: auto;
+  padding: 28px 28px 24px;
+  border-radius: var(--pa-radius);
+  border: 1px solid var(--pa-border-soft);
+  background: var(--pa-bg-chip);
+  box-shadow: 0 24px 80px var(--pa-overlay-faint), 0 0 0 1px var(--pa-blue-dim);
+  transform: scale(0.96) translateY(8px);
+  transition: transform 0.2s ease;
+}
+
+.pa-invite-link-overlay.visible .pa-invite-link-dialog {
+  transform: scale(1) translateY(0);
+}
+
+.pa-invite-link-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--pa-radius-sm);
+  background: transparent;
+  color: var(--pa-text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.pa-invite-link-close:hover {
+  background: var(--pa-surface-2, rgba(255, 255, 255, 0.06));
+  color: var(--pa-text);
+}
+
+.pa-invite-link-icon {
+  width: var(--pa-icon-circle);
+  height: var(--pa-icon-circle);
+  border-radius: var(--pa-radius);
+  background: var(--pa-orange-dim);
+  color: var(--pa-orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--pa-fs-xl);
+  margin-bottom: 14px;
+}
+
+.pa-invite-link-title {
+  font-family: var(--pa-font-display);
+  font-size: var(--pa-fs-lg);
+  font-weight: var(--pa-fw-xl);
+  color: var(--pa-text);
+  margin: 0 0 8px;
+}
+
+.pa-invite-link-text {
+  font-size: var(--pa-fs-xmd);
+  color: var(--pa-text-dim);
+  line-height: 1.55;
+  margin: 0 0 18px;
+}
+
+.pa-invite-link-url-input {
+  font-size: var(--pa-fs-sm);
+}
+
+.pa-invite-link-status.is-success {
+  color: var(--pa-green);
+}
+
+.pa-invite-link-status.is-danger {
+  color: var(--pa-red);
+}
+
+.pa-invite-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pa-card-gap);
+  margin-top: 20px;
+}
+
+.pa-invite-link-actions .pa-btn {
+  flex: 1 1 140px;
+}

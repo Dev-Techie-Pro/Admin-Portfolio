@@ -3,6 +3,9 @@ import LegacyBody from '@/components/LegacyBody';
 import { requireStaffPageContext } from '@/lib/auth/require-staff-page';
 import { personalizePageHtml } from '@/lib/shell/html-access';
 import { ADD_USER_PANEL_HTML } from '@/app/addUserPanelHtml';
+import { CUSTOM_PANEL_HTML } from '@/app/customPanelHtml';
+import { INVITE_USER_PANEL_HTML } from '@/app/inviteUserPanelHtml';
+import { STAFF_INVITE_LINK_MODAL_HTML } from '@/app/staffInviteLinkModalHtml';
 import { QUICK_ADD_PANEL_HTML } from '@/app/quickAddPanelHtml';
 import { canAccessSettingsTab } from '@/lib/auth/capabilities';
 
@@ -11,6 +14,8 @@ type StaffLegacyBodyProps = {
   extraHtml?: string;
   /** Append add-user panels only when the signed-in user is an admin. */
   includeAddUserPanel?: boolean;
+  /** Append invite-by-email panel (users page). */
+  includeInviteUserPanel?: boolean;
   /** Redirect to dashboard when the user is not an admin. */
   requireAdmin?: boolean;
   /** Redirect when the user cannot access editor features (e.g. blog engagement). */
@@ -30,6 +35,7 @@ export default async function StaffLegacyBody({
   html,
   extraHtml = '',
   includeAddUserPanel = false,
+  includeInviteUserPanel = false,
   requireAdmin = false,
   requireEditor = false,
   settingsTab,
@@ -55,6 +61,13 @@ export default async function StaffLegacyBody({
   }
   if (includeAddUserPanel && capabilities.isAdmin) {
     combined += ADD_USER_PANEL_HTML;
+  }
+  if (!authBody && !standaloneBody) {
+    combined += CUSTOM_PANEL_HTML;
+  }
+  if (includeInviteUserPanel && capabilities.isAdmin) {
+    combined += INVITE_USER_PANEL_HTML;
+    combined += STAFF_INVITE_LINK_MODAL_HTML;
   }
 
   const personalized = personalizePageHtml(combined, capabilities);

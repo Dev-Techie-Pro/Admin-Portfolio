@@ -13,10 +13,48 @@ class LoginModule extends AuthModule {
       useBackupCode: false
     };
   }
+  redirectInviteHashToCallback() {
+    if (typeof window === "undefined" || !window.location.hash) return false;
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    if (hash.get("access_token") && hash.get("refresh_token")) {
+      window.location.replace(`/auth/callback${window.location.hash}`);
+      return true;
+    }
+    return false;
+  }
+  showAuthCallbackErrors() {
+    if (typeof window === "undefined" || !window.location.hash) return;
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const code = hash.get("error_code");
+    const description = hash.get("error_description") || "";
+    if (code === "otp_expired" || /expired/i.test(description)) {
+      this.showError(
+        "This invitation link has expired or was already used. Ask an admin to send a new invite."
+      );
+    } else if (hash.get("error")) {
+      this.showError(description || "Authentication link is invalid. Please try again.");
+    }
+    const clean = window.location.pathname + window.location.search;
+    window.history.replaceState(null, "", clean);
+  }
   async load() {
+    if (this.redirectInviteHashToCallback()) return;
+    this.showAuthCallbackErrors();
     const params = new URLSearchParams(window.location.search);
     if (params.get("error") === "auth_callback_failed") {
-      this.showError("Authentication link expired or is invalid. Please try again.");
+      const detail = params.get("error_description") || "";
+      if (/expired|otp_expired/i.test(detail)) {
+        this.showError(
+          "This invitation or sign-in link has expired or was already used. Ask an admin to send a new invite."
+        );
+      } else {
+        this.showError(
+          detail || "Authentication link expired or is invalid. Please try again."
+        );
+      }
+    }
+    if (params.get("error") === "no_dashboard_access") {
+      this.showError("This account does not have access to the dashboard. Contact an administrator.");
     }
     if (params.get("session") === "expired") {
       this.showError("Your session has ended after 24 hours. Please sign in again.");

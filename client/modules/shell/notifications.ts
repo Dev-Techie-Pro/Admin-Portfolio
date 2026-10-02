@@ -72,15 +72,22 @@ export function renderNotifications() {
   }
 }
 
-export async function loadNotifications({ silent = false } = {}) {
+export async function loadNotifications({ silent = false, force = false } = {}) {
   if (!silent) {
     loading = true;
     renderNotifications();
   }
   try {
+    if (force) {
+      storage.invalidate('pa_notifications');
+    }
     const payload = await storage.get('pa_notifications', { notifications: [], unreadCount: 0 });
-    notifications = Array.isArray(payload?.notifications) ? payload.notifications : [];
-    unreadCount = Number(payload?.unreadCount) || notifications.filter((n) => !n.read).length;
+    const list = payload?.notifications;
+    notifications = Array.isArray(list) ? list : [];
+    unreadCount = Number(payload?.unreadCount);
+    if (Number.isNaN(unreadCount)) {
+      unreadCount = notifications.filter((n) => !n.read).length;
+    }
   } catch {
     notifications = [];
     unreadCount = 0;
