@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/purge-activities",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/prune-sessions",
+      "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/cron/publish-scheduled",
+      "schedule": "0 4 * * *"
+    }
+  ]
+}

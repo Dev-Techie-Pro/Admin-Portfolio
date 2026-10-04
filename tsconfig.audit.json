@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "lib/cms/ops-readiness.ts",
+    "lib/cms/content-preview-token.ts",
+    "lib/cms/content-revisions.ts",
+    "lib/cms/public-sitemap.ts",
+    "lib/api/turnstile.ts",
+    "lib/api/cron-auth.ts",
+    "lib/api/rate-limit.ts",
+    "lib/api/public-cors.ts",
+    "lib/config/redirects.ts",
+    "lib/auth/admin-mfa-policy.ts",
+    "lib/auth/request-cache.tsx",
+    "lib/auth/guard.ts",
+    "lib/site-url.ts",
+    "lib/email/send-contact-auto-reply.tsx",
+    "app/api/public/contact/route.ts",
+    "app/api/public/config/route.ts",
+    "app/api/public/sitemap/route.ts",
+    "app/api/public/rss/route.ts",
+    "middleware.ts"
+  ]
+}

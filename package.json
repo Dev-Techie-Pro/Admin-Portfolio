@@ -1,0 +1,42 @@
+{
+  "name": "admin-dashboard-nextjs",
+  "version": "1.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run build:client && next dev",
+    "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev",
+    "build:client": "node client/build-client.mjs",
+    "build": "npm run build:client && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "lint:css": "stylelint \"app/**/*.css\"",
+    "typecheck": "tsc --noEmit",
+    "typecheck:audit": "tsc -p tsconfig.audit.json --noEmit",
+    "verify:deployment": "node scripts/verify-deployment-env.mjs",
+    "test:ci": "node scripts/test-api-guards.mjs && node scripts/test-prefetch-sync.mjs && node scripts/verify-deployment-env.mjs && node scripts/test-preview-token.mjs && node scripts/test-guard-smoke.mjs && node scripts/test-public-api-hardening.mjs",
+    "db:push": "supabase db push",
+    "db:status": "supabase migration list",
+    "db:types": "supabase gen types typescript --linked > lib/supabase/database.types.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.6",
+    "@supabase/supabase-js": "^2.115.0",
+    "apexcharts": "^3.49.0",
+    "motion": "^12.43.0",
+    "next": "14.2.35",
+    "nodemailer": "^10.0.10",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remixicon": "^4.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "@types/nodemailer": "^8.0.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "esbuild": "^0.28.2",
+    "stylelint": "^16.20.0",
+    "stylelint-config-standard": "^38.0.0",
+    "typescript": "^5.8.3"
+  }
+}

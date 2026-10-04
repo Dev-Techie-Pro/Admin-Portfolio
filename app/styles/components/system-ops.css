@@ -1,0 +1,62 @@
+.pa-system-ops-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--pa-card-gap);
+}
+
+.pa-system-ops-check {
+  display: flex;
+  align-items: center;
+  gap: var(--pa-card-gap);
+  padding: 2px 14px;
+  border-radius: var(--pa-radius);
+  font-size: var(--pa-fs-sm);
+  position: relative;
+  z-index: 1;
+}
+
+.pa-system-ops-check::before {
+  content: '';
+  position: absolute;
+  top: 30px;
+  left: 2rem;
+  width: 1px;
+  height: 100%;
+  background: var(--pa-border-soft);
+  z-index: -1;
+}
+
+.pa-system-ops-check:last-child::before {
+  width: 0;
+  height: 0;
+}
+.pa-system-ops-check i {
+  font-size: 2rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.pa-system-ops-ok {
+  color: var(--pa-green);
+}
+
+.pa-system-ops-warn {
+  color: var(--pa-orange);
+}
+
+.pa-system-ops-warnings {
+  margin: 0;
+  padding-left: var(--pa-card-gap);
+  font-size: var(--pa-fs-xs);
+  color: var(--pa-text-muted);
+}
+
+.pa-system-ops-warnings li {
+  margin-bottom: var(--pa-gap-sm);
+}
+
+.pa-system-ops-error {
+  border-color: var(--pa-red);
+}
