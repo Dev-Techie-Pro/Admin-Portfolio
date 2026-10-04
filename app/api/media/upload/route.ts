@@ -10,6 +10,7 @@ import {
   isUploadPage,
   isUploadPurpose,
 } from '@/lib/cms/upload-file-name';
+import { checkRateLimit, rateLimitResponse } from '@/lib/api/rate-limit';
 
 /** Staff self-service profile media (viewers cannot use general CMS upload). */
 function isStaffSelfProfileMediaUpload(pageRaw: string, purposeRaw: string, folder: string) {
@@ -37,6 +38,15 @@ export async function POST(request) {
 
     const auth = await guardStaff();
     if (!auth.ok) return auth.response;
+
+    const limit = await checkRateLimit(request, 'staff_media_upload');
+    if (!limit.allowed) {
+      const { status, headers } = rateLimitResponse(limit.retryAfterSec);
+      return NextResponse.json(
+        { error: 'Too many uploads. Please try again later.' },
+        { status, headers },
+      );
+    }
 
     const caps = auth.capabilities;
     const selfProfileMedia = isStaffSelfProfileMediaUpload(pageRaw, purposeRaw, folder);

@@ -8,6 +8,10 @@ import {
 } from '@/lib/auth/session-lifetime';
 import { getRuntimeRedirects } from '@/lib/config/redirects';
 import { adminMustCompleteMfa } from '@/lib/auth/admin-mfa-policy';
+import {
+  readAdminMfaOkCookie,
+  setAdminMfaOkCookie,
+} from '@/lib/auth/admin-mfa-cookie';
 import { stripSensitiveAuthQueryParams } from '@/lib/auth/sensitive-query-params';
 
 function isPublicPath(pathname) {
@@ -95,7 +99,13 @@ export async function middleware(request) {
     || pathname.startsWith('/settings/security');
 
   if (user && !needsMfa) {
-    const adminMfaBlock = await adminMustCompleteMfa(supabase, user.id);
+    let adminMfaBlock: string | null = null;
+    if (!readAdminMfaOkCookie(request, user.id)) {
+      adminMfaBlock = await adminMustCompleteMfa(supabase, user.id);
+      if (!adminMfaBlock) {
+        setAdminMfaOkCookie(supabaseResponse, user.id);
+      }
+    }
     if (adminMfaBlock && !mfaAllowedPath) {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: adminMfaBlock, needsMfa: true }, { status: 403 });

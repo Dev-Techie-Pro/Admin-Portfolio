@@ -33,3 +33,18 @@ export function publicCorsOptions(request: Request) {
 export function publicCorsJson(request: Request, data: unknown, init?: ResponseInit) {
   return withPublicCors(request, NextResponse.json(data, init));
 }
+
+/** Public JSON with CDN-friendly cache headers (portfolio GET APIs). */
+export function publicCorsJsonCached(
+  request: Request,
+  data: unknown,
+  maxAgeSec: number,
+  init?: ResponseInit,
+) {
+  const res = publicCorsJson(request, data, init);
+  res.headers.set(
+    'Cache-Control',
+    `public, max-age=${maxAgeSec}, s-maxage=${maxAgeSec}, stale-while-revalidate=60`,
+  );
+  return res;
+}

@@ -1,106 +1,15 @@
-import { escapeHtml } from "./dom.js";
-const DEFAULT_LIST_COLUMNS = [
-  { label: "#", className: "pa-lv-col-num" },
-  { label: "Project", className: "pa-lv-col-project" },
-  { label: "Category" },
-  { label: "Status", className: "pa-lv-col-status" },
-  { label: "Created", className: "pa-lv-col-date" },
-  { label: "Actions", className: "pa-lv-col-actions" }
-];
-function listStatusVariant(label) {
-  const l = (label || "").trim().toLowerCase();
-  if (l === "active" || l === "published" || l === "in progress") return "active";
-  if (l === "completed" || l === "archived") return "completed";
-  if (l === "on hold" || l === "inactive" || l === "cancelled") return "hold";
-  if (l === "draft" || l === "pending" || l === "planning") return "planning";
-  return "planning";
-}
-function renderListTableShell(columns, bodyHtml) {
-  const ths = columns.map((col) => `<th scope="col" class="${col.className || ""}">${escapeHtml(col.label)}</th>`).join("");
-  return `<div class="pa-lv-shell">
+import{escapeHtml as s}from"./dom.js";const x=[{label:"#",className:"pa-lv-col-num"},{label:"Project",className:"pa-lv-col-project"},{label:"Category"},{label:"Status",className:"pa-lv-col-status"},{label:"Created",className:"pa-lv-col-date"},{label:"Actions",className:"pa-lv-col-actions"}];function g(t){const e=(t||"").trim().toLowerCase();return e==="active"||e==="published"||e==="in progress"?"active":e==="completed"||e==="archived"?"completed":e==="on hold"||e==="inactive"||e==="cancelled"?"hold":"planning"}function h(t,e){return`<div class="pa-lv-shell">
     <div class="pa-lv-scroll">
       <table class="pa-lv-table">
-        <thead><tr>${ths}</tr></thead>
-        <tbody>${bodyHtml}</tbody>
+        <thead><tr>${t.map(l=>`<th scope="col" class="${l.className||""}">${s(l.label)}</th>`).join("")}</tr></thead>
+        <tbody>${e}</tbody>
       </table>
     </div>
-  </div>`;
-}
-function applyListGridClasses(grid, isList) {
-  if (!grid) return;
-  grid.classList.toggle("list-view", isList);
-  grid.classList.toggle("pa-lv-mode", isList);
-}
-function syncListPaginationChrome(isList, paginationRoot) {
-  const root = paginationRoot || document.querySelector(".pa-pagination");
-  if (root) root.classList.toggle("pa-pagination--list", isList);
-}
-function renderListRowStart(rowClass = "") {
-  return `<tr class="pa-lv-row${rowClass ? ` ${rowClass}` : ""}">`;
-}
-function renderListIndexCell(rowIndex) {
-  return `<td class="pa-lv-col-num"><span class="pa-lv-index">${rowIndex}</span></td>`;
-}
-function renderListProjectCell(title, thumbInnerHtml) {
-  const safe = escapeHtml(title);
-  return `<td class="pa-lv-col-project">
+  </div>`}function C(t,e){t&&(t.classList.toggle("list-view",e),t.classList.toggle("pa-lv-mode",e))}function T(t,e){const n=e||document.querySelector(".pa-pagination");n&&n.classList.toggle("pa-pagination--list",t)}function y(t=""){return`<tr class="pa-lv-row${t?` ${t}`:""}">`}function A(t){return`<td class="pa-lv-col-num"><span class="pa-lv-index">${t}</span></td>`}function b(t,e){const n=s(t);return`<td class="pa-lv-col-project">
     <div class="pa-lv-project">
-      <div class="pa-lv-thumb" aria-hidden="true"><div class="pa-lv-thumb-inner">${thumbInnerHtml}</div></div>
-      <span class="pa-lv-project-name" title="${safe}">${safe}</span>
+      <div class="pa-lv-thumb" aria-hidden="true"><div class="pa-lv-thumb-inner">${e}</div></div>
+      <span class="pa-lv-project-name" title="${n}">${n}</span>
     </div>
-  </td>`;
-}
-function renderListIconProjectCell(title, iconHtml) {
-  const thumb = `<div class="pa-lv-icon-thumb">${iconHtml}</div>`;
-  return renderListProjectCell(title, thumb);
-}
-function renderListTextCell(text, className = "") {
-  return `<td class="${className}"><span class="pa-lv-text">${escapeHtml(text || "\u2014")}</span></td>`;
-}
-function renderListStatusCell(label, variant) {
-  const v = variant || listStatusVariant(label);
-  return `<td class="pa-lv-col-status"><span class="pa-lv-status pa-lv-status--${v}">${escapeHtml(label || "\u2014")}</span></td>`;
-}
-function renderListDateCell(dateText) {
-  return renderListTextCell(dateText, "pa-lv-col-date");
-}
-function listActionBtn(actionClass, iconClass, title, idAttr, id, ariaPrefix, extraClasses = "") {
-  const safeId = escapeHtml(String(id));
-  const safeTitle = escapeHtml(title);
-  const label = escapeHtml(ariaPrefix ? `${ariaPrefix} ${title}` : title);
-  const isDelete = actionClass.includes("delete");
-  const variant = isDelete ? " pa-lv-action--delete" : "";
-  const extra = extraClasses ? ` ${extraClasses}` : "";
-  return `<button type="button" class="pa-lv-action pa-action-btn ${actionClass}${variant}${extra}" ${idAttr}="${safeId}" title="${escapeHtml(title)}" aria-label="${label} ${safeTitle}"><i class="${iconClass}"></i></button>`;
-}
-function renderListActionsCell(buttonsHtml) {
-  return `<td class="pa-lv-col-actions"><div class="pa-lv-actions">${buttonsHtml}</div></td>`;
-}
-function renderListEditDeleteActions(opts) {
-  const { idAttr, id, title, extraHtml = "" } = opts;
-  const buttons = `${extraHtml}
-    ${listActionBtn("pa-action-edit", "ri-pencil-line", "Edit", idAttr, id, "Edit")}
-    ${listActionBtn("pa-action-delete", "ri-delete-bin-line", "Delete", idAttr, id, "Delete")}`;
-  return renderListActionsCell(buttons);
-}
-function closeListRow() {
-  return "</tr>";
-}
-export {
-  DEFAULT_LIST_COLUMNS,
-  applyListGridClasses,
-  closeListRow,
-  listActionBtn,
-  listStatusVariant,
-  renderListActionsCell,
-  renderListDateCell,
-  renderListEditDeleteActions,
-  renderListIconProjectCell,
-  renderListIndexCell,
-  renderListProjectCell,
-  renderListRowStart,
-  renderListStatusCell,
-  renderListTableShell,
-  renderListTextCell,
-  syncListPaginationChrome
-};
+  </td>`}function S(t,e){const n=`<div class="pa-lv-icon-thumb">${e}</div>`;return b(t,n)}function m(t,e=""){return`<td class="${e}"><span class="pa-lv-text">${s(t||"\u2014")}</span></td>`}function j(t,e){return`<td class="pa-lv-col-status"><span class="pa-lv-status pa-lv-status--${e||g(t)}">${s(t||"\u2014")}</span></td>`}function N(t){return m(t,"pa-lv-col-date")}function o(t,e,n,l,r,i,a=""){const c=s(String(r)),p=s(n),d=s(i?`${i} ${n}`:n),u=t.includes("delete")?" pa-lv-action--delete":"",v=a?` ${a}`:"";return`<button type="button" class="pa-lv-action pa-action-btn ${t}${u}${v}" ${l}="${c}" title="${s(n)}" aria-label="${d} ${p}"><i class="${e}"></i></button>`}function $(t){return`<td class="pa-lv-col-actions"><div class="pa-lv-actions">${t}</div></td>`}function D(t){const{idAttr:e,id:n,title:l,extraHtml:r=""}=t,i=`${r}
+    ${o("pa-action-edit","ri-pencil-line","Edit",e,n,"Edit")}
+    ${o("pa-action-delete","ri-delete-bin-line","Delete",e,n,"Delete")}`;return $(i)}function E(){return"</tr>"}export{x as DEFAULT_LIST_COLUMNS,C as applyListGridClasses,E as closeListRow,o as listActionBtn,g as listStatusVariant,$ as renderListActionsCell,N as renderListDateCell,D as renderListEditDeleteActions,S as renderListIconProjectCell,A as renderListIndexCell,b as renderListProjectCell,y as renderListRowStart,j as renderListStatusCell,h as renderListTableShell,m as renderListTextCell,T as syncListPaginationChrome};

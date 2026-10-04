@@ -21,7 +21,7 @@ export async function searchCmsContent(query: string, limit = 20): Promise<Searc
   const pattern = `%${escapeIlike(q)}%`;
   const sb = createAdminClient();
 
-  const [projects, blogs, media, tools] = await Promise.all([
+  const [projects, blogs, media, categoriesRes] = await Promise.all([
     sb
       .from('projects')
       .select('id, legacy_id, title, status')
@@ -38,19 +38,27 @@ export async function searchCmsContent(query: string, limit = 20): Promise<Searc
       .limit(safeLimit),
     sb
       .from('media_assets')
-      .select('id, legacy_id, name, file_name')
+      .select('id, legacy_id, file_name')
       .eq('site_id', SITE_ID)
       .is('deleted_at', null)
-      .ilike('name', pattern)
+      .ilike('file_name', pattern)
       .limit(safeLimit),
     sb
+      .from('tool_categories')
+      .select('id')
+      .eq('site_id', SITE_ID)
+      .is('deleted_at', null),
+  ]);
+
+  const toolCategoryIds = (categoriesRes.data || []).map((c) => c.id);
+  const tools = toolCategoryIds.length
+    ? await sb
       .from('tool_items')
       .select('id, legacy_id, name')
-      .eq('site_id', SITE_ID)
-      .is('deleted_at', null)
+      .in('category_id', toolCategoryIds)
       .ilike('name', pattern)
-      .limit(safeLimit),
-  ]);
+      .limit(safeLimit)
+    : { data: [] };
 
   const results: SearchResult[] = [];
 
@@ -79,7 +87,7 @@ export async function searchCmsContent(query: string, limit = 20): Promise<Searc
       type: 'media',
       id: row.id,
       legacyId: row.legacy_id,
-      title: row.name || row.file_name || 'Media asset',
+      title: row.file_name || 'Media asset',
       href: '/media-library',
     });
   }

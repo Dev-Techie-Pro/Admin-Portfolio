@@ -1,12 +1,1 @@
-import {
-  buildUploadFileName,
-  extensionForUploadMime,
-  isUploadPage,
-  isUploadPurpose
-} from "../../lib/cms/upload-file-name.js";
-export {
-  buildUploadFileName,
-  extensionForUploadMime,
-  isUploadPage,
-  isUploadPurpose
-};
+import{buildUploadFileName as l,extensionForUploadMime as p,isUploadPage as a,isUploadPurpose as i}from"../../lib/cms/upload-file-name.js";export{l as buildUploadFileName,p as extensionForUploadMime,a as isUploadPage,i as isUploadPurpose};

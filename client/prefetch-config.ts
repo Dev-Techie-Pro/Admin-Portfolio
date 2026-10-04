@@ -4,7 +4,7 @@
 (function initPrefetchConfig(global) {
   const PAGE_KEYS = {
     dashboard: [
-      'pa_projects', 'pa_technologies', 'pa_tool_categories', 'pa_experience', 'pa_testimonials',
+      'pa_projects', 'pa_technologies', 'pa_experience', 'pa_testimonials',
       'pa_media_library', 'pa_tools', 'pa_category_meta', 'pa_recent_activities',
     ],
     projects: ['pa_projects', 'pa_category_meta', 'pa_technologies', 'pa_tool_categories'],

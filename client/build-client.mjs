@@ -24,11 +24,14 @@ const cleanSplitChunksPlugin = {
   },
 };
 
+const isProd = process.env.NODE_ENV === 'production';
+
 const SHARED_BUILD = {
   format: 'esm',
   platform: 'browser',
   target: ['es2020'],
-  sourcemap: false,
+  sourcemap: !isProd,
+  minify: isProd,
   logLevel: 'info',
 };
 

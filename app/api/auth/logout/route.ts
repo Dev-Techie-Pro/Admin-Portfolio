@@ -4,6 +4,7 @@ import { guardAuthenticated } from '@/lib/auth/guard';
 import { recordLoginActivity } from '@/lib/auth/login-activity';
 import { logUserLogout } from '@/lib/cms/activity-events';
 import { clearSessionDeadlineCookie } from '@/lib/auth/session-lifetime';
+import { clearAdminMfaOkCookie } from '@/lib/auth/admin-mfa-cookie';
 
 export async function POST(request) {
   try {
@@ -34,6 +35,7 @@ export async function POST(request) {
 
     const response = NextResponse.json({ ok: true });
     clearSessionDeadlineCookie(response);
+    clearAdminMfaOkCookie(response);
     return response;
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
