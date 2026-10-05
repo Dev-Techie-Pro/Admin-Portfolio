@@ -30,12 +30,6 @@ import {
 import { maybeShowRoleAccessModal } from './roleAccessModal.js';
 import { syncElevationBanner } from './elevationBanner.js';
 import { focusGlobalSearch, initGlobalSearch } from './globalSearch.js';
-const KNOWN_NAV_LABELS = [
-  'Projects', 'Categories', 'Tags', 'Technologies', 'Tool Categories', 'Tools', 'Media Library',
-  'Testimonials', 'Blog Posts', 'Blog Categories', 'Experience', 'Dashboard', 'Contact Messages',
-  'Recent Activities', 'Settings', 'Users', 'Access Requests', 'Comments & Likes',
-];
-
 export class ShellModule extends Module {
   constructor() {
     super({ name: 'Shell' });
@@ -160,10 +154,6 @@ export class ShellModule extends Module {
       document.querySelectorAll('.pa-nav-subitem').forEach((i) => i.classList.remove('active'));
       document.querySelectorAll('.pa-nav-toggle').forEach((i) => i.classList.remove('active'));
       item.classList.add('active');
-      const label = item.dataset.nav;
-      if (label && !KNOWN_NAV_LABELS.includes(label)) {
-        showToast(`"${label}" section is not implemented in this demo`, 'info');
-      }
       closeMobileSidebar();
     };
 
