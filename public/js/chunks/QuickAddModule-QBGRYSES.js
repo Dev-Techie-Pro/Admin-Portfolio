@@ -1,25 +1,59 @@
-import { Module } from "../../core/Module.js";
-import { storage } from "../../core/StorageService.js";
-import { $id, escapeHtml } from "../../utils/dom.js";
-import { isValidUrl, isValidSlug, slugify } from "../../utils/strings.js";
-import { handleFileValidation } from "../../utils/files.js";
-import { uploadCmsFile, uploadCmsFileWithPreview } from "../../utils/media-upload.js";
-import { setupRte, getRteHtml } from "../../utils/rte.js";
+import {
+  CATEGORY_META_PROJECTS,
+  bindTechnologySuggest,
+  pickSceneForCategory
+} from "./chunk-HYBGLB5N.js";
 import {
   addChip,
   addProjectCategoryChip,
   getChipValues,
   getProjectCategoryChipKeys,
-  getProjectStackFromChips
-} from "../../utils/chips.js";
-import { CATEGORY_META_PROJECTS } from "../../utils/projectCategories.js";
-import { bindTechnologySuggest } from "../../utils/technologySuggest.js";
-import { parseSortInput, sortByNewestFirst } from "../../utils/format.js";
-import { showStatusToast } from "../shell/toast.js";
-import { closePanels, openPanel, activateTab, activateWizardStep, registerPanel } from "../shell/panels.js";
-import { canManageContent } from "../../core/cms-access.js";
-import { pickSceneForCategory } from "../projects/ProjectsModule.js";
-import { syncPaSelect } from "../../utils/paSelect.js";
+  getProjectStackFromChips,
+  getRteHtml,
+  setupRte
+} from "./chunk-RYWPYYWU.js";
+import "./chunk-GN57JL5E.js";
+import "./chunk-HNJWM3YX.js";
+import {
+  syncPaSelect
+} from "./chunk-6WJHVOTG.js";
+import {
+  handleFileValidation,
+  uploadCmsFile,
+  uploadCmsFileWithPreview
+} from "./chunk-IW7GETM7.js";
+import "./chunk-4HK2T2N7.js";
+import {
+  isValidSlug,
+  isValidUrl,
+  slugify
+} from "./chunk-7E6YUGMN.js";
+import "./chunk-BTPUWCWQ.js";
+import "./chunk-54MFROHH.js";
+import {
+  parseSortInput,
+  sortByNewestFirst
+} from "./chunk-MXTY5YBH.js";
+import "./chunk-FL3A6ZLL.js";
+import "./chunk-FNXGUDEM.js";
+import "./chunk-ILGO5IJP.js";
+import {
+  Module,
+  activateTab,
+  activateWizardStep,
+  canManageContent,
+  closePanels,
+  openPanel,
+  registerPanel,
+  storage
+} from "./chunk-JKW3G2ST.js";
+import {
+  $id,
+  escapeHtml,
+  showStatusToast
+} from "./chunk-B2QR3Q5R.js";
+
+// client/modules/dashboard/QuickAddModule.ts
 function setVal(id, value) {
   const el = $id(id);
   if (el && "value" in el) el.value = value;
@@ -36,18 +70,18 @@ function setDisplay(id, display) {
   const el = $id(id);
   if (el) el.style.display = display;
 }
-const TAB_META = {
+var TAB_META = {
   project: { subtitle: "Create a new item and fill in the details below.", submit: "Add Project", wizard: true, steps: ["basic", "media", "technologies", "additional"] },
   testimonial: { subtitle: "Add a client testimonial to your portfolio.", submit: "Add Testimonial", wizard: false },
   experience: { subtitle: "Add a work experience entry.", submit: "Add Experience", wizard: true, steps: ["details", "dates"] },
   blog: { subtitle: "Write and publish a new blog post.", submit: "Add Blog Post", wizard: true, steps: ["content", "publishing"] }
 };
-const STEP_LABELS = {
+var STEP_LABELS = {
   project: { basic: "Next: Media", media: "Next: Tools & Technologies", technologies: "Next: Additional", additional: "Add Project" },
   experience: { details: "Next: Dates", dates: "Add Experience" },
   blog: { content: "Next: Publishing", publishing: "Add Blog Post" }
 };
-class QuickAddModule extends Module {
+var QuickAddModule = class extends Module {
   constructor(dashboardModule) {
     super({ name: "QuickAdd" });
     this.dashboard = dashboardModule;
@@ -885,8 +919,8 @@ class QuickAddModule extends Module {
     resets[tab]?.();
     this.updateFooter();
   }
-}
+};
 export {
   QuickAddModule
 };
-//# sourceMappingURL=QuickAddModule.js.map
+//# sourceMappingURL=QuickAddModule-QBGRYSES.js.map

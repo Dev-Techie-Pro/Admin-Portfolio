@@ -3,7 +3,7 @@ import { storage } from '../../core/StorageService.js';
 import { $id, escapeHtml } from '../../utils/dom.js';
 import { isValidUrl, isValidSlug, slugify } from '../../utils/strings.js';
 import { handleFileValidation } from '../../utils/files.js';
-import { uploadCmsFileWithPreview } from '../../utils/media-upload.js';
+import { uploadCmsFile, uploadCmsFileWithPreview } from '../../utils/media-upload.js';
 import type { UploadPurpose } from '../../utils/upload-file-name.js';
 import { setupRte, getRteHtml } from '../../utils/rte.js';
 import {
@@ -692,7 +692,13 @@ export class QuickAddModule extends Module {
             setImg({ url: previewUrl, name: file.name });
             if (wrap) {
               wrap.innerHTML = `<div class="pa-media-preview"><img src="${previewUrl}" alt="${file.name}" /><button type="button" class="pa-media-preview-remove" aria-label="Remove"><i class="ri-close-line"></i></button></div>`;
+              wrap.querySelector('.pa-media-preview-remove')?.addEventListener('click', () => {
+                setImg(null);
+                wrap.innerHTML = '';
+                box.style.display = '';
+              });
             }
+            box.style.display = 'none';
           },
         });
         setImg({ url: uploaded.url, name: uploaded.fileName || file.name });
@@ -739,25 +745,43 @@ export class QuickAddModule extends Module {
     this.on(box, 'click', () => input.click());
     this.on(input, 'change', async () => {
       const files = Array.from(input.files || []);
-      const arr = getArr().slice();
-      let seq = arr.length;
+      input.value = '';
+      let seq = getArr().length;
       for (const file of files) {
         if (!handleFileValidation(file)) continue;
         seq += 1;
+        const previewUrl = URL.createObjectURL(file);
+        const arr = getArr().slice();
+        arr.push({ url: previewUrl, name: file.name });
+        setArr(arr);
+        render();
+        const index = arr.length - 1;
+        const uploadSeq = seq;
         try {
-          const uploaded = await uploadCmsFileWithPreview(file, {
+          const uploaded = await uploadCmsFile(file, {
             folder,
             page: 'quick-add',
             purpose,
-            sequence: seq,
+            sequence: uploadSeq,
             optimize: { maxWidth: 1920, maxHeight: 1080, quality: 0.88 },
           });
-          arr.push({ url: uploaded.url, name: uploaded.fileName || file.name });
-        } catch { /* skip */ }
+          const next = getArr().slice();
+          if (next[index]?.url === previewUrl) {
+            next[index] = { url: uploaded.url, name: uploaded.fileName || file.name };
+            setArr(next);
+            render();
+          }
+        } catch {
+          const next = getArr().slice();
+          if (next[index]?.url === previewUrl) {
+            next.splice(index, 1);
+            setArr(next);
+            render();
+          }
+        } finally {
+          URL.revokeObjectURL(previewUrl);
+        }
       }
-      setArr(arr);
-      render();
-      input.value = '';
     });
   }
 

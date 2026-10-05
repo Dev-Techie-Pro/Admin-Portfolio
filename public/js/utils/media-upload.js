@@ -134,7 +134,7 @@ async function uploadCmsFileWithPreview(file, options = {}) {
   try {
     return await uploadCmsFile(file, options);
   } finally {
-    URL.revokeObjectURL(previewUrl);
+    queueMicrotask(() => URL.revokeObjectURL(previewUrl));
   }
 }
 async function uploadContactAttachment(file) {

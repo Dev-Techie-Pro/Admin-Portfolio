@@ -212,7 +212,7 @@ export async function uploadCmsFileWithPreview(
   try {
     return await uploadCmsFile(file, options);
   } finally {
-    URL.revokeObjectURL(previewUrl);
+    queueMicrotask(() => URL.revokeObjectURL(previewUrl));
   }
 }
 
