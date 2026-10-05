@@ -1,4 +1,118 @@
-import{debounce as p}from"../../utils/timing.js";let a=null,r=null,l=!1;function s(){return document.querySelector(".pa-header-top-left .pa-global-search input, .pa-header-top .pa-global-search input, .pa-header-top-left .pa-search input")}function d(){if(!r)return null;const e=r.closest(".pa-search");if(!e)return null;let t=e.querySelector(".pa-global-search-results");return t||(t=document.createElement("div"),t.className="pa-global-search-results",t.setAttribute("role","listbox"),t.hidden=!0,e.appendChild(t)),a=t,t}function h(e){const t=d();if(t){if(!e.length){t.innerHTML='<div class="pa-global-search-empty">No matches</div>',t.hidden=!1;return}t.innerHTML=e.map(n=>`<a class="pa-global-search-item" role="option" href="${n.href}">
-        <span class="pa-global-search-item-title">${n.title}</span>
-        <span class="pa-global-search-item-meta">${n.type}${n.subtitle?` \xB7 ${n.subtitle}`:""}</span>
-      </a>`).join(""),t.hidden=!1}}async function f(e){const t=e.trim();if(t.length<2){a&&(a.hidden=!0);return}try{const n=await fetch(`/api/search?q=${encodeURIComponent(t)}&limit=12`,{credentials:"same-origin"});if(!n.ok)return;const u=await n.json();h(u.results||[])}catch{}}const c=p(e=>{f(e)},280);function i(){const e=document.querySelector(".pa-header-top-left");if(!e||e.querySelector(".pa-search input"))return;const t=document.createElement("div");t.id="paGlobalSearchWrap",t.className="pa-search pa-global-search",t.innerHTML='<i class="ri-search-line" aria-hidden="true"></i><input type="search" placeholder="Search CMS\u2026" aria-label="Search CMS">',e.appendChild(t)}function m(){l||(l=!0,document.addEventListener("click",e=>{const t=e.target;!r?.closest(".pa-search")?.contains(t)&&a&&!a.contains(t)&&(a.hidden=!0)}))}function o(e){r=e,e.dataset.paGlobalSearchBound!=="1"&&(e.dataset.paGlobalSearchBound="1",e.setAttribute("autocomplete","off"),e.addEventListener("input",()=>c(e.value||"")),e.addEventListener("focus",()=>{(e.value||"").trim().length>=2&&c(e.value||"")}))}function b(){return i(),s()}function E(){const e=b();return e?(o(e),e.focus(),!0):!1}function L(){a=null,r=null,g()}function g(){i(),m();const e=s();e&&o(e)}export{E as focusGlobalSearch,b as getGlobalSearchInput,g as initGlobalSearch,L as reinitGlobalSearch};
+import { debounce } from "../../utils/timing.js";
+let listEl = null;
+let inputEl = null;
+let documentClickBound = false;
+function findHeaderSearchInput() {
+  return document.querySelector(
+    ".pa-header-top-left .pa-global-search input, .pa-header-top .pa-global-search input, .pa-header-top-left .pa-search input"
+  );
+}
+function ensureResultsList() {
+  if (!inputEl) return null;
+  const wrap = inputEl.closest(".pa-search");
+  if (!wrap) return null;
+  let panel = wrap.querySelector(".pa-global-search-results");
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.className = "pa-global-search-results";
+    panel.setAttribute("role", "listbox");
+    panel.hidden = true;
+    wrap.appendChild(panel);
+  }
+  listEl = panel;
+  return panel;
+}
+function renderResults(results) {
+  const panel = ensureResultsList();
+  if (!panel) return;
+  if (!results.length) {
+    panel.innerHTML = '<div class="pa-global-search-empty">No matches</div>';
+    panel.hidden = false;
+    return;
+  }
+  panel.innerHTML = results.map(
+    (item) => `<a class="pa-global-search-item" role="option" href="${item.href}">
+        <span class="pa-global-search-item-title">${item.title}</span>
+        <span class="pa-global-search-item-meta">${item.type}${item.subtitle ? ` \xB7 ${item.subtitle}` : ""}</span>
+      </a>`
+  ).join("");
+  panel.hidden = false;
+}
+async function runSearch(query) {
+  const q = query.trim();
+  if (q.length < 2) {
+    if (listEl) listEl.hidden = true;
+    return;
+  }
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=12`, {
+      credentials: "same-origin"
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    renderResults(data.results || []);
+  } catch {
+  }
+}
+const debouncedSearch = debounce((value) => {
+  void runSearch(value);
+}, 280);
+function ensureHeaderSearchInput() {
+  const left = document.querySelector(".pa-header-top-left");
+  if (!left || left.querySelector(".pa-search input")) return;
+  const wrap = document.createElement("div");
+  wrap.id = "paGlobalSearchWrap";
+  wrap.className = "pa-search pa-global-search";
+  wrap.innerHTML = '<i class="ri-search-line" aria-hidden="true"></i><input type="search" placeholder="Search CMS\u2026" aria-label="Search CMS">';
+  left.appendChild(wrap);
+}
+function bindDocumentDismiss() {
+  if (documentClickBound) return;
+  documentClickBound = true;
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!inputEl?.closest(".pa-search")?.contains(target) && listEl && !listEl.contains(target)) {
+      listEl.hidden = true;
+    }
+  });
+}
+function bindSearchInput(input) {
+  inputEl = input;
+  if (input.dataset.paGlobalSearchBound === "1") return;
+  input.dataset.paGlobalSearchBound = "1";
+  input.setAttribute("autocomplete", "off");
+  input.addEventListener("input", () => debouncedSearch(input.value || ""));
+  input.addEventListener("focus", () => {
+    if ((input.value || "").trim().length >= 2) debouncedSearch(input.value || "");
+  });
+}
+function getGlobalSearchInput() {
+  ensureHeaderSearchInput();
+  return findHeaderSearchInput();
+}
+function focusGlobalSearch() {
+  const input = getGlobalSearchInput();
+  if (!input) return false;
+  bindSearchInput(input);
+  input.focus();
+  return true;
+}
+function reinitGlobalSearch() {
+  listEl = null;
+  inputEl = null;
+  initGlobalSearch();
+}
+function initGlobalSearch() {
+  ensureHeaderSearchInput();
+  bindDocumentDismiss();
+  const input = findHeaderSearchInput();
+  if (!input) return;
+  bindSearchInput(input);
+}
+export {
+  focusGlobalSearch,
+  getGlobalSearchInput,
+  initGlobalSearch,
+  reinitGlobalSearch
+};
+//# sourceMappingURL=globalSearch.js.map

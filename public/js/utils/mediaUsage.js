@@ -1,1 +1,96 @@
-import{storage as p}from"../core/StorageService.js";function c(e,a,i){const o=`${i.type}|${i.label}|${i.detail||""}`;a.has(o)||(a.add(o),e.push(i))}function l(e,a){return!e||!a?!1:e===a}async function d(e){if(!e)return[];const[a,i,o,y]=await Promise.all([p.get("pa_projects",[]),p.get("pa_testimonials",[]),p.get("pa_blog_posts",[]),p.get("pa_contact_messages",[])]),r=[],s=new Set;return Array.isArray(a)&&a.forEach(t=>{(l(t.bannerImgUrl,e)||l(t.imageUrl,e))&&c(r,s,{type:"Project",label:t.title||"Untitled project",detail:"Featured image",path:"/projects",icon:"ri-apps-line"}),Array.isArray(t.gallery)&&t.gallery.forEach((n,m)=>{const f=typeof n=="string"?n:n?.url;l(f,e)&&c(r,s,{type:"Project",label:t.title||"Untitled project",detail:`Gallery image ${m+1}`,path:"/projects",icon:"ri-gallery-line"})})}),Array.isArray(i)&&i.forEach(t=>{l(t.imageUrl,e)&&c(r,s,{type:"Testimonial",label:t.name||"Untitled testimonial",detail:"Avatar image",path:"/testimonials",icon:"ri-chat-quote-line"})}),Array.isArray(o)&&o.forEach(t=>{l(t.imageUrl,e)&&c(r,s,{type:"Blog Post",label:t.title||"Untitled post",detail:"Cover image",path:"/blog-post",icon:"ri-article-line"})}),Array.isArray(y)&&y.forEach(t=>{const n=t.name||t.subject||"Contact message";(Array.isArray(t.replies)?t.replies:[]).forEach((f,g)=>{l(f.attachmentUrl,e)&&c(r,s,{type:"Contact Reply",label:n,detail:`Reply attachment ${g+1}`,path:"/contact-messages",icon:"ri-mail-line"})})}),r}export{d as findMediaUsage};
+import { storage } from "../core/StorageService.js";
+function pushMatch(matches, seen, entry) {
+  const key = `${entry.type}|${entry.label}|${entry.detail || ""}`;
+  if (seen.has(key)) return;
+  seen.add(key);
+  matches.push(entry);
+}
+function urlMatches(recordUrl, targetUrl) {
+  if (!recordUrl || !targetUrl) return false;
+  return recordUrl === targetUrl;
+}
+async function findMediaUsage(url) {
+  if (!url) return [];
+  const [projects, testimonials, blogPosts, contactMessages] = await Promise.all([
+    storage.get("pa_projects", []),
+    storage.get("pa_testimonials", []),
+    storage.get("pa_blog_posts", []),
+    storage.get("pa_contact_messages", [])
+  ]);
+  const matches = [];
+  const seen = /* @__PURE__ */ new Set();
+  if (Array.isArray(projects)) {
+    projects.forEach((p) => {
+      if (urlMatches(p.bannerImgUrl, url) || urlMatches(p.imageUrl, url)) {
+        pushMatch(matches, seen, {
+          type: "Project",
+          label: p.title || "Untitled project",
+          detail: "Featured image",
+          path: "/projects",
+          icon: "ri-apps-line"
+        });
+      }
+      if (Array.isArray(p.gallery)) {
+        p.gallery.forEach((g, i) => {
+          const gUrl = typeof g === "string" ? g : g?.url;
+          if (urlMatches(gUrl, url)) {
+            pushMatch(matches, seen, {
+              type: "Project",
+              label: p.title || "Untitled project",
+              detail: `Gallery image ${i + 1}`,
+              path: "/projects",
+              icon: "ri-gallery-line"
+            });
+          }
+        });
+      }
+    });
+  }
+  if (Array.isArray(testimonials)) {
+    testimonials.forEach((t) => {
+      if (urlMatches(t.imageUrl, url)) {
+        pushMatch(matches, seen, {
+          type: "Testimonial",
+          label: t.name || "Untitled testimonial",
+          detail: "Avatar image",
+          path: "/testimonials",
+          icon: "ri-chat-quote-line"
+        });
+      }
+    });
+  }
+  if (Array.isArray(blogPosts)) {
+    blogPosts.forEach((b) => {
+      if (urlMatches(b.imageUrl, url)) {
+        pushMatch(matches, seen, {
+          type: "Blog Post",
+          label: b.title || "Untitled post",
+          detail: "Cover image",
+          path: "/blog-post",
+          icon: "ri-article-line"
+        });
+      }
+    });
+  }
+  if (Array.isArray(contactMessages)) {
+    contactMessages.forEach((message) => {
+      const label = message.name || message.subject || "Contact message";
+      const replies = Array.isArray(message.replies) ? message.replies : [];
+      replies.forEach((reply, index) => {
+        if (!urlMatches(reply.attachmentUrl, url)) return;
+        pushMatch(matches, seen, {
+          type: "Contact Reply",
+          label,
+          detail: `Reply attachment ${index + 1}`,
+          path: "/contact-messages",
+          icon: "ri-mail-line"
+        });
+      });
+    });
+  }
+  return matches;
+}
+export {
+  findMediaUsage
+};
+//# sourceMappingURL=mediaUsage.js.map

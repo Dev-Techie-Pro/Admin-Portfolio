@@ -1,4 +1,22 @@
-import{isValidUrl as U}from"./strings.js";let e=null,l=null,i=null,a=null,o=null,c=!1;function L(t){const r=String(t||"").trim();return r?/^https?:\/\//i.test(r)?r:`https://${r}`:""}function k(){e||(e=document.createElement("div"),e.className="pa-url-prompt-overlay",e.id="paUrlPromptOverlay",e.innerHTML=`
+import { isValidUrl } from "./strings.js";
+let overlay = null;
+let inputEl = null;
+let errorEl = null;
+let removeBtn = null;
+let pendingResolve = null;
+let hadExistingLink = false;
+function normalizeUrl(raw) {
+  const value = String(raw || "").trim();
+  if (!value) return "";
+  if (/^https?:\/\//i.test(value)) return value;
+  return `https://${value}`;
+}
+function ensureModal() {
+  if (overlay) return;
+  overlay = document.createElement("div");
+  overlay.className = "pa-url-prompt-overlay";
+  overlay.id = "paUrlPromptOverlay";
+  overlay.innerHTML = `
     <div class="pa-url-prompt-box" role="dialog" aria-modal="true" aria-labelledby="paUrlPromptTitle">
       <div class="pa-url-prompt-icon" aria-hidden="true"><i class="ri-link"></i></div>
       <div class="pa-url-prompt-title" id="paUrlPromptTitle">Insert link</div>
@@ -14,4 +32,92 @@ import{isValidUrl as U}from"./strings.js";let e=null,l=null,i=null,a=null,o=null
         <button type="button" class="pa-btn pa-btn-danger pa-url-prompt-remove" id="paUrlPromptRemove" style="display:none;">Remove link</button>
         <button type="button" class="pa-btn pa-btn-primary" id="paUrlPromptOk">Insert link</button>
       </div>
-    </div>`,document.body.appendChild(e),l=e.querySelector("#paUrlPromptInput"),i=e.querySelector("#paUrlPromptError"),a=e.querySelector("#paUrlPromptRemove"),e.querySelector("#paUrlPromptCancel").addEventListener("click",()=>n(null)),e.querySelector("#paUrlPromptOk").addEventListener("click",()=>m()),a.addEventListener("click",()=>n("")),e.addEventListener("click",t=>{t.target===e&&n(null)}),l.addEventListener("input",()=>{l.classList.remove("error"),i?.classList.remove("visible")}),l.addEventListener("keydown",t=>{t.key==="Enter"&&(t.preventDefault(),m())}),document.addEventListener("keydown",E))}function E(t){e?.classList.contains("visible")&&t.key==="Escape"&&(t.preventDefault(),n(null))}function d(t){const r=i?.querySelector("span");r&&t&&(r.textContent=t),l?.classList.add("error"),i?.classList.add("visible")}function m(){const t=L(l?.value);if(!t){d("URL is required"),l?.focus();return}if(!U(t)){d("Enter a valid URL starting with https://"),l?.focus();return}n(t)}function n(t){e?.classList.remove("visible");const r=o;o=null,r?.(t)}function h(t={}){k(),o&&n(null);const{defaultValue:r="",title:v="Insert link",subtitle:f="Add a web address for the selected text.",confirmLabel:b="Insert link"}=t;c=!!r;const s=e.querySelector("#paUrlPromptTitle"),p=e.querySelector("#paUrlPromptSub"),u=e.querySelector("#paUrlPromptOk");return s&&(s.textContent=v),p&&(p.textContent=f),u&&(u.textContent=b),a&&(a.style.display=c?"":"none"),l.value=r||"https://",l.classList.remove("error"),i?.classList.remove("visible"),new Promise(y=>{o=y,e.classList.add("visible"),requestAnimationFrame(()=>{l?.focus(),l?.select()})})}export{h as promptUrl};
+    </div>`;
+  document.body.appendChild(overlay);
+  inputEl = overlay.querySelector("#paUrlPromptInput");
+  errorEl = overlay.querySelector("#paUrlPromptError");
+  removeBtn = overlay.querySelector("#paUrlPromptRemove");
+  overlay.querySelector("#paUrlPromptCancel").addEventListener("click", () => close(null));
+  overlay.querySelector("#paUrlPromptOk").addEventListener("click", () => submit());
+  removeBtn.addEventListener("click", () => close(""));
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close(null);
+  });
+  inputEl.addEventListener("input", () => {
+    inputEl.classList.remove("error");
+    errorEl?.classList.remove("visible");
+  });
+  inputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      submit();
+    }
+  });
+  document.addEventListener("keydown", onDocumentKeydown);
+}
+function onDocumentKeydown(e) {
+  if (!overlay?.classList.contains("visible")) return;
+  if (e.key === "Escape") {
+    e.preventDefault();
+    close(null);
+  }
+}
+function setError(message) {
+  const span = errorEl?.querySelector("span");
+  if (span && message) span.textContent = message;
+  inputEl?.classList.add("error");
+  errorEl?.classList.add("visible");
+}
+function submit() {
+  const normalized = normalizeUrl(inputEl?.value);
+  if (!normalized) {
+    setError("URL is required");
+    inputEl?.focus();
+    return;
+  }
+  if (!isValidUrl(normalized)) {
+    setError("Enter a valid URL starting with https://");
+    inputEl?.focus();
+    return;
+  }
+  close(normalized);
+}
+function close(result) {
+  overlay?.classList.remove("visible");
+  const resolve = pendingResolve;
+  pendingResolve = null;
+  resolve?.(result);
+}
+function promptUrl(options = {}) {
+  ensureModal();
+  if (pendingResolve) close(null);
+  const {
+    defaultValue = "",
+    title = "Insert link",
+    subtitle = "Add a web address for the selected text.",
+    confirmLabel = "Insert link"
+  } = options;
+  hadExistingLink = !!defaultValue;
+  const titleEl = overlay.querySelector("#paUrlPromptTitle");
+  const subEl = overlay.querySelector("#paUrlPromptSub");
+  const okEl = overlay.querySelector("#paUrlPromptOk");
+  if (titleEl) titleEl.textContent = title;
+  if (subEl) subEl.textContent = subtitle;
+  if (okEl) okEl.textContent = confirmLabel;
+  if (removeBtn) removeBtn.style.display = hadExistingLink ? "" : "none";
+  inputEl.value = defaultValue || "https://";
+  inputEl.classList.remove("error");
+  errorEl?.classList.remove("visible");
+  return new Promise((resolve) => {
+    pendingResolve = resolve;
+    overlay.classList.add("visible");
+    requestAnimationFrame(() => {
+      inputEl?.focus();
+      inputEl?.select();
+    });
+  });
+}
+export {
+  promptUrl
+};
+//# sourceMappingURL=url-prompt.js.map

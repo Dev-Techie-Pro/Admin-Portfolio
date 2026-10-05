@@ -1,1 +1,46 @@
-function a(l,t){let n;return function(...u){clearTimeout(n),n=setTimeout(()=>l.apply(this,u),t)}}function c(l,t){let n=0,e=null,u=null;return function(...r){const i=Date.now(),o=t-(i-n);e=r,o<=0?(n=i,l.apply(this,e),e=null):u||(u=setTimeout(()=>{n=Date.now(),u=null,e&&l.apply(this,e),e=null},o))}}function f(l){let t=!1;return function(...e){t||(t=!0,requestAnimationFrame(()=>{t=!1,l.apply(this,e)}))}}export{a as debounce,f as rafScheduler,c as throttle};
+function debounce(fn, wait) {
+  let t;
+  return function debounced(...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), wait);
+  };
+}
+function throttle(fn, wait) {
+  let last = 0;
+  let pendingArgs = null;
+  let timer = null;
+  return function throttled(...args) {
+    const now = Date.now();
+    const remaining = wait - (now - last);
+    pendingArgs = args;
+    if (remaining <= 0) {
+      last = now;
+      fn.apply(this, pendingArgs);
+      pendingArgs = null;
+    } else if (!timer) {
+      timer = setTimeout(() => {
+        last = Date.now();
+        timer = null;
+        if (pendingArgs) fn.apply(this, pendingArgs);
+        pendingArgs = null;
+      }, remaining);
+    }
+  };
+}
+function rafScheduler(fn) {
+  let scheduled = false;
+  return function schedule(...args) {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      fn.apply(this, args);
+    });
+  };
+}
+export {
+  debounce,
+  rafScheduler,
+  throttle
+};
+//# sourceMappingURL=timing.js.map

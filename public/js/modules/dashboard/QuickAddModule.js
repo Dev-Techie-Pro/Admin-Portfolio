@@ -1,1 +1,869 @@
-import{Module as $}from"../../core/Module.js";import{storage as u}from"../../core/StorageService.js";import{$id as t,escapeHtml as w}from"../../utils/dom.js";import{isValidUrl as k,isValidSlug as M,slugify as W}from"../../utils/strings.js";import{handleFileValidation as E}from"../../utils/files.js";import{uploadCmsFileWithPreview as x}from"../../utils/media-upload.js";import{setupRte as F,getRteHtml as N}from"../../utils/rte.js";import{addChip as A,addProjectCategoryChip as O,getChipValues as L,getProjectCategoryChipKeys as D,getProjectStackFromChips as z}from"../../utils/chips.js";import{CATEGORY_META_PROJECTS as _}from"../../utils/projectCategories.js";import{bindTechnologySuggest as R}from"../../utils/technologySuggest.js";import{parseSortInput as H,sortByNewestFirst as G}from"../../utils/format.js";import{showStatusToast as S}from"../shell/toast.js";import{closePanels as C,openPanel as Q,activateTab as K,activateWizardStep as b,registerPanel as V}from"../shell/panels.js";import{canManageContent as Y}from"../../core/cms-access.js";import{pickSceneForCategory as J}from"../projects/ProjectsModule.js";import{syncPaSelect as U}from"../../utils/paSelect.js";function h(v,e){const a=t(v);a&&"value"in a&&(a.value=e)}function P(v,e){const a=t(v);a&&(a.innerHTML=e)}function B(v,e){const a=t(v);a&&(a.textContent=e)}function j(v,e){const a=t(v);a&&(a.style.display=e)}const y={project:{subtitle:"Create a new item and fill in the details below.",submit:"Add Project",wizard:!0,steps:["basic","media","technologies","additional"]},testimonial:{subtitle:"Add a client testimonial to your portfolio.",submit:"Add Testimonial",wizard:!1},experience:{subtitle:"Add a work experience entry.",submit:"Add Experience",wizard:!0,steps:["details","dates"]},blog:{subtitle:"Write and publish a new blog post.",submit:"Add Blog Post",wizard:!0,steps:["content","publishing"]}},X={project:{basic:"Next: Media",media:"Next: Tools & Technologies",technologies:"Next: Additional",additional:"Add Project"},experience:{details:"Next: Dates",dates:"Add Experience"},blog:{content:"Next: Publishing",publishing:"Add Blog Post"}};class me extends ${constructor(e){super({name:"QuickAdd"}),this.dashboard=e,this.activeTab="project",this.wizardStep={},Object.keys(y).forEach(a=>{y[a].wizard&&(this.wizardStep[a]=y[a].steps[0])}),this.prjFeaturedImage=null,this.prjGalleryImages=[],this.testiImage=null,this.blogImage=null,this.blogSlugTouched=!1,this.nextIds={project:1,testimonial:1,experience:1,blog:1},this.qaTechSuggest=null}async initIds(){const[e,a,s,i,o,d]=await Promise.all([u.get("pa_projects",[]),u.get("pa_testimonials",[]),u.get("pa_experience",[]),u.get("pa_blog_posts",[]),u.get("pa_category_meta",{}),u.get("pa_blog_categories",[])]);this.nextIds.project=Math.max(0,...(e||[]).map(r=>Number(r.id)||0))+1,this.nextIds.testimonial=Math.max(0,...(a||[]).map(r=>Number(r.id)||0))+1,this.nextIds.experience=Math.max(0,...(s||[]).map(r=>Number(r.id)||0))+1,this.nextIds.blog=Math.max(0,...(i||[]).map(r=>Number(r.id)||0))+1,this.categoriesMap=o&&typeof o=="object"?o:{},this.blogCategories=Array.isArray(d)?d:[],this.populateProjectCategories(),this.populateBlogCategories()}populateBlogCategories(){const e=t("qaBlogCategory");if(!e)return;const a=e.value,s=G(this.blogCategories);e.innerHTML='<option value="">Select category</option>'+s.map(i=>`<option value="${w(i.key)}">${w(i.label)}</option>`).join(""),a&&(e.value=a)}populateProjectCategories(){const e=t("qaPrjCategoryPick");if(!e)return;const a=new Set([...Object.keys(_),...Object.keys(this.categoriesMap||{})]),s=e.value;e.innerHTML='<option value="">Select category to add</option>'+[...a].map(i=>{const o=this.categoriesMap[i]?.label||_[i]?.label||i;return`<option value="${w(i)}">${w(o)}</option>`}).join(""),s&&(e.value=s),U(e)}addProjectCategoryFromPick(){const e=t("qaPrjCategoryPick"),a=t("qaPrjCategoryChips");if(!e||!a||!e.value)return;const s=e.value,i=e.options[e.selectedIndex]?.text||s;O(a,s,i),e.value="",U(e),t("qaPrjCategoryChips")?.classList.remove("error"),t("qaPrjCategoryError")?.classList.remove("visible")}bindEvents(){Y()&&(V("paQuickAddPanel"),t("paAddNewBtn")?.addEventListener("click",()=>this.open()),t("paQuickAddPanelClose")?.addEventListener("click",C),t("qaCancel")?.addEventListener("click",C),document.querySelectorAll('.pa-qa-top-tab[data-panel="quickAdd"], .pa-qa-bottom-tab[data-panel="quickAdd"]').forEach(e=>{e.addEventListener("click",()=>this.switchTab(e.dataset.tab))}),t("qaPrimaryBtn")?.addEventListener("click",()=>{this.onPrimary()}),t("qaPrevBtn")?.addEventListener("click",()=>this.onPrev()),document.querySelectorAll(".pa-qa-wizard-steps .pa-qa-step").forEach(e=>{e.addEventListener("click",()=>{const a=e.closest(".pa-qa-wizard")?.dataset.qaEntity;a&&(this.wizardStep[a]=e.dataset.wizardStep,this.updateWizardUi(a))})}),this.initIds(),u.prefetch(["pa_technologies","pa_tools","pa_tool_categories","pa_category_meta"]),this.wireProjectForm(),this.wireTestimonialForm(),this.wireExperienceForm(),this.wireBlogForm(),F("qaPrjRteWrap","qaPrjFullDesc"),F("qaBlogRteWrap","qaBlogContent"))}async open(e="project"){await this.initIds(),this.switchTab(e),Q("paQuickAddPanel"),e==="project"&&(u.prefetch(["pa_technologies","pa_tools"]),this.ensureProjectTechSuggest()),setTimeout(()=>{const s=t({project:"qaPrjTitle",testimonial:"qaTestiName",experience:"qaExpTitle",blog:"qaBlogTitle"}[e]);s?.focus?s.focus():s?.click?.(),e==="project"&&this.ensureProjectTechSuggest()},320)}switchTab(e){this.activeTab=e,K("quickAdd",e);const a=y[e],s=t("paQuickAddSubtitle");s&&(s.textContent=a.subtitle),a.wizard&&(this.wizardStep[e]=a.steps[0],b(e,a.steps[0])),this.resetForm(e),this.updateFooter()}updateFooter(){const e=y[this.activeTab],a=t("qaPrevBtn"),s=t("qaPrimaryBtnLabel");if(e.wizard){const i=this.wizardStep[this.activeTab],d=e.steps.indexOf(i);a&&(a.style.display=d>0?"":"none"),s&&(s.textContent=X[this.activeTab]?.[i]||e.submit)}else a&&(a.style.display="none"),s&&(s.textContent=e.submit)}updateWizardUi(e){const a=this.wizardStep[e];b(e,a);const i=y[e].steps,o=i.indexOf(a),d=t(`qa${e}StepBadge`);d&&(d.textContent=`Step ${o+1} of ${i.length}`);const r=document.querySelector(`.pa-qa-wizard[data-qa-entity="${e}"] .pa-qa-step[data-wizard-step="${a}"]`),g=t(`qa${e}StepTitle`),f=t(`qa${e}StepSub`);g&&r&&(g.textContent=r.querySelector(".pa-qa-step-label")?.textContent||""),f&&r&&(f.textContent=r.dataset.stepDesc||""),e==="project"&&a==="technologies"&&(this.ensureProjectTechSuggest(),this.qaTechSuggest?.refreshCatalog()),this.updateFooter()}onPrev(){const e=y[this.activeTab];if(!e.wizard)return;const a=e.steps,s=a.indexOf(this.wizardStep[this.activeTab]);s>0&&(this.wizardStep[this.activeTab]=a[s-1],this.updateWizardUi(this.activeTab))}async onPrimary(){const e=y[this.activeTab];if(e.wizard){const a=e.steps,s=a.indexOf(this.wizardStep[this.activeTab]);if(s<a.length-1){if(!this.validateStep(this.activeTab,this.wizardStep[this.activeTab]))return;this.wizardStep[this.activeTab]=a[s+1],this.updateWizardUi(this.activeTab);return}}await this.submit()}async submit(){const e={project:()=>this.submitProject(),testimonial:()=>this.submitTestimonial(),experience:()=>this.submitExperience(),blog:()=>this.submitBlog()};try{if(!await e[this.activeTab]())return;u.invalidate("pa_recent_activities"),await this.dashboard.reload(),t("qaKeepOpen")?.checked?this.resetForm(this.activeTab):C()}catch{this.statusToast("Could not save. Please try again.","danger")}}showErr(e,a){t(e)?.classList.toggle("error",a),t(`${e}Error`)?.classList.toggle("visible",a)}setFieldError(e,a,s){const i=t(e),o=t(`${e}Error`);if(i?.classList.toggle("error",!a),o?.classList.toggle("visible",!a),!a&&s){const d=o?.querySelector("span");d&&(d.textContent=s)}}validateStep(e,a){return e==="project"&&a==="basic"?this.validateProjectBasic():e==="project"&&a==="technologies"?this.validateProjectTechnologies():e==="experience"&&a==="details"?this.validateExpDetails():e==="blog"&&a==="content"?this.validateBlogContent():!0}ensureProjectTechSuggest(){const e=t("qaPrjTechInput"),a=t("qaPrjTechChips"),s=t("qaPrjTechSuggestList");if(!(e instanceof HTMLInputElement)||!a||!s)return;this.qaTechSuggest?.destroy(),this.qaTechSuggest=R(e,a,s,{onStackItemCreated:o=>{o.kind==="tool"?this.toast(`"${o.name}" added to Tools. You can set its category on the Tools page.`,"success",4e3):this.toast(`"${o.name}" added to Technologies. You can set its category on the Technologies page.`,"success",4e3)},onCreateFailed:o=>this.toast(o,"danger")});const i=t("qaPrjTechAddBtn");i&&!i.dataset.paTechSuggestBound&&(i.dataset.paTechSuggestBound="1",this.on(i,"click",()=>{this.qaTechSuggest?.commit()})),this.qaTechSuggest?.refreshCatalog()}wireProjectForm(){this.qaTechSuggest?.destroy(),this.qaTechSuggest=null;const e=t("qaPrjTechAddBtn");e&&delete e.dataset.paTechSuggestBound,this.ensureProjectTechSuggest(),this.on(t("qaPrjShortDesc"),"input",a=>{const s=t("qaPrjShortDescCount");s&&(s.textContent=a.target.value.length)}),this.on(t("qaPrjCategoryAddBtn"),"click",()=>this.addProjectCategoryFromPick()),this.setupFeaturedUpload("qaPrjMediaUpload","qaPrjFeaturedFile",()=>this.prjFeaturedImage,a=>{this.prjFeaturedImage=a},"projects","project-featured"),this.setupGalleryUpload("qaPrjGalleryUpload","qaPrjGalleryFile",()=>this.prjGalleryImages,a=>{this.prjGalleryImages=a},"qaPrjGalleryGrid","projects","project-gallery")}validateProjectBasic(){let e=!0;return t("qaPrjTitle")?.value.trim()?this.showErr("qaPrjTitle",!1):(this.showErr("qaPrjTitle",!0),e=!1),D(t("qaPrjCategoryChips")).length?(t("qaPrjCategoryChips")?.classList.remove("error"),t("qaPrjCategoryError")?.classList.remove("visible")):(t("qaPrjCategoryChips")?.classList.add("error"),t("qaPrjCategoryError")?.classList.add("visible"),e=!1),t("qaPrjShortDesc")?.value.trim()?this.showErr("qaPrjShortDesc",!1):(this.showErr("qaPrjShortDesc",!0),e=!1),t("qaPrjFullDesc")?.textContent.trim()?t("qaPrjFullDescError")?.classList.remove("visible"):(t("qaPrjFullDescError")?.classList.add("visible"),e=!1),e||this.toast("Please fill in all required fields","danger"),e}validateProjectTechnologies(){const e=z(t("qaPrjTechChips")),a=e.technologies.length>0||e.tools.length>0;return a?t("qaPrjTechError")?.classList.remove("visible"):(t("qaPrjTechError")?.classList.add("visible"),this.toast("Add at least one tool or technology","danger")),a}validateProjectAll(){return this.validateProjectBasic()&&this.validateProjectTechnologies()}async submitProject(){if(!this.validateProjectAll())return!1;const e=t("qaPrjLiveUrl")?.value.trim()||"",a=t("qaPrjRepoUrl")?.value.trim()||"";if(e&&!k(e))return this.toast("Live URL must include https://","danger"),!1;if(a&&!k(a))return this.toast("Repository URL must include https://","danger"),!1;const s=D(t("qaPrjCategoryChips")),i=s[0]||"web",o=this.prjFeaturedImage?.url||t("qaPrjImageUrl")?.value.trim()||"",d=await u.get("pa_projects",[]),r={id:this.nextIds.project++,title:t("qaPrjTitle").value.trim(),catKey:i,catKeys:s,desc:t("qaPrjShortDesc").value.trim(),fullDesc:t("qaPrjFullDesc").textContent.trim(),...z(t("qaPrjTechChips")),tags:(()=>{const g=t("qaPrjTagChips");return g?L(g):[]})(),featured:t("qaPrjFeatured")?.value==="1",scene:J(i),liveUrl:e,repoUrl:a,status:t("qaPrjStatus")?.value||"Completed",sortOrder:parseInt(t("qaPrjSortOrder")?.value,10)||d.length+1,imageUrl:o,bannerImgUrl:o,gallery:this.prjGalleryImages.slice(),createdAt:new Date().toISOString()};return S("Saving changes\u2026","info",12e4),await u.set("pa_projects",d.concat(r)),this.statusToast(`"${r.title}" added successfully!`,"success"),this.notify(`New project "${r.title}" was added.`,"ri-add-circle-line"),!0}resetProjectForm(){["qaPrjTitle","qaPrjShortDesc","qaPrjImageUrl","qaPrjLiveUrl","qaPrjRepoUrl","qaPrjSortOrder"].forEach(a=>h(a,"")),P("qaPrjCategoryChips",""),h("qaPrjCategoryPick",""),P("qaPrjFullDesc",""),P("qaPrjTechChips",""),h("qaPrjTechInput","");const e=t("qaPrjTechSuggestList");e instanceof HTMLElement&&(e.hidden=!0),this.qaTechSuggest?.refreshCatalog(),B("qaPrjShortDescCount","0"),h("qaPrjStatus","Completed"),h("qaPrjFeatured","0"),P("qaPrjGalleryGrid",""),t("qaPrjGalleryPreview")?.classList.remove("has-images"),P("qaPrjFeaturedPreviewWrap",""),j("qaPrjMediaUpload",""),this.prjFeaturedImage=null,this.prjGalleryImages=[],this.wizardStep.project="basic",b("project","basic"),this.updateWizardUi("project")}wireTestimonialForm(){this.setupAvatarDropzone("qaTestiAvatarDropzone","qaTestiAvatarFileInput","qaTestiAvatarPreviewWrap","qaTestiAvatarPreviewImg","qaTestiAvatarRemoveBtn",()=>this.testiImage,e=>{this.testiImage=e},"testimonials","testimonial-avatar"),this.on(t("qaTestiQuote"),"input",e=>{const a=t("qaTestiQuoteCount");a&&(a.textContent=e.target.value.length)})}async submitTestimonial(){const e=t("qaTestiName")?.value.trim(),a=t("qaTestiQuote")?.value.trim();let s=!0;if(e?this.showErr("qaTestiName",!1):(this.showErr("qaTestiName",!0),s=!1),a?this.showErr("qaTestiQuote",!1):(this.showErr("qaTestiQuote",!0),s=!1),!s)return this.toast("Please fill in all required fields","danger"),!1;const i=await u.get("pa_testimonials",[]),o={id:this.nextIds.testimonial++,name:e,quote:a,role:t("qaTestiRole")?.value.trim()||"",company:t("qaTestiCompany")?.value.trim()||"",rating:parseInt(t("qaTestiRating")?.value,10)||5,imageUrl:this.testiImage||"",imageAlt:t("qaTestiAlt")?.value.trim()||"",featured:t("qaTestiFeatured")?.value==="1",createdAt:new Date().toISOString()};return S("Saving changes\u2026","info",12e4),await u.set("pa_testimonials",i.concat(o)),this.statusToast(`Testimonial from "${e}" added!`,"success"),this.notify(`New testimonial from "${e}" was added.`,"ri-chat-quote-line"),!0}resetTestimonialForm(){["qaTestiName","qaTestiRole","qaTestiCompany","qaTestiQuote","qaTestiAlt"].forEach(e=>h(e,"")),h("qaTestiRating","5"),h("qaTestiFeatured","0"),B("qaTestiQuoteCount","0"),this.testiImage=null,j("qaTestiAvatarPreviewWrap","none"),j("qaTestiAvatarDropzone","")}wireExperienceForm(){this.on(t("qaExpCurrent"),"change",e=>{const a=t("qaExpEndDateRow");a&&(a.style.display=e.target.value==="1"?"none":"block")})}validateExpDetails(){let e=!0;return t("qaExpTitle")?.value.trim()?this.showErr("qaExpTitle",!1):(this.showErr("qaExpTitle",!0),e=!1),t("qaExpCompany")?.value.trim()?this.showErr("qaExpCompany",!1):(this.showErr("qaExpCompany",!0),e=!1),t("qaExpType")?.value?this.showErr("qaExpType",!1):(this.showErr("qaExpType",!0),e=!1),e||this.toast("Please fill in all required fields","danger"),e}async submitExperience(){if(!this.validateExpDetails())return!1;if(!t("qaExpStartDate")?.value)return this.showErr("qaExpStartDate",!0),this.toast("Start date is required","danger"),!1;const e=t("qaExpCurrent")?.value==="1",a=await u.get("pa_experience",[]),s={id:this.nextIds.experience++,title:t("qaExpTitle").value.trim(),company:t("qaExpCompany").value.trim(),location:t("qaExpLocation")?.value.trim()||"",type:t("qaExpType").value,startDate:t("qaExpStartDate").value,endDate:e?"":t("qaExpEndDate")?.value||"",current:e,desc:t("qaExpDesc")?.value.trim()||"",sortOrder:H(t("qaExpSort")?.value||"",a.length+1)};return S("Saving changes\u2026","info",12e4),await u.set("pa_experience",a.concat(s)),this.statusToast(`"${s.title}" added successfully!`,"success"),this.notify(`New experience "${s.title}" was added.`,"ri-briefcase-line"),!0}resetExperienceForm(){["qaExpTitle","qaExpCompany","qaExpLocation","qaExpDesc","qaExpStartDate","qaExpEndDate","qaExpSort"].forEach(e=>h(e,"")),h("qaExpType",""),h("qaExpCurrent","0"),j("qaExpEndDateRow","block"),this.wizardStep.experience="details",b("experience","details"),this.updateWizardUi("experience")}wireBlogForm(){this.on(t("qaBlogTitle"),"input",e=>{this.blogSlugTouched||(t("qaBlogSlug").value=W(e.target.value))}),this.on(t("qaBlogSlug"),"input",()=>{this.blogSlugTouched=!0}),this.on(t("qaBlogExcerpt"),"input",e=>{const a=t("qaBlogExcerptCount");a&&(a.textContent=e.target.value.length)}),this.on(t("qaBlogTagInput"),"keydown",e=>{(e.key==="Enter"||e.key===",")&&(e.preventDefault(),A(t("qaBlogTagChips"),e.target.value),e.target.value="")}),this.on(t("qaBlogTagAddBtn"),"click",()=>{const e=t("qaBlogTagInput");A(t("qaBlogTagChips"),e.value),e.value=""}),this.setupAvatarDropzone("qaBlogImageDropzone","qaBlogImageFileInput","qaBlogImagePreviewWrap","qaBlogImagePreviewImg","qaBlogImageRemoveBtn",()=>this.blogImage,e=>{this.blogImage=e},"blog","blog-featured")}validateBlogContent(){let e=!0;t("qaBlogTitle")?.value.trim()?this.showErr("qaBlogTitle",!1):(this.showErr("qaBlogTitle",!0),e=!1);const a=t("qaBlogSlug")?.value.trim();return!a||!M(a)?(this.showErr("qaBlogSlug",!0),e=!1):this.showErr("qaBlogSlug",!1),t("qaBlogCategory")?.value?this.showErr("qaBlogCategory",!1):(this.showErr("qaBlogCategory",!0),e=!1),t("qaBlogExcerpt")?.value.trim()?this.showErr("qaBlogExcerpt",!1):(this.showErr("qaBlogExcerpt",!0),e=!1),t("qaBlogContent")?.textContent.trim()||""?(t("qaBlogContentError")?.classList.remove("visible"),t("qaBlogRteWrap")?.classList.remove("error")):(t("qaBlogContentError")?.classList.add("visible"),t("qaBlogRteWrap")?.classList.add("error"),e=!1),e||(this.wizardStep.blog==="publishing"&&(this.wizardStep.blog="content",this.updateWizardUi("blog")),this.toast("Please fill in all required fields","danger")),e}async submitBlog(){if(!this.validateBlogContent())return!1;const e=t("qaBlogSlug").value.trim();u.invalidate("pa_blog_posts");const a=await u.get("pa_blog_posts",[]);if(a.some(d=>d.slug===e))return this.toast(`Slug "${e}" is already in use`,"danger"),!1;const s=t("qaBlogContent"),i=Math.max(0,...a.map(d=>Number(d.id)||0))+1;this.nextIds.blog=i+1;const o={id:i,title:t("qaBlogTitle").value.trim(),slug:e,category:t("qaBlogCategory").value,excerpt:t("qaBlogExcerpt").value.trim(),content:s?N(s):"",tags:L(t("qaBlogTagChips")),status:t("qaBlogStatus")?.value||"Draft",featured:t("qaBlogFeatured")?.value==="1",imageUrl:this.blogImage||t("qaBlogImageUrl")?.value.trim()||"",imageAlt:t("qaBlogImageAlt")?.value.trim()||"",publishedAt:t("qaBlogPublishedDate")?.value||new Date().toISOString().slice(0,10),sortOrder:parseInt(t("qaBlogSortOrder")?.value,10)||a.length+1,metaTitle:"",metaDesc:"",commentsEnabled:!0,likesEnabled:!0,commentsAutoApprove:!1,createdAt:new Date().toISOString()};return S("Saving changes\u2026","info",12e4),await u.set("pa_blog_posts",a.concat(o)),this.statusToast(`"${o.title}" added successfully!`,"success"),this.notify(`New blog post "${o.title}" was added.`,"ri-article-line"),!0}resetBlogForm(){["qaBlogTitle","qaBlogSlug","qaBlogExcerpt","qaBlogImageUrl","qaBlogImageAlt","qaBlogSortOrder"].forEach(e=>h(e,"")),h("qaBlogCategory",""),P("qaBlogContent",""),P("qaBlogTagChips",""),h("qaBlogStatus","Draft"),h("qaBlogFeatured","0"),h("qaBlogPublishedDate",new Date().toISOString().slice(0,10)),B("qaBlogExcerptCount","0"),this.blogImage=null,this.blogSlugTouched=!1,j("qaBlogImagePreviewWrap","none"),j("qaBlogImageDropzone",""),this.wizardStep.blog="content",b("blog","content"),this.updateWizardUi("blog")}setupFeaturedUpload(e,a,s,i,o="projects",d="project-featured"){const r=t(e),g=t(a);if(!r||!g)return;const f=e.replace("MediaUpload","FeaturedPreviewWrap"),m=async l=>{if(!E(l))return;const c=t(f);try{const q=await x(l,{folder:o,page:"quick-add",purpose:d,optimize:{maxWidth:1920,maxHeight:1080,quality:.88},onPreview:n=>{i({url:n,name:l.name}),c&&(c.innerHTML=`<div class="pa-media-preview"><img src="${n}" alt="${l.name}" /><button type="button" class="pa-media-preview-remove" aria-label="Remove"><i class="ri-close-line"></i></button></div>`)}});i({url:q.url,name:q.fileName||l.name}),c&&(c.innerHTML=`<div class="pa-media-preview"><img src="${q.url}" alt="${q.fileName||l.name}" /><button type="button" class="pa-media-preview-remove" aria-label="Remove"><i class="ri-close-line"></i></button></div>`,c.querySelector(".pa-media-preview-remove")?.addEventListener("click",()=>{i(null),c.innerHTML="",r.style.display=""})),r.style.display="none"}catch{this.toast("Could not upload image","danger")}};this.on(r,"click",()=>g.click()),this.on(g,"change",async()=>{const l=g.files?.[0];g.value="",l&&await m(l)}),["dragenter","dragover"].forEach(l=>this.on(r,l,c=>{c.preventDefault(),r.classList.add("dragover")})),["dragleave","drop"].forEach(l=>this.on(r,l,c=>{c.preventDefault(),r.classList.remove("dragover")})),this.on(r,"drop",async l=>{const c=l.dataTransfer?.files?.[0];c&&await m(c)})}setupGalleryUpload(e,a,s,i,o,d="projects",r="project-gallery"){const g=t(e),f=t(a);if(!g||!f)return;const m=()=>{const l=t(o),c=s();if(!l)return;l.closest(".pa-qa-gallery-preview")?.classList.toggle("has-images",c.length>0),l.innerHTML=c.map((n,p)=>`<div class="pa-gallery-thumb"><img src="${n.url}" alt="${n.name||""}" /><div class="pa-gallery-thumb-remove" data-i="${p}" role="button"><i class="ri-close-line"></i></div></div>`).join(""),l.querySelectorAll(".pa-gallery-thumb-remove").forEach(n=>{n.addEventListener("click",()=>{const p=s().slice();p.splice(parseInt(n.dataset.i,10),1),i(p),m()})})};this.on(g,"click",()=>f.click()),this.on(f,"change",async()=>{const l=Array.from(f.files||[]),c=s().slice();let q=c.length;for(const n of l)if(E(n)){q+=1;try{const p=await x(n,{folder:d,page:"quick-add",purpose:r,sequence:q,optimize:{maxWidth:1920,maxHeight:1080,quality:.88}});c.push({url:p.url,name:p.fileName||n.name})}catch{}}i(c),m(),f.value=""})}setupAvatarDropzone(e,a,s,i,o,d,r,g="avatars",f="profile-avatar"){const m=t(e),l=t(a),c=t(o);if(!m||!l)return;const q=n=>{const p=t(s),T=t(i);n?(T&&(T.src=n),p&&(p.style.display="block"),m.style.display="none"):(p&&(p.style.display="none"),m.style.display="")};this.on(m,"click",()=>l.click()),this.on(l,"change",async()=>{const n=l.files?.[0];if(l.value="",!(!n||!E(n)))try{const p=await x(n,{folder:g,page:"quick-add",purpose:f,optimize:{maxWidth:800,maxHeight:800,quality:.85},onPreview:T=>{r(T),q(T)}});r(p.url),q(p.url)}catch{this.toast("Could not upload image","danger")}}),["dragenter","dragover"].forEach(n=>this.on(m,n,p=>{p.preventDefault(),m.classList.add("dragover")})),["dragleave","drop"].forEach(n=>this.on(m,n,p=>{p.preventDefault(),m.classList.remove("dragover")})),this.on(m,"drop",async n=>{const p=n.dataTransfer?.files?.[0];if(!(!p||!E(p)))try{const T=await x(p,{folder:g,page:"quick-add",purpose:f,optimize:{maxWidth:800,maxHeight:800,quality:.85},onPreview:I=>{r(I),q(I)}});r(T.url),q(T.url)}catch{this.toast("Could not upload image","danger")}}),c&&this.on(c,"click",n=>{n.stopPropagation(),r(null),q(null)})}resetForm(e){({project:()=>this.resetProjectForm(),testimonial:()=>this.resetTestimonialForm(),experience:()=>this.resetExperienceForm(),blog:()=>this.resetBlogForm()})[e]?.(),this.updateFooter()}}export{me as QuickAddModule};
+import { Module } from "../../core/Module.js";
+import { storage } from "../../core/StorageService.js";
+import { $id, escapeHtml } from "../../utils/dom.js";
+import { isValidUrl, isValidSlug, slugify } from "../../utils/strings.js";
+import { handleFileValidation } from "../../utils/files.js";
+import { uploadCmsFileWithPreview } from "../../utils/media-upload.js";
+import { setupRte, getRteHtml } from "../../utils/rte.js";
+import {
+  addChip,
+  addProjectCategoryChip,
+  getChipValues,
+  getProjectCategoryChipKeys,
+  getProjectStackFromChips
+} from "../../utils/chips.js";
+import { CATEGORY_META_PROJECTS } from "../../utils/projectCategories.js";
+import { bindTechnologySuggest } from "../../utils/technologySuggest.js";
+import { parseSortInput, sortByNewestFirst } from "../../utils/format.js";
+import { showStatusToast } from "../shell/toast.js";
+import { closePanels, openPanel, activateTab, activateWizardStep, registerPanel } from "../shell/panels.js";
+import { canManageContent } from "../../core/cms-access.js";
+import { pickSceneForCategory } from "../projects/ProjectsModule.js";
+import { syncPaSelect } from "../../utils/paSelect.js";
+function setVal(id, value) {
+  const el = $id(id);
+  if (el && "value" in el) el.value = value;
+}
+function setHtml(id, html) {
+  const el = $id(id);
+  if (el) el.innerHTML = html;
+}
+function setText(id, text) {
+  const el = $id(id);
+  if (el) el.textContent = text;
+}
+function setDisplay(id, display) {
+  const el = $id(id);
+  if (el) el.style.display = display;
+}
+const TAB_META = {
+  project: { subtitle: "Create a new item and fill in the details below.", submit: "Add Project", wizard: true, steps: ["basic", "media", "technologies", "additional"] },
+  testimonial: { subtitle: "Add a client testimonial to your portfolio.", submit: "Add Testimonial", wizard: false },
+  experience: { subtitle: "Add a work experience entry.", submit: "Add Experience", wizard: true, steps: ["details", "dates"] },
+  blog: { subtitle: "Write and publish a new blog post.", submit: "Add Blog Post", wizard: true, steps: ["content", "publishing"] }
+};
+const STEP_LABELS = {
+  project: { basic: "Next: Media", media: "Next: Tools & Technologies", technologies: "Next: Additional", additional: "Add Project" },
+  experience: { details: "Next: Dates", dates: "Add Experience" },
+  blog: { content: "Next: Publishing", publishing: "Add Blog Post" }
+};
+class QuickAddModule extends Module {
+  constructor(dashboardModule) {
+    super({ name: "QuickAdd" });
+    this.dashboard = dashboardModule;
+    this.activeTab = "project";
+    this.wizardStep = {};
+    Object.keys(TAB_META).forEach((k) => {
+      if (TAB_META[k].wizard) this.wizardStep[k] = TAB_META[k].steps[0];
+    });
+    this.prjFeaturedImage = null;
+    this.prjGalleryImages = [];
+    this.testiImage = null;
+    this.blogImage = null;
+    this.blogSlugTouched = false;
+    this.nextIds = { project: 1, testimonial: 1, experience: 1, blog: 1 };
+    this.qaTechSuggest = null;
+  }
+  async initIds() {
+    const [projects, testi, exp, blog, categories, blogCategories] = await Promise.all([
+      storage.get("pa_projects", []),
+      storage.get("pa_testimonials", []),
+      storage.get("pa_experience", []),
+      storage.get("pa_blog_posts", []),
+      storage.get("pa_category_meta", {}),
+      storage.get("pa_blog_categories", [])
+    ]);
+    this.nextIds.project = Math.max(0, ...(projects || []).map((p) => Number(p.id) || 0)) + 1;
+    this.nextIds.testimonial = Math.max(0, ...(testi || []).map((t) => Number(t.id) || 0)) + 1;
+    this.nextIds.experience = Math.max(0, ...(exp || []).map((e) => Number(e.id) || 0)) + 1;
+    this.nextIds.blog = Math.max(0, ...(blog || []).map((b) => Number(b.id) || 0)) + 1;
+    this.categoriesMap = categories && typeof categories === "object" ? categories : {};
+    this.blogCategories = Array.isArray(blogCategories) ? blogCategories : [];
+    this.populateProjectCategories();
+    this.populateBlogCategories();
+  }
+  populateBlogCategories() {
+    const sel = $id("qaBlogCategory");
+    if (!sel) return;
+    const current = sel.value;
+    const sorted = sortByNewestFirst(this.blogCategories);
+    sel.innerHTML = '<option value="">Select category</option>' + sorted.map((c) => `<option value="${escapeHtml(c.key)}">${escapeHtml(c.label)}</option>`).join("");
+    if (current) sel.value = current;
+  }
+  populateProjectCategories() {
+    const sel = $id("qaPrjCategoryPick");
+    if (!sel) return;
+    const keys = /* @__PURE__ */ new Set([...Object.keys(CATEGORY_META_PROJECTS), ...Object.keys(this.categoriesMap || {})]);
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Select category to add</option>' + [...keys].map((k) => {
+      const label = this.categoriesMap[k]?.label || CATEGORY_META_PROJECTS[k]?.label || k;
+      return `<option value="${escapeHtml(k)}">${escapeHtml(label)}</option>`;
+    }).join("");
+    if (current) sel.value = current;
+    syncPaSelect(sel);
+  }
+  addProjectCategoryFromPick() {
+    const pick = $id("qaPrjCategoryPick");
+    const chips = $id("qaPrjCategoryChips");
+    if (!pick || !chips || !pick.value) return;
+    const key = pick.value;
+    const label = pick.options[pick.selectedIndex]?.text || key;
+    addProjectCategoryChip(chips, key, label);
+    pick.value = "";
+    syncPaSelect(pick);
+    $id("qaPrjCategoryChips")?.classList.remove("error");
+    $id("qaPrjCategoryError")?.classList.remove("visible");
+  }
+  bindEvents() {
+    if (!canManageContent()) return;
+    registerPanel("paQuickAddPanel");
+    $id("paAddNewBtn")?.addEventListener("click", () => this.open());
+    $id("paQuickAddPanelClose")?.addEventListener("click", closePanels);
+    $id("qaCancel")?.addEventListener("click", closePanels);
+    document.querySelectorAll('.pa-qa-top-tab[data-panel="quickAdd"], .pa-qa-bottom-tab[data-panel="quickAdd"]').forEach((btn) => {
+      btn.addEventListener("click", () => this.switchTab(btn.dataset.tab));
+    });
+    $id("qaPrimaryBtn")?.addEventListener("click", () => {
+      void this.onPrimary();
+    });
+    $id("qaPrevBtn")?.addEventListener("click", () => this.onPrev());
+    document.querySelectorAll(".pa-qa-wizard-steps .pa-qa-step").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const entity = btn.closest(".pa-qa-wizard")?.dataset.qaEntity;
+        if (!entity) return;
+        this.wizardStep[entity] = btn.dataset.wizardStep;
+        this.updateWizardUi(entity);
+      });
+    });
+    void this.initIds();
+    storage.prefetch(["pa_technologies", "pa_tools", "pa_tool_categories", "pa_category_meta"]);
+    this.wireProjectForm();
+    this.wireTestimonialForm();
+    this.wireExperienceForm();
+    this.wireBlogForm();
+    setupRte("qaPrjRteWrap", "qaPrjFullDesc");
+    setupRte("qaBlogRteWrap", "qaBlogContent");
+  }
+  async open(tab = "project") {
+    await this.initIds();
+    this.switchTab(tab);
+    openPanel("paQuickAddPanel");
+    if (tab === "project") {
+      storage.prefetch(["pa_technologies", "pa_tools"]);
+      this.ensureProjectTechSuggest();
+    }
+    setTimeout(() => {
+      const focusMap = {
+        project: "qaPrjTitle",
+        testimonial: "qaTestiName",
+        experience: "qaExpTitle",
+        blog: "qaBlogTitle"
+      };
+      const el = $id(focusMap[tab]);
+      if (el?.focus) el.focus();
+      else el?.click?.();
+      if (tab === "project") this.ensureProjectTechSuggest();
+    }, 320);
+  }
+  switchTab(tab) {
+    this.activeTab = tab;
+    activateTab("quickAdd", tab);
+    const meta = TAB_META[tab];
+    const sub = $id("paQuickAddSubtitle");
+    if (sub) sub.textContent = meta.subtitle;
+    if (meta.wizard) {
+      this.wizardStep[tab] = meta.steps[0];
+      activateWizardStep(tab, meta.steps[0]);
+    }
+    this.resetForm(tab);
+    this.updateFooter();
+  }
+  updateFooter() {
+    const meta = TAB_META[this.activeTab];
+    const prev = $id("qaPrevBtn");
+    const label = $id("qaPrimaryBtnLabel");
+    if (meta.wizard) {
+      const step = this.wizardStep[this.activeTab];
+      const steps = meta.steps;
+      const idx = steps.indexOf(step);
+      if (prev) prev.style.display = idx > 0 ? "" : "none";
+      if (label) label.textContent = STEP_LABELS[this.activeTab]?.[step] || meta.submit;
+    } else {
+      if (prev) prev.style.display = "none";
+      if (label) label.textContent = meta.submit;
+    }
+  }
+  updateWizardUi(entity) {
+    const step = this.wizardStep[entity];
+    activateWizardStep(entity, step);
+    const meta = TAB_META[entity];
+    const steps = meta.steps;
+    const idx = steps.indexOf(step);
+    const badge = $id(`qa${entity}StepBadge`);
+    if (badge) badge.textContent = `Step ${idx + 1} of ${steps.length}`;
+    const stepBtn = document.querySelector(`.pa-qa-wizard[data-qa-entity="${entity}"] .pa-qa-step[data-wizard-step="${step}"]`);
+    const title = $id(`qa${entity}StepTitle`);
+    const sub = $id(`qa${entity}StepSub`);
+    if (title && stepBtn) title.textContent = stepBtn.querySelector(".pa-qa-step-label")?.textContent || "";
+    if (sub && stepBtn) sub.textContent = stepBtn.dataset.stepDesc || "";
+    if (entity === "project" && step === "technologies") {
+      this.ensureProjectTechSuggest();
+      void this.qaTechSuggest?.refreshCatalog();
+    }
+    this.updateFooter();
+  }
+  onPrev() {
+    const meta = TAB_META[this.activeTab];
+    if (!meta.wizard) return;
+    const steps = meta.steps;
+    const idx = steps.indexOf(this.wizardStep[this.activeTab]);
+    if (idx > 0) {
+      this.wizardStep[this.activeTab] = steps[idx - 1];
+      this.updateWizardUi(this.activeTab);
+    }
+  }
+  async onPrimary() {
+    const meta = TAB_META[this.activeTab];
+    if (meta.wizard) {
+      const steps = meta.steps;
+      const idx = steps.indexOf(this.wizardStep[this.activeTab]);
+      if (idx < steps.length - 1) {
+        if (!this.validateStep(this.activeTab, this.wizardStep[this.activeTab])) return;
+        this.wizardStep[this.activeTab] = steps[idx + 1];
+        this.updateWizardUi(this.activeTab);
+        return;
+      }
+    }
+    await this.submit();
+  }
+  async submit() {
+    const handlers = {
+      project: () => this.submitProject(),
+      testimonial: () => this.submitTestimonial(),
+      experience: () => this.submitExperience(),
+      blog: () => this.submitBlog()
+    };
+    try {
+      const ok = await handlers[this.activeTab]();
+      if (!ok) return;
+      storage.invalidate("pa_recent_activities");
+      await this.dashboard.reload();
+      const keepOpen = $id("qaKeepOpen")?.checked;
+      if (keepOpen) {
+        this.resetForm(this.activeTab);
+      } else {
+        closePanels();
+      }
+    } catch {
+      this.statusToast("Could not save. Please try again.", "danger");
+    }
+  }
+  // ─── Validation helpers ───────────────────────────────────────────
+  showErr(id, show) {
+    $id(id)?.classList.toggle("error", show);
+    $id(`${id}Error`)?.classList.toggle("visible", show);
+  }
+  setFieldError(id, valid, message) {
+    const input = $id(id);
+    const err = $id(`${id}Error`);
+    input?.classList.toggle("error", !valid);
+    err?.classList.toggle("visible", !valid);
+    if (!valid && message) {
+      const span = err?.querySelector("span");
+      if (span) span.textContent = message;
+    }
+  }
+  validateStep(tab, step) {
+    if (tab === "project" && step === "basic") return this.validateProjectBasic();
+    if (tab === "project" && step === "technologies") return this.validateProjectTechnologies();
+    if (tab === "experience" && step === "details") return this.validateExpDetails();
+    if (tab === "blog" && step === "content") return this.validateBlogContent();
+    return true;
+  }
+  // ─── Project ──────────────────────────────────────────────────────
+  ensureProjectTechSuggest() {
+    const input = $id("qaPrjTechInput");
+    const chips = $id("qaPrjTechChips");
+    const list = $id("qaPrjTechSuggestList");
+    if (!(input instanceof HTMLInputElement) || !chips || !list) return;
+    this.qaTechSuggest?.destroy();
+    this.qaTechSuggest = bindTechnologySuggest(input, chips, list, {
+      onStackItemCreated: (item) => {
+        if (item.kind === "tool") {
+          this.toast(
+            `"${item.name}" added to Tools. You can set its category on the Tools page.`,
+            "success",
+            4e3
+          );
+        } else {
+          this.toast(
+            `"${item.name}" added to Technologies. You can set its category on the Technologies page.`,
+            "success",
+            4e3
+          );
+        }
+      },
+      onCreateFailed: (msg) => this.toast(msg, "danger")
+    });
+    const addBtn = $id("qaPrjTechAddBtn");
+    if (addBtn && !addBtn.dataset.paTechSuggestBound) {
+      addBtn.dataset.paTechSuggestBound = "1";
+      this.on(addBtn, "click", () => {
+        void this.qaTechSuggest?.commit();
+      });
+    }
+    void this.qaTechSuggest?.refreshCatalog();
+  }
+  wireProjectForm() {
+    this.qaTechSuggest?.destroy();
+    this.qaTechSuggest = null;
+    const addBtn = $id("qaPrjTechAddBtn");
+    if (addBtn) delete addBtn.dataset.paTechSuggestBound;
+    this.ensureProjectTechSuggest();
+    this.on($id("qaPrjShortDesc"), "input", (e) => {
+      const c = $id("qaPrjShortDescCount");
+      if (c) c.textContent = e.target.value.length;
+    });
+    this.on($id("qaPrjCategoryAddBtn"), "click", () => this.addProjectCategoryFromPick());
+    this.setupFeaturedUpload("qaPrjMediaUpload", "qaPrjFeaturedFile", () => this.prjFeaturedImage, (v) => {
+      this.prjFeaturedImage = v;
+    }, "projects", "project-featured");
+    this.setupGalleryUpload("qaPrjGalleryUpload", "qaPrjGalleryFile", () => this.prjGalleryImages, (v) => {
+      this.prjGalleryImages = v;
+    }, "qaPrjGalleryGrid", "projects", "project-gallery");
+  }
+  validateProjectBasic() {
+    let ok = true;
+    const title = $id("qaPrjTitle")?.value.trim();
+    if (!title) {
+      this.showErr("qaPrjTitle", true);
+      ok = false;
+    } else this.showErr("qaPrjTitle", false);
+    const catKeys = getProjectCategoryChipKeys($id("qaPrjCategoryChips"));
+    if (!catKeys.length) {
+      $id("qaPrjCategoryChips")?.classList.add("error");
+      $id("qaPrjCategoryError")?.classList.add("visible");
+      ok = false;
+    } else {
+      $id("qaPrjCategoryChips")?.classList.remove("error");
+      $id("qaPrjCategoryError")?.classList.remove("visible");
+    }
+    const desc = $id("qaPrjShortDesc")?.value.trim();
+    if (!desc) {
+      this.showErr("qaPrjShortDesc", true);
+      ok = false;
+    } else this.showErr("qaPrjShortDesc", false);
+    const full = $id("qaPrjFullDesc")?.textContent.trim();
+    if (!full) {
+      $id("qaPrjFullDescError")?.classList.add("visible");
+      ok = false;
+    } else $id("qaPrjFullDescError")?.classList.remove("visible");
+    if (!ok) this.toast("Please fill in all required fields", "danger");
+    return ok;
+  }
+  validateProjectTechnologies() {
+    const stack = getProjectStackFromChips($id("qaPrjTechChips"));
+    const ok = stack.technologies.length > 0 || stack.tools.length > 0;
+    if (!ok) {
+      $id("qaPrjTechError")?.classList.add("visible");
+      this.toast("Add at least one tool or technology", "danger");
+    } else {
+      $id("qaPrjTechError")?.classList.remove("visible");
+    }
+    return ok;
+  }
+  validateProjectAll() {
+    return this.validateProjectBasic() && this.validateProjectTechnologies();
+  }
+  async submitProject() {
+    if (!this.validateProjectAll()) return false;
+    const liveUrl = $id("qaPrjLiveUrl")?.value.trim() || "";
+    const repoUrl = $id("qaPrjRepoUrl")?.value.trim() || "";
+    if (liveUrl && !isValidUrl(liveUrl)) {
+      this.toast("Live URL must include https://", "danger");
+      return false;
+    }
+    if (repoUrl && !isValidUrl(repoUrl)) {
+      this.toast("Repository URL must include https://", "danger");
+      return false;
+    }
+    const catKeys = getProjectCategoryChipKeys($id("qaPrjCategoryChips"));
+    const primaryCat = catKeys[0] || "web";
+    const imageUrl = this.prjFeaturedImage?.url || $id("qaPrjImageUrl")?.value.trim() || "";
+    const records = await storage.get("pa_projects", []);
+    const newProject = {
+      id: this.nextIds.project++,
+      title: $id("qaPrjTitle").value.trim(),
+      catKey: primaryCat,
+      catKeys,
+      desc: $id("qaPrjShortDesc").value.trim(),
+      fullDesc: $id("qaPrjFullDesc").textContent.trim(),
+      ...getProjectStackFromChips($id("qaPrjTechChips")),
+      tags: (() => {
+        const el = $id("qaPrjTagChips");
+        return el ? getChipValues(el) : [];
+      })(),
+      featured: $id("qaPrjFeatured")?.value === "1",
+      scene: pickSceneForCategory(primaryCat),
+      liveUrl,
+      repoUrl,
+      status: $id("qaPrjStatus")?.value || "Completed",
+      sortOrder: parseInt($id("qaPrjSortOrder")?.value, 10) || records.length + 1,
+      imageUrl,
+      bannerImgUrl: imageUrl,
+      gallery: this.prjGalleryImages.slice(),
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    showStatusToast("Saving changes\u2026", "info", 12e4);
+    await storage.set("pa_projects", records.concat(newProject));
+    this.statusToast(`"${newProject.title}" added successfully!`, "success");
+    this.notify(`New project "${newProject.title}" was added.`, "ri-add-circle-line");
+    return true;
+  }
+  resetProjectForm() {
+    ["qaPrjTitle", "qaPrjShortDesc", "qaPrjImageUrl", "qaPrjLiveUrl", "qaPrjRepoUrl", "qaPrjSortOrder"].forEach((id) => setVal(id, ""));
+    setHtml("qaPrjCategoryChips", "");
+    setVal("qaPrjCategoryPick", "");
+    setHtml("qaPrjFullDesc", "");
+    setHtml("qaPrjTechChips", "");
+    setVal("qaPrjTechInput", "");
+    const suggestList = $id("qaPrjTechSuggestList");
+    if (suggestList instanceof HTMLElement) suggestList.hidden = true;
+    void this.qaTechSuggest?.refreshCatalog();
+    setText("qaPrjShortDescCount", "0");
+    setVal("qaPrjStatus", "Completed");
+    setVal("qaPrjFeatured", "0");
+    setHtml("qaPrjGalleryGrid", "");
+    $id("qaPrjGalleryPreview")?.classList.remove("has-images");
+    setHtml("qaPrjFeaturedPreviewWrap", "");
+    setDisplay("qaPrjMediaUpload", "");
+    this.prjFeaturedImage = null;
+    this.prjGalleryImages = [];
+    this.wizardStep.project = "basic";
+    activateWizardStep("project", "basic");
+    this.updateWizardUi("project");
+  }
+  // ─── Testimonial ──────────────────────────────────────────────────
+  wireTestimonialForm() {
+    this.setupAvatarDropzone("qaTestiAvatarDropzone", "qaTestiAvatarFileInput", "qaTestiAvatarPreviewWrap", "qaTestiAvatarPreviewImg", "qaTestiAvatarRemoveBtn", () => this.testiImage, (v) => {
+      this.testiImage = v;
+    }, "testimonials", "testimonial-avatar");
+    this.on($id("qaTestiQuote"), "input", (e) => {
+      const c = $id("qaTestiQuoteCount");
+      if (c) c.textContent = e.target.value.length;
+    });
+  }
+  async submitTestimonial() {
+    const name = $id("qaTestiName")?.value.trim();
+    const quote = $id("qaTestiQuote")?.value.trim();
+    let ok = true;
+    if (!name) {
+      this.showErr("qaTestiName", true);
+      ok = false;
+    } else this.showErr("qaTestiName", false);
+    if (!quote) {
+      this.showErr("qaTestiQuote", true);
+      ok = false;
+    } else this.showErr("qaTestiQuote", false);
+    if (!ok) {
+      this.toast("Please fill in all required fields", "danger");
+      return false;
+    }
+    const records = await storage.get("pa_testimonials", []);
+    const newItem = {
+      id: this.nextIds.testimonial++,
+      name,
+      quote,
+      role: $id("qaTestiRole")?.value.trim() || "",
+      company: $id("qaTestiCompany")?.value.trim() || "",
+      rating: parseInt($id("qaTestiRating")?.value, 10) || 5,
+      imageUrl: this.testiImage || "",
+      imageAlt: $id("qaTestiAlt")?.value.trim() || "",
+      featured: $id("qaTestiFeatured")?.value === "1",
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    showStatusToast("Saving changes\u2026", "info", 12e4);
+    await storage.set("pa_testimonials", records.concat(newItem));
+    this.statusToast(`Testimonial from "${name}" added!`, "success");
+    this.notify(`New testimonial from "${name}" was added.`, "ri-chat-quote-line");
+    return true;
+  }
+  resetTestimonialForm() {
+    ["qaTestiName", "qaTestiRole", "qaTestiCompany", "qaTestiQuote", "qaTestiAlt"].forEach((id) => setVal(id, ""));
+    setVal("qaTestiRating", "5");
+    setVal("qaTestiFeatured", "0");
+    setText("qaTestiQuoteCount", "0");
+    this.testiImage = null;
+    setDisplay("qaTestiAvatarPreviewWrap", "none");
+    setDisplay("qaTestiAvatarDropzone", "");
+  }
+  // ─── Experience ───────────────────────────────────────────────────
+  wireExperienceForm() {
+    this.on($id("qaExpCurrent"), "change", (e) => {
+      const row = $id("qaExpEndDateRow");
+      if (row) row.style.display = e.target.value === "1" ? "none" : "block";
+    });
+  }
+  validateExpDetails() {
+    let ok = true;
+    if (!$id("qaExpTitle")?.value.trim()) {
+      this.showErr("qaExpTitle", true);
+      ok = false;
+    } else this.showErr("qaExpTitle", false);
+    if (!$id("qaExpCompany")?.value.trim()) {
+      this.showErr("qaExpCompany", true);
+      ok = false;
+    } else this.showErr("qaExpCompany", false);
+    if (!$id("qaExpType")?.value) {
+      this.showErr("qaExpType", true);
+      ok = false;
+    } else this.showErr("qaExpType", false);
+    if (!ok) this.toast("Please fill in all required fields", "danger");
+    return ok;
+  }
+  async submitExperience() {
+    if (!this.validateExpDetails()) return false;
+    if (!$id("qaExpStartDate")?.value) {
+      this.showErr("qaExpStartDate", true);
+      this.toast("Start date is required", "danger");
+      return false;
+    }
+    const current = $id("qaExpCurrent")?.value === "1";
+    const records = await storage.get("pa_experience", []);
+    const newExp = {
+      id: this.nextIds.experience++,
+      title: $id("qaExpTitle").value.trim(),
+      company: $id("qaExpCompany").value.trim(),
+      location: $id("qaExpLocation")?.value.trim() || "",
+      type: $id("qaExpType").value,
+      startDate: $id("qaExpStartDate").value,
+      endDate: current ? "" : $id("qaExpEndDate")?.value || "",
+      current,
+      desc: $id("qaExpDesc")?.value.trim() || "",
+      sortOrder: parseSortInput($id("qaExpSort")?.value || "", records.length + 1)
+    };
+    showStatusToast("Saving changes\u2026", "info", 12e4);
+    await storage.set("pa_experience", records.concat(newExp));
+    this.statusToast(`"${newExp.title}" added successfully!`, "success");
+    this.notify(`New experience "${newExp.title}" was added.`, "ri-briefcase-line");
+    return true;
+  }
+  resetExperienceForm() {
+    ["qaExpTitle", "qaExpCompany", "qaExpLocation", "qaExpDesc", "qaExpStartDate", "qaExpEndDate", "qaExpSort"].forEach((id) => setVal(id, ""));
+    setVal("qaExpType", "");
+    setVal("qaExpCurrent", "0");
+    setDisplay("qaExpEndDateRow", "block");
+    this.wizardStep.experience = "details";
+    activateWizardStep("experience", "details");
+    this.updateWizardUi("experience");
+  }
+  // ─── Blog ─────────────────────────────────────────────────────────
+  wireBlogForm() {
+    this.on($id("qaBlogTitle"), "input", (e) => {
+      if (!this.blogSlugTouched) $id("qaBlogSlug").value = slugify(e.target.value);
+    });
+    this.on($id("qaBlogSlug"), "input", () => {
+      this.blogSlugTouched = true;
+    });
+    this.on($id("qaBlogExcerpt"), "input", (e) => {
+      const c = $id("qaBlogExcerptCount");
+      if (c) c.textContent = e.target.value.length;
+    });
+    this.on($id("qaBlogTagInput"), "keydown", (e) => {
+      if (e.key === "Enter" || e.key === ",") {
+        e.preventDefault();
+        addChip($id("qaBlogTagChips"), e.target.value);
+        e.target.value = "";
+      }
+    });
+    this.on($id("qaBlogTagAddBtn"), "click", () => {
+      const input = $id("qaBlogTagInput");
+      addChip($id("qaBlogTagChips"), input.value);
+      input.value = "";
+    });
+    this.setupAvatarDropzone("qaBlogImageDropzone", "qaBlogImageFileInput", "qaBlogImagePreviewWrap", "qaBlogImagePreviewImg", "qaBlogImageRemoveBtn", () => this.blogImage, (v) => {
+      this.blogImage = v;
+    }, "blog", "blog-featured");
+  }
+  validateBlogContent() {
+    let ok = true;
+    if (!$id("qaBlogTitle")?.value.trim()) {
+      this.showErr("qaBlogTitle", true);
+      ok = false;
+    } else this.showErr("qaBlogTitle", false);
+    const slug = $id("qaBlogSlug")?.value.trim();
+    if (!slug || !isValidSlug(slug)) {
+      this.showErr("qaBlogSlug", true);
+      ok = false;
+    } else this.showErr("qaBlogSlug", false);
+    if (!$id("qaBlogCategory")?.value) {
+      this.showErr("qaBlogCategory", true);
+      ok = false;
+    } else this.showErr("qaBlogCategory", false);
+    if (!$id("qaBlogExcerpt")?.value.trim()) {
+      this.showErr("qaBlogExcerpt", true);
+      ok = false;
+    } else this.showErr("qaBlogExcerpt", false);
+    const contentEl = $id("qaBlogContent");
+    const contentPlain = contentEl?.textContent.trim() || "";
+    if (!contentPlain) {
+      $id("qaBlogContentError")?.classList.add("visible");
+      $id("qaBlogRteWrap")?.classList.add("error");
+      ok = false;
+    } else {
+      $id("qaBlogContentError")?.classList.remove("visible");
+      $id("qaBlogRteWrap")?.classList.remove("error");
+    }
+    if (!ok) {
+      if (this.wizardStep.blog === "publishing") {
+        this.wizardStep.blog = "content";
+        this.updateWizardUi("blog");
+      }
+      this.toast("Please fill in all required fields", "danger");
+    }
+    return ok;
+  }
+  async submitBlog() {
+    if (!this.validateBlogContent()) return false;
+    const slug = $id("qaBlogSlug").value.trim();
+    storage.invalidate("pa_blog_posts");
+    const records = await storage.get("pa_blog_posts", []);
+    if (records.some((p) => p.slug === slug)) {
+      this.toast(`Slug "${slug}" is already in use`, "danger");
+      return false;
+    }
+    const contentEl = $id("qaBlogContent");
+    const nextId = Math.max(0, ...records.map((b) => Number(b.id) || 0)) + 1;
+    this.nextIds.blog = nextId + 1;
+    const newPost = {
+      id: nextId,
+      title: $id("qaBlogTitle").value.trim(),
+      slug,
+      category: $id("qaBlogCategory").value,
+      excerpt: $id("qaBlogExcerpt").value.trim(),
+      content: contentEl ? getRteHtml(contentEl) : "",
+      tags: getChipValues($id("qaBlogTagChips")),
+      status: $id("qaBlogStatus")?.value || "Draft",
+      featured: $id("qaBlogFeatured")?.value === "1",
+      imageUrl: this.blogImage || $id("qaBlogImageUrl")?.value.trim() || "",
+      imageAlt: $id("qaBlogImageAlt")?.value.trim() || "",
+      publishedAt: $id("qaBlogPublishedDate")?.value || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
+      sortOrder: parseInt($id("qaBlogSortOrder")?.value, 10) || records.length + 1,
+      metaTitle: "",
+      metaDesc: "",
+      commentsEnabled: true,
+      likesEnabled: true,
+      commentsAutoApprove: false,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    showStatusToast("Saving changes\u2026", "info", 12e4);
+    await storage.set("pa_blog_posts", records.concat(newPost));
+    this.statusToast(`"${newPost.title}" added successfully!`, "success");
+    this.notify(`New blog post "${newPost.title}" was added.`, "ri-article-line");
+    return true;
+  }
+  resetBlogForm() {
+    ["qaBlogTitle", "qaBlogSlug", "qaBlogExcerpt", "qaBlogImageUrl", "qaBlogImageAlt", "qaBlogSortOrder"].forEach((id) => setVal(id, ""));
+    setVal("qaBlogCategory", "");
+    setHtml("qaBlogContent", "");
+    setHtml("qaBlogTagChips", "");
+    setVal("qaBlogStatus", "Draft");
+    setVal("qaBlogFeatured", "0");
+    setVal("qaBlogPublishedDate", (/* @__PURE__ */ new Date()).toISOString().slice(0, 10));
+    setText("qaBlogExcerptCount", "0");
+    this.blogImage = null;
+    this.blogSlugTouched = false;
+    setDisplay("qaBlogImagePreviewWrap", "none");
+    setDisplay("qaBlogImageDropzone", "");
+    this.wizardStep.blog = "content";
+    activateWizardStep("blog", "content");
+    this.updateWizardUi("blog");
+  }
+  // ─── Shared upload helpers ──────────────────────────────────────────
+  setupFeaturedUpload(boxId, inputId, getImg, setImg, folder = "projects", purpose = "project-featured") {
+    const box = $id(boxId);
+    const input = $id(inputId);
+    if (!box || !input) return;
+    const previewWrapId = boxId.replace("MediaUpload", "FeaturedPreviewWrap");
+    const accept = async (file) => {
+      if (!handleFileValidation(file)) return;
+      const wrap = $id(previewWrapId);
+      try {
+        const uploaded = await uploadCmsFileWithPreview(file, {
+          folder,
+          page: "quick-add",
+          purpose,
+          optimize: { maxWidth: 1920, maxHeight: 1080, quality: 0.88 },
+          onPreview: (previewUrl) => {
+            setImg({ url: previewUrl, name: file.name });
+            if (wrap) {
+              wrap.innerHTML = `<div class="pa-media-preview"><img src="${previewUrl}" alt="${file.name}" /><button type="button" class="pa-media-preview-remove" aria-label="Remove"><i class="ri-close-line"></i></button></div>`;
+            }
+          }
+        });
+        setImg({ url: uploaded.url, name: uploaded.fileName || file.name });
+        if (wrap) {
+          wrap.innerHTML = `<div class="pa-media-preview"><img src="${uploaded.url}" alt="${uploaded.fileName || file.name}" /><button type="button" class="pa-media-preview-remove" aria-label="Remove"><i class="ri-close-line"></i></button></div>`;
+          wrap.querySelector(".pa-media-preview-remove")?.addEventListener("click", () => {
+            setImg(null);
+            wrap.innerHTML = "";
+            box.style.display = "";
+          });
+        }
+        box.style.display = "none";
+      } catch {
+        this.toast("Could not upload image", "danger");
+      }
+    };
+    this.on(box, "click", () => input.click());
+    this.on(input, "change", async () => {
+      const f = input.files?.[0];
+      input.value = "";
+      if (f) await accept(f);
+    });
+    ["dragenter", "dragover"].forEach((evt) => this.on(box, evt, (e) => {
+      e.preventDefault();
+      box.classList.add("dragover");
+    }));
+    ["dragleave", "drop"].forEach((evt) => this.on(box, evt, (e) => {
+      e.preventDefault();
+      box.classList.remove("dragover");
+    }));
+    this.on(box, "drop", async (e) => {
+      const f = e.dataTransfer?.files?.[0];
+      if (f) await accept(f);
+    });
+  }
+  setupGalleryUpload(boxId, inputId, getArr, setArr, gridId, folder = "projects", purpose = "project-gallery") {
+    const box = $id(boxId);
+    const input = $id(inputId);
+    if (!box || !input) return;
+    const render = () => {
+      const grid = $id(gridId);
+      const images = getArr();
+      if (!grid) return;
+      const preview = grid.closest(".pa-qa-gallery-preview");
+      preview?.classList.toggle("has-images", images.length > 0);
+      grid.innerHTML = images.map((img, i) => `<div class="pa-gallery-thumb"><img src="${img.url}" alt="${img.name || ""}" /><div class="pa-gallery-thumb-remove" data-i="${i}" role="button"><i class="ri-close-line"></i></div></div>`).join("");
+      grid.querySelectorAll(".pa-gallery-thumb-remove").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const arr = getArr().slice();
+          arr.splice(parseInt(btn.dataset.i, 10), 1);
+          setArr(arr);
+          render();
+        });
+      });
+    };
+    this.on(box, "click", () => input.click());
+    this.on(input, "change", async () => {
+      const files = Array.from(input.files || []);
+      const arr = getArr().slice();
+      let seq = arr.length;
+      for (const file of files) {
+        if (!handleFileValidation(file)) continue;
+        seq += 1;
+        try {
+          const uploaded = await uploadCmsFileWithPreview(file, {
+            folder,
+            page: "quick-add",
+            purpose,
+            sequence: seq,
+            optimize: { maxWidth: 1920, maxHeight: 1080, quality: 0.88 }
+          });
+          arr.push({ url: uploaded.url, name: uploaded.fileName || file.name });
+        } catch {
+        }
+      }
+      setArr(arr);
+      render();
+      input.value = "";
+    });
+  }
+  setupAvatarDropzone(dzId, inputId, wrapId, imgId, removeId, getData, setData, folder = "avatars", purpose = "profile-avatar") {
+    const dz = $id(dzId);
+    const input = $id(inputId);
+    const remove = $id(removeId);
+    if (!dz || !input) return;
+    const setPreview = (dataUrl) => {
+      const wrap = $id(wrapId);
+      const img = $id(imgId);
+      if (dataUrl) {
+        if (img) img.src = dataUrl;
+        if (wrap) wrap.style.display = "block";
+        dz.style.display = "none";
+      } else {
+        if (wrap) wrap.style.display = "none";
+        dz.style.display = "";
+      }
+    };
+    this.on(dz, "click", () => input.click());
+    this.on(input, "change", async () => {
+      const file = input.files?.[0];
+      input.value = "";
+      if (!file || !handleFileValidation(file)) return;
+      try {
+        const uploaded = await uploadCmsFileWithPreview(file, {
+          folder,
+          page: "quick-add",
+          purpose,
+          optimize: { maxWidth: 800, maxHeight: 800, quality: 0.85 },
+          onPreview: (previewUrl) => {
+            setData(previewUrl);
+            setPreview(previewUrl);
+          }
+        });
+        setData(uploaded.url);
+        setPreview(uploaded.url);
+      } catch {
+        this.toast("Could not upload image", "danger");
+      }
+    });
+    ["dragenter", "dragover"].forEach((evt) => this.on(dz, evt, (e) => {
+      e.preventDefault();
+      dz.classList.add("dragover");
+    }));
+    ["dragleave", "drop"].forEach((evt) => this.on(dz, evt, (e) => {
+      e.preventDefault();
+      dz.classList.remove("dragover");
+    }));
+    this.on(dz, "drop", async (e) => {
+      const file = e.dataTransfer?.files?.[0];
+      if (!file || !handleFileValidation(file)) return;
+      try {
+        const uploaded = await uploadCmsFileWithPreview(file, {
+          folder,
+          page: "quick-add",
+          purpose,
+          optimize: { maxWidth: 800, maxHeight: 800, quality: 0.85 },
+          onPreview: (previewUrl) => {
+            setData(previewUrl);
+            setPreview(previewUrl);
+          }
+        });
+        setData(uploaded.url);
+        setPreview(uploaded.url);
+      } catch {
+        this.toast("Could not upload image", "danger");
+      }
+    });
+    if (remove) this.on(remove, "click", (e) => {
+      e.stopPropagation();
+      setData(null);
+      setPreview(null);
+    });
+  }
+  resetForm(tab) {
+    const resets = {
+      project: () => this.resetProjectForm(),
+      testimonial: () => this.resetTestimonialForm(),
+      experience: () => this.resetExperienceForm(),
+      blog: () => this.resetBlogForm()
+    };
+    resets[tab]?.();
+    this.updateFooter();
+  }
+}
+export {
+  QuickAddModule
+};
+//# sourceMappingURL=QuickAddModule.js.map

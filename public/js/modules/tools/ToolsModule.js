@@ -1,4 +1,341 @@
-import{CrudCardModule as y}from"../../core/CrudCardModule.js";import{escapeHtml as i,$id as s}from"../../utils/dom.js";import{parseSortInput as h,sortByNewestFirst as g}from"../../utils/format.js";import{uniqueCopyName as C}from"../../utils/strings.js";import{storage as S}from"../../core/StorageService.js";import*as p from"../../utils/SvgIconPicker.js";import{DEFAULT_TOOL_ICON as I,renderIconHtml as u}from"../../utils/icon-utils.js";import{renderPaCatCard as T,renderPaCatListRow as v,attachPaCatCardViewListeners as b}from"../../utils/paCatCard.js";import{listActionBtn as f}from"../../utils/listDataTable.js";import{categoryKeyFromAccentHex as _}from"../../utils/categoryClassOptions.js";import{setStatTrend as n,setStatValue as c}from"../../utils/pageStats.js";const l=I;class U extends y{constructor(){super({name:"Tools",storageKey:"pa_tools",deleteType:"tool",page:"tools",pageSize:12,listTable:!0,cardIdAttr:"data-tool-id",bulkLabel:"tool",defaultFilters:{category:"all"},filterSelectIds:[{id:"paToolsCategoryFilter",key:"category"}],layout:{selectId:"paToolsLayout",singular:"tool",plural:"tools",getGroupInfo(t){const e=this._categoryMeta(t.categoryId),o=String(e.iconClass||"").startsWith("ri-")?e.iconClass:"ri-folder-line";return{key:String(t.categoryId??"uncategorized"),title:e.label||"Uncategorized",icon:o,href:"/tool-categories",linkLabel:"Open"}}},addFocusId:"toolsAddName",editFocusId:"toolsEditName",ids:{grid:"paToolsGrid",resultCount:"paToolsResultCount",paginationBtns:"paToolsPaginationBtns",paginationInfo:"paToolsPaginationInfo",pagePrev:"paToolsPagePrev",pageNext:"paToolsPageNext",bodyScroll:"paToolsBody",emptyResetBtn:"paToolsEmptyResetBtn",emptyAddBtn:"paToolsEmptyAddBtn",addPanel:"paToolsAddPanel",editPanel:"paToolsEditPanel",addSubmit:"paToolsAddSubmit",editSubmit:"paToolsEditSubmit",editDelete:null,addNewBtn:"paToolsAddNewBtn",addPanelClose:"paToolsAddPanelClose",editPanelClose:"paToolsEditPanelClose",addCancel:"paToolsAddCancel",editCancel:"paToolsEditCancel"},menuActions:{"copy-name":function(e){this.copyToolName(e)}}}),this.categories=[]}bindEvents(){super.bindEvents(),this.on(s("toolsAddIconBtn"),"click",()=>this._openIconPicker("toolsAdd")),this.on(s("toolsEditIconBtn"),"click",()=>this._openIconPicker("toolsEdit"))}render(){this._populateCategoryFilter(),super.render()}async load(){const[t,e]=await Promise.all([this.loadRecords(()=>[]),S.get("pa_tool_categories",[])]);this.categories=e,this._populateCategorySelects(),this._populateCategoryFilter();try{const a=sessionStorage.getItem("pa_tools_cat_filter");a&&(sessionStorage.removeItem("pa_tools_cat_filter"),this.store.set("filters",{...this.store.get("filters"),category:a}))}catch{}const o=Math.max(0,...t.map(a=>Number(a.id)||0));this.nextId=o+1,this.store.set("records",t)}_categoryMeta(t){return this.categories.find(o=>String(o.id)===String(t))||{label:"Uncategorized",key:"other",color:"#9a9aa0",iconClass:l}}_populateCategoryFilter(){const t=s("paToolsCategoryFilter");if(!t)return;const e=this.store.get("filters")?.category||"all";t.innerHTML='<option value="all">All categories</option>'+g(this.categories).map(o=>`<option value="${i(String(o.id))}">${i(o.label)}</option>`).join(""),t.value=e}_populateCategorySelects(){const t=g(this.categories).map(a=>`<option value="${i(String(a.id))}">${i(a.label)}</option>`).join(""),e=s("toolsAddCategory"),o=s("toolsEditCategory");e&&(e.innerHTML=t||'<option value="">No categories</option>'),o&&(o.innerHTML=t||'<option value="">No categories</option>')}_setIconField(t,e){p.updateIconTrigger(t,e,l)}_openIconPicker(t){const e=s(`${t}Icon`)?.value||l;p.open({current:e,defaultIcon:l,returnFocus:s(`${t}IconBtn`),onSelect:o=>this._setIconField(t,o)})}seedData(){return[]}sortRecords(t){return g(t)}matchesFilters(t,e){return!(e.category!=="all"&&String(t.categoryId)!==String(e.category))}matchesSearch(t,e){const o=e.trim().toLowerCase();if(!o||t.name?.toLowerCase().includes(o))return!0;const a=this._categoryMeta(t.categoryId);return a.label.toLowerCase().includes(o)||a.key.toLowerCase().includes(o)}getDeleteName(t){return t.name}renderStats(){const t=this.store.get("records"),e=new Set(t.map(o=>o.categoryId).filter(o=>o!=null));c("paToolsStatTotal",t.length),c("paToolsStatCategories",e.size),c("paToolsStatWithUrl",t.filter(o=>(o.iconUrl||"").trim()).length),c("paToolsStatUncategorized",t.filter(o=>o.categoryId==null).length),n("paToolsStatTotalTrend",t),n("paToolsStatCategoriesTrend",t,o=>o.categoryId!=null),n("paToolsStatWithUrlTrend",t,o=>(o.iconUrl||"").trim()),n("paToolsStatUncategorizedTrend",t,o=>o.categoryId==null)}copyToolName(t){const e=this.findById(t);e&&navigator.clipboard?.writeText(e.name).then(()=>this.toast("Name copied to clipboard","success",2e3),()=>this.toast("Clipboard not available.","danger"))}buildDuplicate(t,e){const o=this.store.get("records").map(a=>a.name);return{...t,id:e,name:C(t.name,o)}}renderCardMenu(t){const e=i(String(t.id)),o=i(t.name);return`<div class="pa-card-menu" data-tool-id="${e}">
-      <div class="pa-card-menu-item" data-action="duplicate" data-tool-id="${e}"><i class="ri-file-copy-line"></i> Duplicate</div>
-      <div class="pa-card-menu-item" data-action="copy-name" data-tool-id="${e}"><i class="ri-clipboard-line"></i> Copy name</div>
-    </div>`}navigateToCategory(t){try{sessionStorage.setItem("pa_tools_cat_filter",String(t))}catch{}window.location.href="/tools"}getListTableColumns(){return[{label:"#",className:"pa-lv-col-num"},{label:"Tool",className:"pa-lv-col-project"},{label:"Category"},{label:"Status",className:"pa-lv-col-status"},{label:"Sort",className:"pa-lv-col-date"},{label:"Actions",className:"pa-lv-col-actions"}]}renderListRow(t,e){const o=this._categoryMeta(t.categoryId),a=o.color||"#9a9aa0",r=t.iconClass||l,d=u(r,{color:a,className:"pa-svg-icon"}),m=f("pa-action-view","ri-eye-line","View category","data-tool-id",t.id,"View tools in","pa-cat-card__view-btn");return v({rowIndex:e,idAttr:"data-tool-id",id:t.id,iconHtml:d,title:t.name,category:o.label,status:"Active",created:t.sortOrder!=null?String(t.sortOrder):"\u2014",cardClass:this.bulkSelect?.cardClass(t.id)||"",viewBtnHtml:m})}renderCard(t,e){const o=this._categoryMeta(t.categoryId),a=o.color||"#9a9aa0",r=t.iconClass||l,d=u(r,{color:a,className:"pa-svg-icon"});return T({idAttr:"data-tool-id",id:t.id,catKey:_(a)||o.key,cardClass:this.bulkSelect?.cardClass(t.id)||"",animationDelay:0,bulkCheckbox:this.bulkSelect?.checkboxHtml(t.id,`Select ${i(t.name)}`)||"",iconHtml:d,title:t.name,slug:o.key,desc:"",countIcon:"ri-folder-line",countLabel:o.label,status:"Active",dateLabel:"Sort",dateValue:t.sortOrder!=null?String(t.sortOrder):"\u2014",viewBtn:{label:"View Category",ariaLabel:`View tools in ${o.label}`},menuHtml:this.renderCardMenu(t)})}attachCardListeners(){super.attachCardListeners(),b(s("paToolsGrid"),"data-tool-id",t=>{const e=this.findById(t);e&&this.navigateToCategory(e.categoryId)})}resetAddForm(){["toolsAddName","toolsAddSort"].forEach(o=>{const a=s(o);a&&(a.value="")});const t=s("toolsAddCategory");t&&this.categories.length&&(t.value=String(this.categories[0].id)),this._setIconField("toolsAdd",l);const e=s("toolsAddSort");e&&(e.value=String(this.store.get("records").length+1)),["Name","Category"].forEach(o=>{s(`toolsAdd${o}Error`)?.classList.remove("visible"),s(`toolsAdd${o}`)?.classList.remove("error")})}populateEditForm(t){s("toolsEditName").value=t.name||"",s("toolsEditCategory").value=t.categoryId!=null?String(t.categoryId):"",this._setIconField("toolsEdit",t.iconClass||l),s("toolsEditSort").value=t.sortOrder!=null?String(t.sortOrder):"",["Name","Category"].forEach(e=>{s(`toolsEdit${e}Error`)?.classList.remove("visible"),s(`toolsEdit${e}`)?.classList.remove("error")})}validateForm(t){const e=t==="add"?"toolsAdd":"toolsEdit";let o=!0;const a=(s(`${e}Name`)?.value||"").trim();a?this._err(`${e}Name`,!1):(this._err(`${e}Name`,!0),o=!1);const r=s(`${e}Category`)?.value;return r?this._err(`${e}Category`,!1):(this._err(`${e}Category`,!0),o=!1),{valid:o,name:a,categoryId:Number(r),iconClass:(s(`${e}Icon`)?.value||"").trim()||l,iconUrl:"",sortOrder:h(s(`${e}Sort`)?.value||"",this.store.get("records").length+1)}}_err(t,e,o){s(t)?.classList.toggle("error",e);const a=s(`${t}Error`);if(a?.classList.toggle("visible",e),e&&o&&a){const r=a.querySelector("span");r&&(r.textContent=o)}}buildNewRecord(t){return{name:t.name,categoryId:t.categoryId,iconClass:t.iconClass,iconUrl:t.iconUrl,sortOrder:t.sortOrder,createdAt:new Date().toISOString()}}applyEditToRecord(t,e){t.name=e.name,t.categoryId=e.categoryId,t.iconClass=e.iconClass,t.iconUrl=e.iconUrl,e.sortOrder!=null&&(t.sortOrder=e.sortOrder)}}export{U as ToolsModule};
+import { CrudCardModule } from "../../core/CrudCardModule.js";
+import { escapeHtml, $id } from "../../utils/dom.js";
+import { parseSortInput, sortByNewestFirst } from "../../utils/format.js";
+import { uniqueCopyName } from "../../utils/strings.js";
+import { storage } from "../../core/StorageService.js";
+import * as svgIconPicker from "../../utils/SvgIconPicker.js";
+import { DEFAULT_TOOL_ICON, renderIconHtml } from "../../utils/icon-utils.js";
+import { renderPaCatCard, renderPaCatListRow, attachPaCatCardViewListeners } from "../../utils/paCatCard.js";
+import { listActionBtn } from "../../utils/listDataTable.js";
+import { categoryKeyFromAccentHex } from "../../utils/categoryClassOptions.js";
+import { setStatTrend, setStatValue } from "../../utils/pageStats.js";
+const DEFAULT_ICON = DEFAULT_TOOL_ICON;
+class ToolsModule extends CrudCardModule {
+  constructor() {
+    super({
+      name: "Tools",
+      storageKey: "pa_tools",
+      deleteType: "tool",
+      page: "tools",
+      pageSize: 12,
+      listTable: true,
+      cardIdAttr: "data-tool-id",
+      bulkLabel: "tool",
+      defaultFilters: { category: "all" },
+      filterSelectIds: [{ id: "paToolsCategoryFilter", key: "category" }],
+      layout: {
+        selectId: "paToolsLayout",
+        singular: "tool",
+        plural: "tools",
+        getGroupInfo(record) {
+          const cat = this._categoryMeta(record.categoryId);
+          const icon = String(cat.iconClass || "").startsWith("ri-") ? cat.iconClass : "ri-folder-line";
+          return {
+            key: String(record.categoryId ?? "uncategorized"),
+            title: cat.label || "Uncategorized",
+            icon,
+            href: "/tool-categories",
+            linkLabel: "Open"
+          };
+        }
+      },
+      addFocusId: "toolsAddName",
+      editFocusId: "toolsEditName",
+      ids: {
+        grid: "paToolsGrid",
+        resultCount: "paToolsResultCount",
+        paginationBtns: "paToolsPaginationBtns",
+        paginationInfo: "paToolsPaginationInfo",
+        pagePrev: "paToolsPagePrev",
+        pageNext: "paToolsPageNext",
+        bodyScroll: "paToolsBody",
+        emptyResetBtn: "paToolsEmptyResetBtn",
+        emptyAddBtn: "paToolsEmptyAddBtn",
+        addPanel: "paToolsAddPanel",
+        editPanel: "paToolsEditPanel",
+        addSubmit: "paToolsAddSubmit",
+        editSubmit: "paToolsEditSubmit",
+        editDelete: null,
+        addNewBtn: "paToolsAddNewBtn",
+        addPanelClose: "paToolsAddPanelClose",
+        editPanelClose: "paToolsEditPanelClose",
+        addCancel: "paToolsAddCancel",
+        editCancel: "paToolsEditCancel"
+      },
+      menuActions: {
+        "copy-name": function copyName(id) {
+          this.copyToolName(id);
+        }
+      }
+    });
+    this.categories = [];
+  }
+  bindEvents() {
+    super.bindEvents();
+    this.on($id("toolsAddIconBtn"), "click", () => this._openIconPicker("toolsAdd"));
+    this.on($id("toolsEditIconBtn"), "click", () => this._openIconPicker("toolsEdit"));
+  }
+  render() {
+    this._populateCategoryFilter();
+    super.render();
+  }
+  async load() {
+    const [records, categories] = await Promise.all([
+      this.loadRecords(() => []),
+      storage.get("pa_tool_categories", [])
+    ]);
+    this.categories = categories;
+    this._populateCategorySelects();
+    this._populateCategoryFilter();
+    try {
+      const pendingCat = sessionStorage.getItem("pa_tools_cat_filter");
+      if (pendingCat) {
+        sessionStorage.removeItem("pa_tools_cat_filter");
+        this.store.set("filters", { ...this.store.get("filters"), category: pendingCat });
+      }
+    } catch {
+    }
+    const maxId = Math.max(0, ...records.map((r) => Number(r.id) || 0));
+    this.nextId = maxId + 1;
+    this.store.set("records", records);
+  }
+  _categoryMeta(categoryId) {
+    const cat = this.categories.find((c) => String(c.id) === String(categoryId));
+    return cat || { label: "Uncategorized", key: "other", color: "#9a9aa0", iconClass: DEFAULT_ICON };
+  }
+  _populateCategoryFilter() {
+    const select = $id("paToolsCategoryFilter");
+    if (!select) return;
+    const current = this.store.get("filters")?.category || "all";
+    select.innerHTML = '<option value="all">All categories</option>' + sortByNewestFirst(this.categories).map((c) => `<option value="${escapeHtml(String(c.id))}">${escapeHtml(c.label)}</option>`).join("");
+    select.value = current;
+  }
+  _populateCategorySelects() {
+    const options = sortByNewestFirst(this.categories).map((c) => `<option value="${escapeHtml(String(c.id))}">${escapeHtml(c.label)}</option>`).join("");
+    const addSelect = $id("toolsAddCategory");
+    const editSelect = $id("toolsEditCategory");
+    if (addSelect) addSelect.innerHTML = options || '<option value="">No categories</option>';
+    if (editSelect) editSelect.innerHTML = options || '<option value="">No categories</option>';
+  }
+  _setIconField(prefix, iconClass) {
+    svgIconPicker.updateIconTrigger(prefix, iconClass, DEFAULT_ICON);
+  }
+  _openIconPicker(prefix) {
+    const current = $id(`${prefix}Icon`)?.value || DEFAULT_ICON;
+    svgIconPicker.open({
+      current,
+      defaultIcon: DEFAULT_ICON,
+      returnFocus: $id(`${prefix}IconBtn`),
+      onSelect: (icon) => this._setIconField(prefix, icon)
+    });
+  }
+  seedData() {
+    return [];
+  }
+  sortRecords(records) {
+    return sortByNewestFirst(records);
+  }
+  matchesFilters(record, filters) {
+    if (filters.category !== "all" && String(record.categoryId) !== String(filters.category)) return false;
+    return true;
+  }
+  matchesSearch(record, query) {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    if (record.name?.toLowerCase().includes(q)) return true;
+    const cat = this._categoryMeta(record.categoryId);
+    return cat.label.toLowerCase().includes(q) || cat.key.toLowerCase().includes(q);
+  }
+  getDeleteName(record) {
+    return record.name;
+  }
+  renderStats() {
+    const records = this.store.get("records");
+    const categoryIds = new Set(records.map((r) => r.categoryId).filter((id) => id != null));
+    setStatValue("paToolsStatTotal", records.length);
+    setStatValue("paToolsStatCategories", categoryIds.size);
+    setStatValue("paToolsStatWithUrl", records.filter((r) => (r.iconUrl || "").trim()).length);
+    setStatValue("paToolsStatUncategorized", records.filter((r) => r.categoryId == null).length);
+    setStatTrend("paToolsStatTotalTrend", records);
+    setStatTrend("paToolsStatCategoriesTrend", records, (r) => r.categoryId != null);
+    setStatTrend("paToolsStatWithUrlTrend", records, (r) => (r.iconUrl || "").trim());
+    setStatTrend("paToolsStatUncategorizedTrend", records, (r) => r.categoryId == null);
+  }
+  copyToolName(id) {
+    const record = this.findById(id);
+    if (!record) return;
+    navigator.clipboard?.writeText(record.name).then(
+      () => this.toast("Name copied to clipboard", "success", 2e3),
+      () => this.toast("Clipboard not available.", "danger")
+    );
+  }
+  buildDuplicate(record, newId) {
+    const names = this.store.get("records").map((r) => r.name);
+    return {
+      ...record,
+      id: newId,
+      name: uniqueCopyName(record.name, names)
+    };
+  }
+  renderCardMenu(record) {
+    const id = escapeHtml(String(record.id));
+    const name = escapeHtml(record.name);
+    return `<div class="pa-card-menu" data-tool-id="${id}">
+      <div class="pa-card-menu-item" data-action="duplicate" data-tool-id="${id}"><i class="ri-file-copy-line"></i> Duplicate</div>
+      <div class="pa-card-menu-item" data-action="copy-name" data-tool-id="${id}"><i class="ri-clipboard-line"></i> Copy name</div>
+    </div>`;
+  }
+  navigateToCategory(categoryId) {
+    try {
+      sessionStorage.setItem("pa_tools_cat_filter", String(categoryId));
+    } catch {
+    }
+    window.location.href = "/tools";
+  }
+  getListTableColumns() {
+    return [
+      { label: "#", className: "pa-lv-col-num" },
+      { label: "Tool", className: "pa-lv-col-project" },
+      { label: "Category" },
+      { label: "Status", className: "pa-lv-col-status" },
+      { label: "Sort", className: "pa-lv-col-date" },
+      { label: "Actions", className: "pa-lv-col-actions" }
+    ];
+  }
+  renderListRow(record, rowIndex) {
+    const cat = this._categoryMeta(record.categoryId);
+    const color = cat.color || "#9a9aa0";
+    const icon = record.iconClass || DEFAULT_ICON;
+    const iconHtml = renderIconHtml(icon, { color, className: "pa-svg-icon" });
+    const viewBtnHtml = listActionBtn(
+      "pa-action-view",
+      "ri-eye-line",
+      "View category",
+      "data-tool-id",
+      record.id,
+      "View tools in",
+      "pa-cat-card__view-btn"
+    );
+    return renderPaCatListRow({
+      rowIndex,
+      idAttr: "data-tool-id",
+      id: record.id,
+      iconHtml,
+      title: record.name,
+      category: cat.label,
+      status: "Active",
+      created: record.sortOrder != null ? String(record.sortOrder) : "\u2014",
+      cardClass: this.bulkSelect?.cardClass(record.id) || "",
+      viewBtnHtml
+    });
+  }
+  renderCard(record, index) {
+    const cat = this._categoryMeta(record.categoryId);
+    const color = cat.color || "#9a9aa0";
+    const icon = record.iconClass || DEFAULT_ICON;
+    const iconHtml = renderIconHtml(icon, { color, className: "pa-svg-icon" });
+    return renderPaCatCard({
+      idAttr: "data-tool-id",
+      id: record.id,
+      catKey: categoryKeyFromAccentHex(color) || cat.key,
+      cardClass: this.bulkSelect?.cardClass(record.id) || "",
+      animationDelay: 0,
+      bulkCheckbox: this.bulkSelect?.checkboxHtml(record.id, `Select ${escapeHtml(record.name)}`) || "",
+      iconHtml,
+      title: record.name,
+      slug: cat.key,
+      desc: "",
+      countIcon: "ri-folder-line",
+      countLabel: cat.label,
+      status: "Active",
+      dateLabel: "Sort",
+      dateValue: record.sortOrder != null ? String(record.sortOrder) : "\u2014",
+      viewBtn: { label: "View Category", ariaLabel: `View tools in ${cat.label}` },
+      menuHtml: this.renderCardMenu(record)
+    });
+  }
+  attachCardListeners() {
+    super.attachCardListeners();
+    attachPaCatCardViewListeners($id("paToolsGrid"), "data-tool-id", (id) => {
+      const record = this.findById(id);
+      if (record) this.navigateToCategory(record.categoryId);
+    });
+  }
+  resetAddForm() {
+    ["toolsAddName", "toolsAddSort"].forEach((id) => {
+      const el = $id(id);
+      if (el) el.value = "";
+    });
+    const category = $id("toolsAddCategory");
+    if (category && this.categories.length) category.value = String(this.categories[0].id);
+    this._setIconField("toolsAdd", DEFAULT_ICON);
+    const sort = $id("toolsAddSort");
+    if (sort) sort.value = String(this.store.get("records").length + 1);
+    ["Name", "Category"].forEach((f) => {
+      $id(`toolsAdd${f}Error`)?.classList.remove("visible");
+      $id(`toolsAdd${f}`)?.classList.remove("error");
+    });
+  }
+  populateEditForm(record) {
+    $id("toolsEditName").value = record.name || "";
+    $id("toolsEditCategory").value = record.categoryId != null ? String(record.categoryId) : "";
+    this._setIconField("toolsEdit", record.iconClass || DEFAULT_ICON);
+    $id("toolsEditSort").value = record.sortOrder != null ? String(record.sortOrder) : "";
+    ["Name", "Category"].forEach((f) => {
+      $id(`toolsEdit${f}Error`)?.classList.remove("visible");
+      $id(`toolsEdit${f}`)?.classList.remove("error");
+    });
+  }
+  validateForm(prefix) {
+    const p = prefix === "add" ? "toolsAdd" : "toolsEdit";
+    let valid = true;
+    const name = ($id(`${p}Name`)?.value || "").trim();
+    if (!name) {
+      this._err(`${p}Name`, true);
+      valid = false;
+    } else this._err(`${p}Name`, false);
+    const categoryId = $id(`${p}Category`)?.value;
+    if (!categoryId) {
+      this._err(`${p}Category`, true);
+      valid = false;
+    } else this._err(`${p}Category`, false);
+    return {
+      valid,
+      name,
+      categoryId: Number(categoryId),
+      iconClass: ($id(`${p}Icon`)?.value || "").trim() || DEFAULT_ICON,
+      iconUrl: "",
+      sortOrder: parseSortInput($id(`${p}Sort`)?.value || "", this.store.get("records").length + 1)
+    };
+  }
+  _err(id, isError, message) {
+    $id(id)?.classList.toggle("error", isError);
+    const err = $id(`${id}Error`);
+    err?.classList.toggle("visible", isError);
+    if (isError && message && err) {
+      const span = err.querySelector("span");
+      if (span) span.textContent = message;
+    }
+  }
+  buildNewRecord(f) {
+    return {
+      name: f.name,
+      categoryId: f.categoryId,
+      iconClass: f.iconClass,
+      iconUrl: f.iconUrl,
+      sortOrder: f.sortOrder,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+  }
+  applyEditToRecord(record, f) {
+    record.name = f.name;
+    record.categoryId = f.categoryId;
+    record.iconClass = f.iconClass;
+    record.iconUrl = f.iconUrl;
+    if (f.sortOrder != null) record.sortOrder = f.sortOrder;
+  }
+}
+export {
+  ToolsModule
+};
+//# sourceMappingURL=ToolsModule.js.map

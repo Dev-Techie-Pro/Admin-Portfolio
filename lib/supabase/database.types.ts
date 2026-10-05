@@ -14,6 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_elevation_requests: {
+        Row: {
+          contact_email: string
+          created_at: string
+          duration_hours: number | null
+          elevated_until: string | null
+          id: string
+          message: string
+          rejection_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role_before_elevation: string | null
+          role_restored_at: string | null
+          site_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          contact_email: string
+          created_at?: string
+          duration_hours?: number | null
+          elevated_until?: string | null
+          id?: string
+          message: string
+          rejection_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role_before_elevation?: string | null
+          role_restored_at?: string | null
+          site_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          contact_email?: string
+          created_at?: string
+          duration_hours?: number | null
+          elevated_until?: string | null
+          id?: string
+          message?: string
+          rejection_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role_before_elevation?: string | null
+          role_restored_at?: string | null
+          site_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_elevation_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_elevation_requests_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_stats"
+            referencedColumns: ["site_id"]
+          },
+          {
+            foreignKeyName: "access_elevation_requests_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_elevation_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_rate_limits: {
+        Row: {
+          bucket: string
+          hit_count: number
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          hit_count?: number
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          hit_count?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       backup_snapshots: {
         Row: {
           completed_at: string | null
@@ -290,6 +388,13 @@ export type Database = {
             referencedRelation: "blog_posts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "blog_post_tags_blog_tag_id_fkey"
+            columns: ["blog_tag_id"]
+            isOneToOne: false
+            referencedRelation: "blog_tags"
+            referencedColumns: ["id"]
+          },
         ]
       }
       blog_posts: {
@@ -385,6 +490,60 @@ export type Database = {
           },
           {
             foreignKeyName: "blog_posts_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_tags: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          id: string
+          legacy_id: number | null
+          name: string
+          site_id: string
+          slug: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          legacy_id?: number | null
+          name: string
+          site_id: string
+          slug: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          legacy_id?: number | null
+          name?: string
+          site_id?: string
+          slug?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_tags_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_stats"
+            referencedColumns: ["site_id"]
+          },
+          {
+            foreignKeyName: "blog_tags_site_id_fkey"
             columns: ["site_id"]
             isOneToOne: false
             referencedRelation: "sites"
@@ -564,6 +723,61 @@ export type Database = {
           },
           {
             foreignKeyName: "contact_messages_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_revisions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          legacy_id: number | null
+          site_id: string
+          snapshot: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          legacy_id?: number | null
+          site_id: string
+          snapshot: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          legacy_id?: number | null
+          site_id?: string
+          snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_revisions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_revisions_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_stats"
+            referencedColumns: ["site_id"]
+          },
+          {
+            foreignKeyName: "content_revisions_site_id_fkey"
             columns: ["site_id"]
             isOneToOne: false
             referencedRelation: "sites"
@@ -960,129 +1174,173 @@ export type Database = {
       }
       project_tag_labels: {
         Row: {
+          created_at: string
+          deleted_at: string | null
+          description: string | null
           id: string
-          site_id: string
           legacy_id: number | null
           name: string
+          site_id: string
           slug: string
-          description: string | null
-          created_at: string
           updated_at: string
-          deleted_at: string | null
           version: number
         }
         Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
           id?: string
-          site_id: string
           legacy_id?: number | null
           name: string
+          site_id: string
           slug: string
-          description?: string | null
-          created_at?: string
           updated_at?: string
-          deleted_at?: string | null
           version?: number
         }
         Update: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
           id?: string
-          site_id?: string
           legacy_id?: number | null
           name?: string
+          site_id?: string
           slug?: string
-          description?: string | null
-          created_at?: string
           updated_at?: string
-          deleted_at?: string | null
           version?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "project_tag_labels_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_stats"
+            referencedColumns: ["site_id"]
+          },
+          {
+            foreignKeyName: "project_tag_labels_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_tag_links: {
         Row: {
           id: string
           project_id: string
-          tag_label_id: string
           sort_order: number
+          tag_label_id: string
         }
         Insert: {
           id?: string
           project_id: string
-          tag_label_id: string
           sort_order?: number
+          tag_label_id: string
         }
         Update: {
           id?: string
           project_id?: string
-          tag_label_id?: string
           sort_order?: number
+          tag_label_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "project_tag_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tag_links_tag_label_id_fkey"
+            columns: ["tag_label_id"]
+            isOneToOne: false
+            referencedRelation: "project_tag_labels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_technology_links: {
         Row: {
           id: string
           project_id: string
-          technology_id: string
           sort_order: number
+          technology_id: string
         }
         Insert: {
           id?: string
           project_id: string
-          technology_id: string
           sort_order?: number
+          technology_id: string
         }
         Update: {
           id?: string
           project_id?: string
-          technology_id?: string
           sort_order?: number
+          technology_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "project_technology_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_technology_links_technology_id_fkey"
+            columns: ["technology_id"]
+            isOneToOne: false
+            referencedRelation: "technologies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      blog_tags: {
+      project_tool_links: {
         Row: {
           id: string
-          site_id: string
-          legacy_id: number | null
-          name: string
-          slug: string
-          description: string | null
-          created_at: string
-          updated_at: string
-          deleted_at: string | null
-          version: number
+          project_id: string
+          sort_order: number
+          tool_item_id: string
         }
         Insert: {
           id?: string
-          site_id: string
-          legacy_id?: number | null
-          name: string
-          slug: string
-          description?: string | null
-          created_at?: string
-          updated_at?: string
-          deleted_at?: string | null
-          version?: number
+          project_id: string
+          sort_order?: number
+          tool_item_id: string
         }
         Update: {
           id?: string
-          site_id?: string
-          legacy_id?: number | null
-          name?: string
-          slug?: string
-          description?: string | null
-          created_at?: string
-          updated_at?: string
-          deleted_at?: string | null
-          version?: number
+          project_id?: string
+          sort_order?: number
+          tool_item_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "project_tool_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tool_links_tool_item_id_fkey"
+            columns: ["tool_item_id"]
+            isOneToOne: false
+            referencedRelation: "tool_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       projects: {
         Row: {
           category_key: string
+          category_keys: string[]
           created_at: string
           deleted_at: string | null
+          detail_payload: Json
           featured_image_url: string | null
           full_description: string
           id: string
@@ -1093,6 +1351,7 @@ export type Database = {
           scene_key: string | null
           short_description: string
           site_id: string
+          slug: string | null
           sort_order: number
           status: Database["public"]["Enums"]["project_status"]
           title: string
@@ -1101,8 +1360,10 @@ export type Database = {
         }
         Insert: {
           category_key: string
+          category_keys?: string[]
           created_at?: string
           deleted_at?: string | null
+          detail_payload?: Json
           featured_image_url?: string | null
           full_description: string
           id?: string
@@ -1113,6 +1374,7 @@ export type Database = {
           scene_key?: string | null
           short_description: string
           site_id: string
+          slug?: string | null
           sort_order?: number
           status?: Database["public"]["Enums"]["project_status"]
           title: string
@@ -1121,8 +1383,10 @@ export type Database = {
         }
         Update: {
           category_key?: string
+          category_keys?: string[]
           created_at?: string
           deleted_at?: string | null
+          detail_payload?: Json
           featured_image_url?: string | null
           full_description?: string
           id?: string
@@ -1133,6 +1397,7 @@ export type Database = {
           scene_key?: string | null
           short_description?: string
           site_id?: string
+          slug?: string | null
           sort_order?: number
           status?: Database["public"]["Enums"]["project_status"]
           title?: string
@@ -1337,6 +1602,13 @@ export type Database = {
             foreignKeyName: "site_runtime_config_site_id_fkey"
             columns: ["site_id"]
             isOneToOne: true
+            referencedRelation: "dashboard_stats"
+            referencedColumns: ["site_id"]
+          },
+          {
+            foreignKeyName: "site_runtime_config_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: true
             referencedRelation: "sites"
             referencedColumns: ["id"]
           },
@@ -1479,6 +1751,64 @@ export type Database = {
           version?: number
         }
         Relationships: []
+      }
+      staff_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          site_id: string
+          token_hash: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          site_id: string
+          token_hash: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          site_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_invites_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_invites_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_stats"
+            referencedColumns: ["site_id"]
+          },
+          {
+            foreignKeyName: "staff_invites_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       technologies: {
         Row: {
@@ -1971,6 +2301,10 @@ export type Database = {
         Args: { p_keep_days?: number }
         Returns: number
       }
+      pa_rate_limit_allow: {
+        Args: { p_bucket: string; p_max_hits: number; p_window_seconds: number }
+        Returns: boolean
+      }
       pa_refresh_dashboard_stats: {
         Args: { p_site_id: string }
         Returns: undefined
@@ -1992,6 +2326,8 @@ export type Database = {
         Returns: undefined
       }
       purge_expired_recent_activities: { Args: never; Returns: undefined }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       activity_status:

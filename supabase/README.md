@@ -6,7 +6,9 @@ For Next.js setup, environment variables, API routes, and deployment, see the ro
 
 ## Migrations
 
-All schema changes live in `supabase/migrations/` (**53** timestamped SQL files). Apply them in **filename order**.
+Active schema is a **single squashed baseline** in [`supabase/migrations/20261011120000_portfolio_admin_baseline.sql`](migrations/20261011120000_portfolio_admin_baseline.sql). It replaces **58** incremental files (archived under [`supabase/migrations_archive/pre_baseline_20261011/`](migrations_archive/pre_baseline_20261011/)).
+
+**New schema changes:** add a new timestamped file in `supabase/migrations/` **after** the baseline (for example `20261012120000_your_change.sql`). Do not edit the baseline by hand — regenerate with `npm run db:baseline` only when re-squashing on purpose.
 
 ### Quick start
 
@@ -16,10 +18,11 @@ cd Portfolio-Admin-main
 supabase login
 supabase link --project-ref YOUR_PROJECT_REF
 npm run db:status       # list applied migrations
-npm run db:push         # push pending migrations
+npm run db:push         # push pending migrations (incremental only)
+npm run db:baseline     # rebuild baseline from archive (re-squash only)
 ```
 
-Or run each file in order via **Supabase Dashboard → SQL Editor**.
+Or paste the baseline SQL via **Supabase Dashboard → SQL Editor** on a **new** empty project (not on a database that already has this schema).
 
 Test the app connection:
 
@@ -28,14 +31,35 @@ npm run dev
 # open http://localhost:3000/api/health/supabase
 ```
 
-Content is managed through the dashboard UI — demo seed migrations are no-ops; only default site rows are seeded.
+Content is managed through the dashboard UI — demo seed migrations in the archive are no-ops; only default site rows are seeded.
+
+### Baseline squash and linked projects
+
+If you already had the 58 incremental migrations applied on a linked remote, **do not** `db push` the baseline SQL — it would try to recreate existing objects. Instead, align migration history only:
+
+```powershell
+# Preview commands
+.\scripts\migration-repair-after-baseline.ps1 -WhatIf
+
+# Mark archived versions reverted + baseline applied (no SQL execution)
+.\scripts\migration-repair-after-baseline.ps1
+npm run db:status   # local and remote should show 20261011120000
+```
+
+If the repair script stops mid-way (CLI timeout), finish remaining `reverted` repairs for any remote versions still listed, then:
+
+```bash
+supabase migration repair --status applied 20261011120000
+```
+
+**Rollback:** restore archived files from git into `supabase/migrations/`, remove the baseline file, and repair old versions back to `applied` on the remote before pushing.
 
 ### Public portfolio access (RLS vs admin APIs)
 
 | Data | Recommended access |
 |------|---------------------|
 | Published blog, projects, testimonials, experience | Supabase **anon** `SELECT` where RLS allows published rows, or **`GET /api/public/content/{resource}`** |
-| Contact form | **`POST /api/public/contact`** on the admin host (after migration `20261005120000_public_api_hardening.sql`; do not insert `contact_messages` with anon) |
+| Contact form | **`POST /api/public/contact`** on the admin host (public API hardening is in baseline `20261011120000`; do not insert `contact_messages` with anon) |
 | Blog likes/comments | **`/api/public/blog/[slug]/*`** with CORS (`PORTFOLIO_PUBLIC_ORIGINS`) |
 | Analytics keys | **`GET /api/public/config`** |
 | Sitemap / RSS | **`GET /api/public/sitemap`**, **`GET /api/public/rss`** |
@@ -64,7 +88,9 @@ SMTP, retention windows, and similar **runtime** settings live in `site_runtime_
 
 ---
 
-## Migration index (chronological)
+## Migration index (archived chronology)
+
+Historical incremental files (now squashed into `20261011120000_portfolio_admin_baseline.sql`):
 
 | Migration | Purpose |
 |-----------|---------|
@@ -121,6 +147,13 @@ SMTP, retention windows, and similar **runtime** settings live in `site_runtime_
 | `20261003120000_access_elevation_requests.sql` | `access_elevation_requests` table + indexes |
 | `20261004120000_access_elevation_role_duration.sql` | Elevation duration columns; approve sets `profiles.role` until `elevated_until` |
 | `20261005120000_public_api_hardening.sql` | `api_rate_limits` + `pa_rate_limit_allow`; drop anon `contact_messages` insert; `content_revisions`, `staff_invites` |
+| `20261006120000_remote_history_align.sql` | **No-op** placeholder for remote migration history alignment |
+| `20261007120000_normalized_tags_and_technologies.sql` | Tag catalogs, junction tables, backfill; drops legacy `project_tags` |
+| `20261009120000_project_tool_links.sql` | `project_tool_links`; extends `pa_save_projects_batch` |
+| `20261010120000_project_category_keys.sql` | `projects.category_keys` array; batch save multi-category |
+| `20261010130000_search_trigram_indexes.sql` | `pg_trgm` GIN indexes for CMS search |
+
+All of the above are concatenated into **`20261011120000_portfolio_admin_baseline.sql`**. Individual files live in [`migrations_archive/pre_baseline_20261011/`](migrations_archive/pre_baseline_20261011/) for audit and `npm run db:baseline`.
 
 ### Thematic groups
 
@@ -134,18 +167,14 @@ SMTP, retention windows, and similar **runtime** settings live in `site_runtime_
 - **Integrations (removed)** — `20260912120000` through provider tweaks; dropped in `20260925160000`
 - **Blog SEO & engagement** — `20260928220000`, `20260929120000`
 - **Runtime & access** — `site_runtime_config`, `access_elevation_requests` (`20261002120000`–`20261004120000`)
-- **Public API hardening** — rate limits, contact RLS, blog revisions, staff invites (`20261005120000`)
+- **Public API hardening** — rate limits, contact RLS, blog revisions, staff invites (baseline section `20261005120000`)
+- **Tags, tools, search** — normalized tags, project tool links, category keys, trigram indexes (`20261007120000`–`20261010130000`)
 
-Required for access elevation (referenced in app error messages):
+Required for access elevation (included in baseline `20261011120000`; archive sections `20261003120000`, `20261004120000`):
 
-- `supabase/migrations/20261003120000_access_elevation_requests.sql`
-- `supabase/migrations/20261004120000_access_elevation_role_duration.sql`
+Run `npm run db:push` on fresh projects until baseline is applied.
 
-Run `npm run db:push` if either is missing.
-
-Required for public contact forms and rate limiting:
-
-- `supabase/migrations/20261005120000_public_api_hardening.sql`
+Required for public contact forms and rate limiting (baseline section `20261005120000`):
 
 Run `npm run test:ci` (includes `scripts/test-public-api-hardening.mjs`) or check **Settings → System** ops readiness (`GET /api/health/supabase?detailed=1`) for `contactMessagesAnonInsertBlocked`.
 
@@ -234,7 +263,7 @@ New users receive rows in `profiles`, `notification_preferences`, and `security_
 
 Public **`media`** bucket (10 MB per object).
 
-Allowed MIME types (after `20260925140000`) include JPEG/PNG/WebP/GIF/SVG, PDF, plain text, Word documents, zip archives, and WOFF/WOFF2 fonts.
+Allowed MIME types (in baseline / archive `20260925140000`) include JPEG/PNG/WebP/GIF/SVG, PDF, plain text, Word documents, zip archives, and WOFF/WOFF2 fonts.
 
 Upload path convention:
 
@@ -311,4 +340,5 @@ Supabase Studio: `http://localhost:54323`
 |---------|-------------|
 | `npm run db:push` | Push local migrations to linked project |
 | `npm run db:status` | List applied migrations |
+| `npm run db:baseline` | Regenerate squashed baseline from archive (re-squash only) |
 | `npm run db:types` | Generate TypeScript types → `lib/supabase/database.types.ts` |

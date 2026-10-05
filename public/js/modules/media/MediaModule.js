@@ -1,13 +1,1214 @@
-import{Module as N}from"../../core/Module.js";import{$id as s,$all as v,escapeHtml as g}from"../../utils/dom.js";import{formatFileSize as x,formatDate as z}from"../../utils/format.js";import{appendCopySuffix as R}from"../../utils/strings.js";import{handleFileValidation as B}from"../../utils/files.js";import{uploadCmsFile as F}from"../../utils/media-upload.js";import{requestDelete as _,requestBulkAction as j}from"../../modules/shell/confirm.js";import{closeAllCardMenus as O,toggleCardMenu as G}from"../../modules/shell/cardMenu.js";import{renderPaMediaCard as H,renderPaMediaListRow as q,getMediaKind as m}from"../../utils/paMediaCard.js";import{applyListGridClasses as V,renderListTableShell as K,syncListPaginationChrome as Q}from"../../utils/listDataTable.js";import{findMediaUsage as Y}from"../../utils/mediaUsage.js";import{openMediaPreviewModal as W,openMediaHistoryModal as J,bindMediaModalEvents as Z}from"../../utils/mediaModals.js";import{openPanel as U,closePanels as b,registerPanel as C}from"../../modules/shell/panels.js";import{PAGE as M}from"../../core/router.js";import{storage as u}from"../../core/StorageService.js";import{canManageContent as X}from"../../core/cms-access.js";const ee=["pa_projects","pa_blog_posts","pa_testimonials","pa_tools","pa_contact_messages"],L={general:{label:"General",icon:"ri-folder-line",color:"#9a9aa0",path:"/media-library"},projects:{label:"Project Screenshots",icon:"ri-apps-line",color:"#60a5fa",path:"/projects"},avatars:{label:"Avatars & Profile",icon:"ri-user-3-line",color:"#a78bfa",path:"/settings/profile"},icons:{label:"Icons & Logos",icon:"ri-shapes-line",color:"#34d399",path:"/tools"},blog:{label:"Blog Posts",icon:"ri-article-line",color:"#fb923c",path:"/blog-post"},testimonials:{label:"Testimonials",icon:"ri-chat-quote-line",color:"#f472b6",path:"/testimonials"},contact:{label:"Contact Attachments",icon:"ri-mail-line",color:"#38bdf8",path:"/contact-messages"}},Ie=[],I=12,k=["projects","blog","contact","testimonials","avatars","icons","general"],te=300*1e3,A="pa_media_library_last_sync";function ae(){try{return Number(sessionStorage.getItem(A)||0)}catch{return 0}}function P(){try{sessionStorage.setItem(A,String(Date.now()))}catch{}}function $(y){const t=k.indexOf(y||"general");return t===-1?k.length:t}function T(y){return String(y||"").trim()}function D(y,t=0){const e=new Date,a=new Date(e.getFullYear(),e.getMonth()+t,1),i=new Date(e.getFullYear(),e.getMonth()+t+1,1);return y.filter(o=>{const n=o.uploadedAt?new Date(o.uploadedAt).getTime():NaN;return!Number.isNaN(n)&&n>=a.getTime()&&n<i.getTime()}).length}function w(y,t,e){const a=s(y);if(!a)return;const i=e?t.filter(e):t,o=D(i,0),n=D(i,-1);let r=0;n>0?r=Math.round((o-n)/n*100):o>0&&(r=100),r>0?(a.className="pa-dash-stat-change up",a.innerHTML=`<i class="ri-arrow-up-line"></i> +${r}%`):r<0?(a.className="pa-dash-stat-change down",a.innerHTML=`<i class="ri-arrow-down-line"></i> ${r}%`):(a.className="pa-dash-stat-change neutral",a.innerHTML='<i class="ri-subtract-line"></i> 0%')}class we extends N{constructor(){super({name:"Media",storageKey:"pa_media_library",initialState:{records:[],searchQuery:"",folderFilter:"all",typeFilter:"all",sortBy:"newest",layoutMode:"flat",viewMode:"grid",page:1,selectMode:!1,selectedIds:new Set}}),this.nextId=1,this.currentEditId=null,this.stagedFiles=[],this.editPendingImage=null,this.editOriginalImage=null,this._entityByUrl=null}async load(){const t=await this.loadRecords(()=>[]);this.nextId=Math.max(0,...t.map(e=>e.id))+1,this.store.set("records",t),this._entityByUrl=null,this.reconcileMediaInBackground()}async reconcileMediaInBackground(){if(X()&&!(Date.now()-ae()<te))try{const t=await fetch("/api/media/sync",{method:"POST",credentials:"same-origin"});if(!t.ok)return;if((await t.json().catch(()=>({}))).skipped){P();return}P(),u.invalidate("pa_media_library");const a=await u.get(this.storageKey,null);if(!Array.isArray(a)||!a.length)return;this.nextId=Math.max(0,...a.map(i=>i.id))+1,this.store.set("records",a),this._entityByUrl=null,this.render()}catch{}}syncFolderSelects(){const t=k.map(o=>`<option value="${g(o)}">${g(L[o].label)}</option>`).join(""),e=s("paFolderFilter");if(e){const o=e.value||"all";e.innerHTML=`<option value="all">All Folders</option>${t}`,e.value=[...e.options].some(n=>n.value===o)?o:"all"}const a=s("paUploadFolder");if(a){const o=a.value||"general";a.innerHTML=t,a.value=[...a.options].some(n=>n.value===o)?o:"general"}const i=s("paEditFolder");if(i){const o=i.value||"general";i.innerHTML=t,i.value=[...i.options].some(n=>n.value===o)?o:"general"}}async persist(){await this.saveRecords(this.store.get("records")),this._entityByUrl=null,await this.refreshLinkedCachesAfterMediaChange()}async refreshLinkedCachesAfterMediaChange(){await Promise.all([u.get("pa_projects",[]),u.get("pa_blog_posts",[]),u.get("pa_testimonials",[]),u.get("pa_tools",[]),u.get("pa_contact_messages",[])].map(t=>t.catch(()=>[])))}applyMediaItemPropagation(t){t?.propagation?.changed&&ee.forEach(e=>u.invalidate(e)),u.invalidate("pa_recent_activities"),u.invalidate("pa_notifications")}async requestMediaItemApi(t,e){const a=await fetch("/api/media/item",{method:t,credentials:"same-origin",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(e)});if(a.status===401)throw window.location.href="/login",new Error("Unauthorized");const i=await a.text();if(!a.ok){let o=i;try{o=JSON.parse(i).error||i}catch{}throw new Error(o||"Media save failed")}return i?JSON.parse(i):{}}async commitLocalMediaRecords(){await u.persistLocal("pa_media_library",this.store.get("records")),this._entityByUrl=null,await this.refreshLinkedCachesAfterMediaChange()}async ensureEntityIndex(){if(this._entityByUrl)return this._entityByUrl;const[t,e,a,i,o]=await Promise.all([u.get("pa_projects",[]),u.get("pa_testimonials",[]),u.get("pa_blog_posts",[]),u.get("pa_tools",[]),u.get("pa_contact_messages",[])]),n=new Map,r=(l,c)=>{const d=T(l);!d||n.has(d)||n.set(d,c)};return Array.isArray(t)&&t.forEach(l=>{const d={type:"Project",label:l.title||"Untitled project",folder:"projects",path:"/projects",icon:"ri-apps-line"};r(l.bannerImgUrl||l.imageUrl,{...d,detail:"Featured image"}),Array.isArray(l.gallery)&&l.gallery.forEach((h,p)=>{const f=typeof h=="string"?h:h?.url;r(f,{...d,detail:`Gallery image ${p+1}`,icon:"ri-gallery-line"})})}),Array.isArray(a)&&a.forEach(l=>{r(l.imageUrl,{type:"Blog Post",label:l.title||"Untitled post",folder:"blog",path:"/blog-post",icon:"ri-article-line",detail:"Cover image"})}),Array.isArray(e)&&e.forEach(l=>{r(l.imageUrl,{type:"Testimonial",label:l.name||"Untitled testimonial",folder:"testimonials",path:"/testimonials",icon:"ri-chat-quote-line",detail:"Avatar image"})}),Array.isArray(i)&&i.forEach(l=>{const c=l.name||l.title||"Untitled tool";r(l.iconUrl||l.imageUrl,{type:"Tool",label:c,folder:"icons",path:"/tools",icon:"ri-tools-line",detail:"Tool icon"})}),Array.isArray(o)&&o.forEach(l=>{const c=l.name||l.subject||"Contact message";(Array.isArray(l.replies)?l.replies:[]).forEach((h,p)=>{h?.attachmentUrl&&r(h.attachmentUrl,{type:"Contact Reply",label:c,folder:"contact",path:"/contact-messages",icon:"ri-mail-line",detail:`Reply attachment ${p+1}`})})}),this._entityByUrl=n,n}getGroupInfo(t){const e=t.folder||"general",a=L[e]||L.general,i=this._entityByUrl?.get(T(t.url));return i?{key:`${e}::entity::${i.type}::${i.label}`,title:i.label,subtitle:a.label,icon:i.icon||a.icon,path:i.path||a.path,folder:e}:{key:`${e}::folder`,title:a.label,subtitle:null,icon:a.icon,path:a.path,folder:e}}renderGroupHeading(t,e){const a=g(t.title),i=t.subtitle?`<span class="pa-media-group-heading__sub">${g(t.subtitle)}</span>`:"",o=`${e} file${e===1?"":"s"}`,n=g(t.path||"/media-library");return`<div class="pa-media-group-heading" data-media-group="${g(t.key)}">
+import { Module } from "../../core/Module.js";
+import { $id, $all, escapeHtml } from "../../utils/dom.js";
+import { formatFileSize, formatDate } from "../../utils/format.js";
+import { appendCopySuffix } from "../../utils/strings.js";
+import { handleFileValidation } from "../../utils/files.js";
+import { uploadCmsFile } from "../../utils/media-upload.js";
+import { requestDelete, requestBulkAction } from "../../modules/shell/confirm.js";
+import { closeAllCardMenus, toggleCardMenu } from "../../modules/shell/cardMenu.js";
+import { renderPaMediaCard, renderPaMediaListRow, getMediaKind } from "../../utils/paMediaCard.js";
+import {
+  applyListGridClasses,
+  renderListTableShell,
+  syncListPaginationChrome
+} from "../../utils/listDataTable.js";
+import { findMediaUsage } from "../../utils/mediaUsage.js";
+import {
+  openMediaPreviewModal,
+  openMediaHistoryModal,
+  bindMediaModalEvents
+} from "../../utils/mediaModals.js";
+import { openPanel, closePanels, registerPanel } from "../../modules/shell/panels.js";
+import { PAGE } from "../../core/router.js";
+import { storage } from "../../core/StorageService.js";
+import { canManageContent } from "../../core/cms-access.js";
+const MEDIA_PROPAGATION_KEYS = [
+  "pa_projects",
+  "pa_blog_posts",
+  "pa_testimonials",
+  "pa_tools",
+  "pa_contact_messages"
+];
+const FOLDER_META = {
+  general: { label: "General", icon: "ri-folder-line", color: "#9a9aa0", path: "/media-library" },
+  projects: { label: "Project Screenshots", icon: "ri-apps-line", color: "#60a5fa", path: "/projects" },
+  avatars: { label: "Avatars & Profile", icon: "ri-user-3-line", color: "#a78bfa", path: "/settings/profile" },
+  icons: { label: "Icons & Logos", icon: "ri-shapes-line", color: "#34d399", path: "/tools" },
+  blog: { label: "Blog Posts", icon: "ri-article-line", color: "#fb923c", path: "/blog-post" },
+  testimonials: { label: "Testimonials", icon: "ri-chat-quote-line", color: "#f472b6", path: "/testimonials" },
+  contact: { label: "Contact Attachments", icon: "ri-mail-line", color: "#38bdf8", path: "/contact-messages" }
+};
+const SEED_MEDIA = [];
+const PAGE_SIZE = 12;
+const FOLDER_ORDER = ["projects", "blog", "contact", "testimonials", "avatars", "icons", "general"];
+const MEDIA_SYNC_COOLDOWN_MS = 5 * 60 * 1e3;
+const MEDIA_SYNC_STORAGE_KEY = "pa_media_library_last_sync";
+function readLastMediaSyncMs() {
+  try {
+    return Number(sessionStorage.getItem(MEDIA_SYNC_STORAGE_KEY) || 0);
+  } catch {
+    return 0;
+  }
+}
+function markMediaSynced() {
+  try {
+    sessionStorage.setItem(MEDIA_SYNC_STORAGE_KEY, String(Date.now()));
+  } catch {
+  }
+}
+function folderRank(folder) {
+  const idx = FOLDER_ORDER.indexOf(folder || "general");
+  return idx === -1 ? FOLDER_ORDER.length : idx;
+}
+function urlKey(url) {
+  return String(url || "").trim();
+}
+function countInMonth(records, monthOffset = 0) {
+  const now = /* @__PURE__ */ new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + monthOffset + 1, 1);
+  return records.filter((m) => {
+    const t = m.uploadedAt ? new Date(m.uploadedAt).getTime() : NaN;
+    return !Number.isNaN(t) && t >= start.getTime() && t < end.getTime();
+  }).length;
+}
+function setStatTrend(elId, records, predicate) {
+  const el = $id(elId);
+  if (!el) return;
+  const filtered = predicate ? records.filter(predicate) : records;
+  const current = countInMonth(filtered, 0);
+  const previous = countInMonth(filtered, -1);
+  let pct = 0;
+  if (previous > 0) pct = Math.round((current - previous) / previous * 100);
+  else if (current > 0) pct = 100;
+  if (pct > 0) {
+    el.className = "pa-dash-stat-change up";
+    el.innerHTML = `<i class="ri-arrow-up-line"></i> +${pct}%`;
+  } else if (pct < 0) {
+    el.className = "pa-dash-stat-change down";
+    el.innerHTML = `<i class="ri-arrow-down-line"></i> ${pct}%`;
+  } else {
+    el.className = "pa-dash-stat-change neutral";
+    el.innerHTML = `<i class="ri-subtract-line"></i> 0%`;
+  }
+}
+class MediaModule extends Module {
+  constructor() {
+    super({
+      name: "Media",
+      storageKey: "pa_media_library",
+      initialState: {
+        records: [],
+        searchQuery: "",
+        folderFilter: "all",
+        typeFilter: "all",
+        sortBy: "newest",
+        layoutMode: "flat",
+        viewMode: "grid",
+        page: 1,
+        selectMode: false,
+        selectedIds: /* @__PURE__ */ new Set()
+      }
+    });
+    this.nextId = 1;
+    this.currentEditId = null;
+    this.stagedFiles = [];
+    this.editPendingImage = null;
+    this.editOriginalImage = null;
+    this._entityByUrl = null;
+  }
+  async load() {
+    const records = await this.loadRecords(() => []);
+    this.nextId = Math.max(0, ...records.map((m) => m.id)) + 1;
+    this.store.set("records", records);
+    this._entityByUrl = null;
+    void this.reconcileMediaInBackground();
+  }
+  /** Full reconcile is expensive; run after first paint and respect cooldown. */
+  async reconcileMediaInBackground() {
+    if (!canManageContent()) return;
+    if (Date.now() - readLastMediaSyncMs() < MEDIA_SYNC_COOLDOWN_MS) return;
+    try {
+      const res = await fetch("/api/media/sync", { method: "POST", credentials: "same-origin" });
+      if (!res.ok) return;
+      const body = await res.json().catch(() => ({}));
+      if (body.skipped) {
+        markMediaSynced();
+        return;
+      }
+      markMediaSynced();
+      storage.invalidate("pa_media_library");
+      const fresh = await storage.get(this.storageKey, null);
+      if (!Array.isArray(fresh) || !fresh.length) return;
+      this.nextId = Math.max(0, ...fresh.map((m) => m.id)) + 1;
+      this.store.set("records", fresh);
+      this._entityByUrl = null;
+      this.render();
+    } catch {
+    }
+  }
+  syncFolderSelects() {
+    const options = FOLDER_ORDER.map((key) => `<option value="${escapeHtml(key)}">${escapeHtml(FOLDER_META[key].label)}</option>`).join("");
+    const folderFilter = $id("paFolderFilter");
+    if (folderFilter) {
+      const current = folderFilter.value || "all";
+      folderFilter.innerHTML = `<option value="all">All Folders</option>${options}`;
+      folderFilter.value = [...folderFilter.options].some((opt) => opt.value === current) ? current : "all";
+    }
+    const uploadFolder = $id("paUploadFolder");
+    if (uploadFolder) {
+      const current = uploadFolder.value || "general";
+      uploadFolder.innerHTML = options;
+      uploadFolder.value = [...uploadFolder.options].some((opt) => opt.value === current) ? current : "general";
+    }
+    const editFolder = $id("paEditFolder");
+    if (editFolder) {
+      const current = editFolder.value || "general";
+      editFolder.innerHTML = options;
+      editFolder.value = [...editFolder.options].some((opt) => opt.value === current) ? current : "general";
+    }
+  }
+  async persist() {
+    await this.saveRecords(this.store.get("records"));
+    this._entityByUrl = null;
+    await this.refreshLinkedCachesAfterMediaChange();
+  }
+  async refreshLinkedCachesAfterMediaChange() {
+    await Promise.all([
+      storage.get("pa_projects", []),
+      storage.get("pa_blog_posts", []),
+      storage.get("pa_testimonials", []),
+      storage.get("pa_tools", []),
+      storage.get("pa_contact_messages", [])
+    ].map((promise) => promise.catch(() => [])));
+  }
+  applyMediaItemPropagation(payload) {
+    if (payload?.propagation?.changed) {
+      MEDIA_PROPAGATION_KEYS.forEach((key) => storage.invalidate(key));
+    }
+    storage.invalidate("pa_recent_activities");
+    storage.invalidate("pa_notifications");
+  }
+  async requestMediaItemApi(method, body) {
+    const res = await fetch("/api/media/item", {
+      method,
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (res.status === 401) {
+      window.location.href = "/login";
+      throw new Error("Unauthorized");
+    }
+    const raw = await res.text();
+    if (!res.ok) {
+      let detail = raw;
+      try {
+        const parsed = JSON.parse(raw);
+        detail = parsed.error || raw;
+      } catch {
+      }
+      throw new Error(detail || "Media save failed");
+    }
+    return raw ? JSON.parse(raw) : {};
+  }
+  async commitLocalMediaRecords() {
+    await storage.persistLocal("pa_media_library", this.store.get("records"));
+    this._entityByUrl = null;
+    await this.refreshLinkedCachesAfterMediaChange();
+  }
+  async ensureEntityIndex() {
+    if (this._entityByUrl) return this._entityByUrl;
+    const [projects, testimonials, blogPosts, tools, contactMessages] = await Promise.all([
+      storage.get("pa_projects", []),
+      storage.get("pa_testimonials", []),
+      storage.get("pa_blog_posts", []),
+      storage.get("pa_tools", []),
+      storage.get("pa_contact_messages", [])
+    ]);
+    const map = /* @__PURE__ */ new Map();
+    const setUrl = (url, entry) => {
+      const key = urlKey(url);
+      if (!key || map.has(key)) return;
+      map.set(key, entry);
+    };
+    if (Array.isArray(projects)) {
+      projects.forEach((p) => {
+        const label = p.title || "Untitled project";
+        const base = {
+          type: "Project",
+          label,
+          folder: "projects",
+          path: "/projects",
+          icon: "ri-apps-line"
+        };
+        setUrl(p.bannerImgUrl || p.imageUrl, { ...base, detail: "Featured image" });
+        if (Array.isArray(p.gallery)) {
+          p.gallery.forEach((g, i) => {
+            const gUrl = typeof g === "string" ? g : g?.url;
+            setUrl(gUrl, { ...base, detail: `Gallery image ${i + 1}`, icon: "ri-gallery-line" });
+          });
+        }
+      });
+    }
+    if (Array.isArray(blogPosts)) {
+      blogPosts.forEach((b) => {
+        setUrl(b.imageUrl, {
+          type: "Blog Post",
+          label: b.title || "Untitled post",
+          folder: "blog",
+          path: "/blog-post",
+          icon: "ri-article-line",
+          detail: "Cover image"
+        });
+      });
+    }
+    if (Array.isArray(testimonials)) {
+      testimonials.forEach((t) => {
+        setUrl(t.imageUrl, {
+          type: "Testimonial",
+          label: t.name || "Untitled testimonial",
+          folder: "testimonials",
+          path: "/testimonials",
+          icon: "ri-chat-quote-line",
+          detail: "Avatar image"
+        });
+      });
+    }
+    if (Array.isArray(tools)) {
+      tools.forEach((tool) => {
+        const label = tool.name || tool.title || "Untitled tool";
+        setUrl(tool.iconUrl || tool.imageUrl, {
+          type: "Tool",
+          label,
+          folder: "icons",
+          path: "/tools",
+          icon: "ri-tools-line",
+          detail: "Tool icon"
+        });
+      });
+    }
+    if (Array.isArray(contactMessages)) {
+      contactMessages.forEach((message) => {
+        const label = message.name || message.subject || "Contact message";
+        const replies = Array.isArray(message.replies) ? message.replies : [];
+        replies.forEach((reply, index) => {
+          if (!reply?.attachmentUrl) return;
+          setUrl(reply.attachmentUrl, {
+            type: "Contact Reply",
+            label,
+            folder: "contact",
+            path: "/contact-messages",
+            icon: "ri-mail-line",
+            detail: `Reply attachment ${index + 1}`
+          });
+        });
+      });
+    }
+    this._entityByUrl = map;
+    return map;
+  }
+  getGroupInfo(item) {
+    const folder = item.folder || "general";
+    const folderMeta = FOLDER_META[folder] || FOLDER_META.general;
+    const entity = this._entityByUrl?.get(urlKey(item.url));
+    if (entity) {
+      return {
+        key: `${folder}::entity::${entity.type}::${entity.label}`,
+        title: entity.label,
+        subtitle: folderMeta.label,
+        icon: entity.icon || folderMeta.icon,
+        path: entity.path || folderMeta.path,
+        folder
+      };
+    }
+    return {
+      key: `${folder}::folder`,
+      title: folderMeta.label,
+      subtitle: null,
+      icon: folderMeta.icon,
+      path: folderMeta.path,
+      folder
+    };
+  }
+  renderGroupHeading(group, count) {
+    const title = escapeHtml(group.title);
+    const subtitle = group.subtitle ? `<span class="pa-media-group-heading__sub">${escapeHtml(group.subtitle)}</span>` : "";
+    const countLabel = `${count} file${count === 1 ? "" : "s"}`;
+    const path = escapeHtml(group.path || "/media-library");
+    return `<div class="pa-media-group-heading" data-media-group="${escapeHtml(group.key)}">
       <div class="pa-media-group-heading__main">
-        <i class="${g(t.icon)}" aria-hidden="true"></i>
+        <i class="${escapeHtml(group.icon)}" aria-hidden="true"></i>
         <div class="pa-media-group-heading__copy">
-          <h2 class="pa-media-group-heading__title">${a}</h2>
-          ${i}
+          <h2 class="pa-media-group-heading__title">${title}</h2>
+          ${subtitle}
         </div>
-        <span class="pa-media-group-heading__count">${g(o)}</span>
+        <span class="pa-media-group-heading__count">${escapeHtml(countLabel)}</span>
       </div>
-      <a class="pa-media-group-heading__link" href="${n}">
+      <a class="pa-media-group-heading__link" href="${path}">
         Open <i class="ri-arrow-right-line"></i>
       </a>
-    </div>`}renderGroupedCards(t,e){if(!t.length)return"";const a={};e.forEach(n=>{const r=this.getGroupInfo(n).key;a[r]=(a[r]||0)+1});const i=[];for(const n of t){const r=this.getGroupInfo(n),l=i[i.length-1];l&&l.key===r.key?l.items.push(n):i.push({...r,items:[n]})}let o=0;return i.map(n=>{const r=this.renderGroupHeading(n,a[n.key]||n.items.length),l=n.items.map(c=>this.buildCard(c,o++)).join("");return`${r}${l}`}).join("")}compareBySort(t,e,a){switch(a){case"oldest":return new Date(t.uploadedAt)-new Date(e.uploadedAt);case"name":return String(t.name||"").localeCompare(String(e.name||""));case"size":return(e.size||0)-(t.size||0);default:return new Date(e.uploadedAt)-new Date(t.uploadedAt)}}getFiltered(){const{records:t,searchQuery:e,folderFilter:a,typeFilter:i,sortBy:o,layoutMode:n}=this.store._raw;let r=t.slice();if(a!=="all"&&(r=r.filter(d=>d.folder===a)),i==="images"?r=r.filter(d=>m(d)==="image"):i==="videos"?r=r.filter(d=>m(d)==="video"):i==="documents"?r=r.filter(d=>m(d)==="document"):i==="others"&&(r=r.filter(d=>m(d)==="other")),e.trim()){const d=e.trim().toLowerCase();r=r.filter(h=>h.name.toLowerCase().includes(d)||(h.alt||"").toLowerCase().includes(d)||(L[h.folder]?.label||h.folder).toLowerCase().includes(d))}const l=o||"newest",c=n==="grouped";return r.sort((d,h)=>{if(c){const p=$(d.folder)-$(h.folder);if(p!==0)return p;if(this._entityByUrl){const f=this.getGroupInfo(d),E=this.getGroupInfo(h),S=String(f.title).localeCompare(String(E.title),void 0,{sensitivity:"base"});if(S!==0)return S;if(f.key!==E.key)return f.key.localeCompare(E.key)}}return this.compareBySort(d,h,l)})}renderStats(){const t=this.store.get("records"),e=(r,l)=>{const c=s(r);c&&(c.textContent=l)},a=t.filter(r=>m(r)==="image").length,i=t.filter(r=>m(r)==="video").length,o=t.filter(r=>m(r)==="document").length,n=t.filter(r=>m(r)==="other").length;e("paMediaStatTotal",t.length),e("paMediaStatImages",a),e("paMediaStatVideos",i),e("paMediaStatDocuments",o),e("paMediaStatOthers",n),w("paMediaStatTotalTrend",t),w("paMediaStatImagesTrend",t,r=>m(r)==="image"),w("paMediaStatVideosTrend",t,r=>m(r)==="video"),w("paMediaStatDocumentsTrend",t,r=>m(r)==="document"),w("paMediaStatOthersTrend",t,r=>m(r)==="other")}syncTypeFilter(){const t=s("paTypeFilter");t&&(t.value=this.store.get("typeFilter")||"all")}findById(t){return this.store.get("records").find(e=>String(e.id)===String(t))}mediaIdKey(t){return String(t)}buildCard(t,e){const a=this.store.get("selectMode"),i=this.store.get("selectedIds").has(this.mediaIdKey(t.id)),o=a?`<button type="button" class="pa-media-card__select" data-select-id="${t.id}" role="checkbox" aria-checked="${i}" aria-label="Select ${g(t.name)}"><i class="${i?"ri-checkbox-fill":"ri-checkbox-blank-line"}"></i></button>`:"";return H(t,{selectCheckbox:o,isSelected:i,animationDelay:Math.min(e,11)*35})}syncLayoutFilter(){const t=s("paMediaLayout");t&&(t.value=this.store.get("layoutMode")||"flat")}async render(){const t=this.store.get("layoutMode")||"flat";t==="grouped"&&await this.ensureEntityIndex(),this.renderStats(),this.syncTypeFilter(),this.syncLayoutFilter();const e=s("paMediaSort"),a=this.store.get("sortBy")||"newest";e&&e.value!==a&&(e.value=a);const i=this.getFiltered(),o=i.length,n=Math.max(1,Math.ceil(o/I));let r=this.store.get("page");r>n&&(r=n),r<1&&(r=1),this.store.set("page",r);const l=(r-1)*I,c=i.slice(l,l+I),d=s("paMediaGrid"),h=this.store.get("viewMode")==="list";if(d)if(V(d,h),c.length===0){const p=this.store.get("searchQuery").trim()||this.store.get("folderFilter")!=="all"||this.store.get("typeFilter")!=="all";d.innerHTML=`<div class="pa-empty-state"><i class="ri-image-line"></i><div class="pa-empty-state-title">${p?"No media matches your filters":"No media files yet"}</div><div class="pa-empty-state-text">${p?"Try adjusting your search or folder filter to find what you're looking for.":"Upload your first image to start building your media library."}</div>${p?'<button class="pa-empty-state-btn" id="paMediaEmptyResetBtn">Reset filters</button>':'<button class="pa-empty-state-btn" id="paMediaEmptyUploadBtn">+ Upload Media</button>'}</div>`,this.on(s("paMediaEmptyResetBtn"),"click",()=>this.resetFilters()),this.on(s("paMediaEmptyUploadBtn"),"click",()=>this.openUploadPanel())}else if(h){const p=[{label:"#",className:"pa-lv-col-num"},{label:"File",className:"pa-lv-col-project"},{label:"Folder"},{label:"Type",className:"pa-lv-col-status"},{label:"Uploaded",className:"pa-lv-col-date"},{label:"Actions",className:"pa-lv-col-actions"}],f=c.map((E,S)=>q(E,{rowIndex:l+S+1,cardClass:this.store.get("selectedIds")?.has?.(String(E.id))?"pa-selected":""})).join("");d.innerHTML=K(p,f)}else t==="grouped"?d.innerHTML=this.renderGroupedCards(c,i):d.innerHTML=c.map((p,f)=>this.buildCard(p,f)).join("");Q(h&&c.length>0,s("paMediaPaginationBtns")?.closest(".pa-pagination")),this.renderPagination(o,n,r),this.attachCardListeners(),this.updateBulkBar(),this.setViewModeFromStore()}setViewModeFromStore(){const t=this.store.get("viewMode")||"grid",e=s("paGridViewBtn"),a=s("paListViewBtn");e&&e.classList.toggle("active",t==="grid"),a&&a.classList.toggle("active",t==="list"),document.querySelectorAll(".pa-view-btn[data-view]").forEach(i=>{const o=i.dataset.view;o==="grid"?i.classList.toggle("active",t==="grid"):o==="list"&&i.classList.toggle("active",t==="list")})}renderPagination(t,e,a){const i=s("paMediaPaginationBtns"),o=s("paMediaPaginationInfo");if(!i||!o)return;if(t===0){i.innerHTML="",o.textContent="Showing 0 of 0 files";return}let n=`<div class="pa-page-nav ${a===1?"disabled":""}" id="paMediaPagePrev" role="button" aria-label="Previous page"><i class="ri-arrow-left-s-line"></i></div>`,r=0;for(let p=1;p<=e;p++)(p===1||p===e||Math.abs(p-a)<=1)&&(p-r>1&&(n+='<span style="color:var(--pa-text-faint);padding:0 4px;font-size:12px;">\u2026</span>'),n+=`<button class="pa-page-btn ${p===a?"active":""}" data-page="${p}">${p}</button>`,r=p);n+=`<div class="pa-page-nav ${a===e?"disabled":""}" id="paMediaPageNext" role="button" aria-label="Next page"><i class="ri-arrow-right-s-line"></i></div>`,i.innerHTML=n;const l=(a-1)*I+1,c=Math.min(a*I,t);o.textContent=`Showing ${l} to ${c} of ${t} files`,i.querySelectorAll(".pa-page-btn").forEach(p=>{p.addEventListener("click",()=>{this.store.set("page",parseInt(p.dataset.page,10)),this.render(),s("paMediaBody")?.scrollTo({top:0,behavior:"smooth"})})});const d=s("paMediaPagePrev"),h=s("paMediaPageNext");d&&!d.classList.contains("disabled")&&d.addEventListener("click",()=>{this.store.set("page",a-1),this.render()}),h&&!h.classList.contains("disabled")&&h.addEventListener("click",()=>{this.store.set("page",a+1),this.render()})}resetFilters(){this.store.batch(()=>{this.store.set("searchQuery",""),this.store.set("folderFilter","all"),this.store.set("typeFilter","all"),this.store.set("sortBy","newest"),this.store.set("layoutMode","flat"),this.store.set("page",1)});const t=s("paSearchInput");t&&(t.value="",s("paSearchWrap")?.classList.remove("has-value"));const e=s("paFolderFilter");e&&(e.value="all");const a=s("paTypeFilter");a&&(a.value="all");const i=s("paMediaSort");i&&(i.value="newest");const o=s("paMediaLayout");o&&(o.value="flat"),this.render()}attachCardListeners(){const t=s("paMediaGrid");t&&(v(".pa-action-view",t).forEach(e=>{e.addEventListener("click",()=>{const a=this.findById(parseInt(e.dataset.mediaId,10));a&&W(a)})}),v(".pa-action-edit",t).forEach(e=>e.addEventListener("click",()=>this.openMediaEditPanel(parseInt(e.dataset.mediaId,10)))),v(".pa-action-delete",t).forEach(e=>{e.addEventListener("click",()=>{const a=this.findById(parseInt(e.dataset.mediaId,10));a&&_(a.id,"media",a.name)})}),v(".pa-action-more",t).forEach(e=>{e.addEventListener("click",a=>{a.stopPropagation();const o=e.closest(".pa-media-card__thumb-more, .pa-media-card__footer-more, .pa-media-card__list-more, .pa-lv-more-wrap")?.querySelector(".pa-card-menu");o&&G(o,e)})}),v(".pa-action-history",t).forEach(e=>{e.addEventListener("click",()=>{this.openMediaHistory(parseInt(e.dataset.mediaId,10))})}),v(".pa-card-menu-item",t).forEach(e=>{e.addEventListener("click",a=>{a.stopPropagation();const i=e.dataset.action,o=parseInt(e.dataset.mediaId,10);if(O(),i==="edit")this.openMediaEditPanel(o);else if(i==="delete"){const n=this.findById(o);n&&_(o,"media",n.name)}else i==="duplicate"?this.duplicateMedia(o):i==="copy-url"?this.copyMediaUrl(o):i==="download"&&this.downloadMedia(o)})}),v(".pa-media-card__select",t).forEach(e=>{e.addEventListener("click",a=>{a.stopPropagation(),e.dataset.selectId!=null&&this.toggleSelect(e.dataset.selectId)})}),v(".pa-media-card",t).forEach(e=>{e.addEventListener("click",a=>{this.store.get("selectMode")&&(a.target.closest(".pa-media-card__actions, .pa-media-card__list-actions, .pa-media-card__select, .pa-media-card__thumb-more, .pa-media-card__footer-more, .pa-media-card__list-more")||e.dataset.mediaId!=null&&this.toggleSelect(e.dataset.mediaId))})}))}toggleSelect(t){const e=this.mediaIdKey(t),a=this.store.get("selectedIds");a.has(e)?a.delete(e):a.add(e),this.render()}toggleSelectMode(){const t=!this.store.get("selectMode");this.store.set("selectMode",t),s("paSelectModeBtn")?.classList.toggle("active",t),t||(this.store.get("selectedIds").clear(),this.updateBulkBar()),this.render()}selectAllVisible(){const t=this.store.get("selectedIds");this.getFiltered().forEach(a=>t.add(this.mediaIdKey(a.id))),this.updateBulkBar(),this.render(),this.toast(`Selected ${t.size} item${t.size===1?"":"s"}.`,"info",1800)}clearSelection(){this.store.get("selectedIds").clear(),this.updateBulkBar(),this.render(),this.toast("Selection cleared.","info",1500)}updateBulkBar(){const t=s("paBulkActionBar");if(!t)return;const e=this.store.get("selectedIds").size;if(this.store.get("selectMode")&&e>0){t.style.display="flex";const i=s("paBulkSelectedCount");i&&(i.textContent=`${e} selected`)}else t.style.display="none"}requestBulkDelete(){const t=this.store.get("selectedIds").size;t!==0&&j({title:`Delete selected file${t>1?"s":""}?`,message:`This will permanently remove <strong>${t}</strong> selected file${t>1?"s":""}. This action cannot be undone.`,onConfirm:()=>this.performBulkDelete()})}closeBulkConfirm(){s("paBulkConfirmOverlay")?.classList.remove("visible")}async performBulkDelete(){const t=this.store.get("selectedIds"),e=[...t].map(n=>this.mediaIdKey(n)),a=e.length;if(a===0)return;const i=new Set(e),o=this.store.get("records");this.store.set("records",o.filter(n=>!i.has(this.mediaIdKey(n.id)))),t.clear(),this.statusToast(`Deleting ${a} file${a>1?"s":""}\u2026`,"info",12e4);try{for(const r of e){const l=await this.requestMediaItemApi("DELETE",{id:r});this.applyMediaItemPropagation(l)}u.invalidate("pa_media_library");const n=await u.revalidate("pa_media_library",[]);Array.isArray(n)&&(this.nextId=Math.max(0,...n.map(r=>Number(r.id)||0))+1,this.store.set("records",n)),this._entityByUrl=null,await this.refreshLinkedCachesAfterMediaChange(),this.closeBulkConfirm(),this.updateBulkBar(),this.render(),this.statusToast(`${a} file${a>1?"s":""} deleted.`,"danger"),this.notify(`${a} media file${a>1?"s":""} deleted in bulk.`,"ri-delete-bin-line")}catch{this.store.set("records",o),this.render(),this.statusToast("Could not delete files. Please try again.","danger")}}async duplicateMedia(t){const e=this.findById(t);if(!e)return;const a={...e,id:this.nextId++,name:R(e.name),uploadedAt:new Date().toISOString(),usageCount:0},i=this.store.get("records");this.store.set("records",i.concat(a));try{await this.persist(),this.render(),this.statusToast(`Duplicated as "${a.name}".`,"info")}catch{this.store.set("records",i),this.statusToast("Could not duplicate file. Please try again.","danger")}}copyMediaUrl(t){const e=this.findById(t);e&&navigator.clipboard?.writeText(e.url).then(()=>this.toast("URL copied to clipboard.","success",2e3),()=>this.toast("Clipboard not available.","danger"))}downloadMedia(t){const e=this.findById(t);if(!e)return;const a=document.createElement("a");a.href=e.url,a.download=e.name,a.target="_blank",a.rel="noopener",document.body.appendChild(a),a.click(),a.remove(),this.toast(`Downloading "${e.name}"\u2026`,"info",1800)}async deleteById(t){const e=this.findById(t);if(!e)return;const a=this.store.get("records"),i=e.name;this.statusToast(`Deleting "${i}"\u2026`,"info",12e4),this.store.set("records",a.filter(o=>String(o.id)!==String(t)));try{const o=await this.requestMediaItemApi("DELETE",{id:e.id});this.applyMediaItemPropagation(o),u.invalidate("pa_media_library");const n=await u.revalidate("pa_media_library",[]);Array.isArray(n)&&(this.nextId=Math.max(0,...n.map(r=>Number(r.id)||0))+1,this.store.set("records",n)),this._entityByUrl=null,await this.refreshLinkedCachesAfterMediaChange(),b(),this.render(),this.statusToast(`"${i}" was deleted.`,"success"),this.toast(`"${i}" was deleted.`,"success"),this.notify(`"${i}" was deleted.`,"ri-delete-bin-line")}catch{this.store.set("records",a),this.render(),this.statusToast("Could not delete file. Please try again.","danger"),this.toast("Could not delete file. Please try again.","danger")}}async openMediaHistory(t){const e=this.findById(t);if(!e)return;const a=await Y(e.url);J(e,a)}openUploadPanel(){M==="media"&&(this.stagedFiles=[],this.renderStagedGrid(),s("paUploadFolder").value="general",s("paUploadAlt").value="",s("paUploadFilesError").classList.remove("visible"),s("paUploadDropzone").classList.remove("error"),U("paUploadPanel",["paEditDetailsPanel"]),setTimeout(()=>s("paUploadDropzone")?.focus(),320))}renderStagedGrid(){const t=s("paUploadStagedGrid");t&&(t.innerHTML=this.stagedFiles.map((e,a)=>`<div class="pa-gallery-thumb"><img src="${g(e.previewUrl||e.url||"")}" alt="${g(e.name)}" /><div class="pa-gallery-thumb-remove" data-i="${a}" role="button" aria-label="Remove ${g(e.name)}"><i class="ri-close-line"></i></div></div>`).join(""),t.querySelectorAll(".pa-gallery-thumb-remove").forEach(e=>{e.addEventListener("click",()=>{this.stagedFiles.splice(parseInt(e.dataset.i,10),1),this.renderStagedGrid()})}),this.stagedFiles.length>0&&(s("paUploadFilesError")?.classList.remove("visible"),s("paUploadDropzone")?.classList.remove("error")))}async stageFiles(t){const e=Array.from(t||[]);let a=0;for(const i of e)if(B(i))try{const o=URL.createObjectURL(i);this.stagedFiles.push({file:i,previewUrl:o,url:"",name:i.name,size:i.size,type:i.type}),a++}catch{this.toast(`Could not read "${i.name}".`,"danger")}this.renderStagedGrid(),a>0&&this.toast(`${a} file${a>1?"s":""} ready to upload.`,"success",2e3)}setupEditImageDropzone(){const t=s("paEditImageDropzone"),e=s("paEditImageFileInput");!t||!e||(this.on(t,"click",()=>e.click()),this.on(t,"keydown",a=>{(a.key==="Enter"||a.key===" ")&&(a.preventDefault(),e.click())}),t.setAttribute("tabindex","0"),t.setAttribute("role","button"),this.on(e,"change",async()=>{const a=e.files?.[0];e.value="",a&&await this.stageEditImage(a)}),["dragenter","dragover"].forEach(a=>{this.on(t,a,i=>{i.preventDefault(),t.classList.add("dragover")})}),["dragleave","drop"].forEach(a=>{this.on(t,a,i=>{i.preventDefault(),t.classList.remove("dragover")})}),this.on(t,"drop",async a=>{const i=a.dataTransfer?.files?.[0];i&&await this.stageEditImage(i)}))}async stageEditImage(t){if(!B(t)){s("paEditImageError")?.classList.add("visible");return}try{const e=URL.createObjectURL(t);this.editPendingImage={file:t,previewUrl:e,name:t.name,size:t.size,type:t.type},s("paEditImageError")?.classList.remove("visible"),this.updateEditPreview(),this.toast("New image selected. Save to apply changes.","info",2200)}catch{s("paEditImageError")?.classList.add("visible"),this.toast(`Could not read "${t.name}".`,"danger")}}updateEditPreview(){const t=s("paEditPreviewImg"),e=s("paEditRevertImageBtn"),a=s("paEditFileSize"),i=this.editPendingImage,o=this.editOriginalImage;if(t){const n=i?.previewUrl||i?.url||o?.url||"";t.src=n;const r=s("paEditAlt")?.value.trim()||s("paEditFileName")?.value.trim()||"";t.alt=r}if(e&&(e.style.display=i?"":"none"),a){const n=i?.size??o?.size,r=i?.previewUrl||i?.url||o?.url;a.textContent=n!=null||r?x(n,r):"\u2014"}}revertEditImage(){this.editPendingImage=null,s("paEditImageError")?.classList.remove("visible"),this.updateEditPreview(),this.toast("Reverted to original image.","info",1800)}resetEditImageState(t){this.editPendingImage=null,this.editOriginalImage=t?{url:t.url,size:t.size,type:t.type,name:t.name}:null,s("paEditImageError")?.classList.remove("visible");const e=s("paEditImageFileInput");e&&(e.value=""),this.updateEditPreview()}setupUploadDropzone(){const t=s("paUploadDropzone"),e=s("paUploadFileInput");!t||!e||(this.on(t,"click",()=>e.click()),this.on(t,"keydown",a=>{(a.key==="Enter"||a.key===" ")&&(a.preventDefault(),e.click())}),t.setAttribute("tabindex","0"),t.setAttribute("role","button"),this.on(e,"change",async()=>{await this.stageFiles(e.files),e.value=""}),["dragenter","dragover"].forEach(a=>this.on(t,a,i=>{i.preventDefault(),t.classList.add("dragover")})),["dragleave","drop"].forEach(a=>this.on(t,a,i=>{i.preventDefault(),t.classList.remove("dragover")})),this.on(t,"drop",async a=>{const i=a.dataTransfer?.files;i&&i.length&&await this.stageFiles(i)}))}async handleUploadSubmit(){if(M!=="media"||this.stagedFiles.length===0){s("paUploadFilesError")?.classList.add("visible"),s("paUploadDropzone")?.classList.add("error"),this.toast("Please select at least one file to upload.","danger");return}const t=s("paUploadFolder").value,e=s("paUploadAlt").value.trim(),a=[],i=[];this.statusToast("Uploading to storage\u2026","info",12e4);let o=0;for(const r of this.stagedFiles){o+=1;const l=await F(r.file,{folder:t,page:"media-library",purpose:"library-asset",sequence:o}),c=l.fileName||r.name;i.push({id:this.nextId++,name:c,url:l.url,alt:e,folder:t,size:l.size||r.size,type:l.mimeType||r.type,uploadedAt:new Date().toISOString(),usageCount:0}),a.push(c),r.previewUrl&&URL.revokeObjectURL(r.previewUrl)}const n=this.store.get("records");this.store.set("records",n.concat(i));try{await this.persist(),b(),this.resetFilters(),this.render();const r=a.length;this.statusToast(`${r} file${r>1?"s":""} uploaded successfully!`,"success"),this.notify(r===1?`"${a[0]}" was uploaded.`:`${r} files were uploaded.`,"ri-upload-cloud-2-line")}catch{this.store.set("records",n),this.statusToast("Could not upload files. Please try again.","danger")}}openMediaEditPanel(t){if(M!=="media")return;const e=this.findById(t);e&&(this.currentEditId=t,this.resetEditImageState(e),s("paEditFileName").value=e.name,s("paEditAlt").value=e.alt||"",s("paEditFolder").value=e.folder,s("paEditFileDate").textContent=z(e.uploadedAt),s("paEditFileUsage").textContent=e.usageCount>0?`${e.usageCount} place${e.usageCount>1?"s":""}`:"Not currently used",s("paEditFileNameError").classList.remove("visible"),s("paEditFileName").classList.remove("error"),U("paEditDetailsPanel",["paUploadPanel"]),setTimeout(()=>s("paEditFileName")?.focus(),320))}async handleMediaEditSubmit(){if(M!=="media"||this.currentEditId==null)return;const t=s("paEditFileName").value.trim();if(!t){s("paEditFileName").classList.add("error"),s("paEditFileNameError").classList.add("visible"),this.toast("Please fill in all required fields.","danger");return}s("paEditFileName").classList.remove("error"),s("paEditFileNameError").classList.remove("visible");const e=this.findById(this.currentEditId);if(!e)return;const a={...e};if(e.name=t,e.alt=s("paEditAlt").value.trim(),e.folder=s("paEditFolder").value,this.editPendingImage?.file){const i=await F(this.editPendingImage.file,{folder:e.folder||"general",page:"media-library",purpose:"library-replace"});e.url=i.url,e.size=i.size,e.type=i.mimeType,this.editPendingImage.previewUrl&&URL.revokeObjectURL(this.editPendingImage.previewUrl)}this.statusToast("Saving changes\u2026","info",12e4);try{const i=await this.requestMediaItemApi("PATCH",{id:e.id,name:e.name,alt:e.alt,folder:e.folder,url:e.url,size:e.size,type:e.type,uploadedAt:e.uploadedAt,usageCount:e.usageCount});this.applyMediaItemPropagation(i),await this.commitLocalMediaRecords(),b(),this.editPendingImage=null,this.editOriginalImage=null,this.render(),this.statusToast(`"${e.name}" updated successfully!`,"success"),this.toast(`"${e.name}" updated successfully!`,"success"),this.notify(`"${e.name}" details were updated.`,"ri-pencil-line")}catch{Object.assign(e,a),this.statusToast("Could not save changes. Please try again.","danger"),this.toast("Could not save changes. Please try again.","danger")}}bindEvents(){this.syncFolderSelects(),C("paUploadPanel"),C("paEditDetailsPanel"),Z({onEscape:!0}),this.setupUploadDropzone(),this.setupEditImageDropzone(),this.on(s("paUploadNewBtn")||s("paMediaAddNewBtn"),"click",()=>this.openUploadPanel()),this.on(s("paUploadPanelClose"),"click",()=>b()),this.on(s("paEditDetailsPanelClose"),"click",()=>b()),this.on(s("paUploadCancel"),"click",()=>b()),this.on(s("paEditDetailsCancel"),"click",()=>b()),this.on(s("paEditRevertImageBtn"),"click",()=>this.revertEditImage()),this.on(s("paUploadSubmit"),"click",()=>{this.handleUploadSubmit()}),this.on(s("paEditDetailsSubmit"),"click",()=>{this.handleMediaEditSubmit()}),this.on(s("paEditDetailsDelete"),"click",()=>{const l=this.findById(this.currentEditId);l&&_(l.id,"media",l.name)});const t=s("paSearchInput");t&&this.on(t,"input",()=>{this.store.set("searchQuery",t.value),this.store.set("page",1),s("paSearchWrap")?.classList.toggle("has-value",!!t.value),this.render()}),this.on(s("paSearchClear"),"click",()=>{t&&(t.value="",this.store.set("searchQuery",""),this.render())}),this.on(s("paFolderFilter"),"change",l=>{this.store.update({folderFilter:l.target.value,page:1}),this.render()}),this.on(s("paTypeFilter"),"change",l=>{this.store.update({typeFilter:l.target.value,page:1}),this.render()}),this.on(s("paMediaSort"),"change",l=>{this.store.update({sortBy:l.target.value,page:1}),this.render()}),this.on(s("paMediaLayout"),"change",l=>{this.store.update({layoutMode:l.target.value,page:1}),this.render()});const e=s("paGridViewBtn"),a=s("paListViewBtn");if(e){const l=e.parentNode,c=e.cloneNode(!0);l.replaceChild(c,e),this.on(c,"click",()=>{this.store.set("viewMode","grid"),this.setViewModeFromStore(),this.render()})}if(a){const l=a.parentNode,c=a.cloneNode(!0);l.replaceChild(c,a),this.on(c,"click",()=>{this.store.set("viewMode","list"),this.setViewModeFromStore(),this.render()})}const i=s("paSelectModeBtn");i&&this.on(i,"click",()=>this.toggleSelectMode());const o=s("paBulkSelectAllBtn");o&&this.on(o,"click",()=>this.selectAllVisible());const n=s("paBulkClearBtn");n&&this.on(n,"click",()=>this.clearSelection());const r=s("paBulkDeleteBtn");r&&(r.type="button",this.on(r,"click",()=>this.requestBulkDelete())),this.onBus("bulk-confirm:close",()=>this.closeBulkConfirm()),this.onBus("confirm:confirmed",({id:l,type:c})=>{c==="media"&&this.deleteById(l)}),this.onBus("shortcut:new-item",({page:l})=>{l===M&&this.openUploadPanel()})}}export{L as FOLDER_META,we as MediaModule,Ie as SEED_MEDIA};
+    </div>`;
+  }
+  renderGroupedCards(pageItems, allFiltered) {
+    if (!pageItems.length) return "";
+    const countByKey = {};
+    allFiltered.forEach((item) => {
+      const key = this.getGroupInfo(item).key;
+      countByKey[key] = (countByKey[key] || 0) + 1;
+    });
+    const groups = [];
+    for (const item of pageItems) {
+      const info = this.getGroupInfo(item);
+      const last = groups[groups.length - 1];
+      if (last && last.key === info.key) {
+        last.items.push(item);
+      } else {
+        groups.push({ ...info, items: [item] });
+      }
+    }
+    let cardIndex = 0;
+    return groups.map((group) => {
+      const heading = this.renderGroupHeading(group, countByKey[group.key] || group.items.length);
+      const cards = group.items.map((item) => this.buildCard(item, cardIndex++)).join("");
+      return `${heading}${cards}`;
+    }).join("");
+  }
+  compareBySort(a, b, sortByValue) {
+    switch (sortByValue) {
+      case "oldest":
+        return new Date(a.uploadedAt) - new Date(b.uploadedAt);
+      case "name":
+        return String(a.name || "").localeCompare(String(b.name || ""));
+      case "size":
+        return (b.size || 0) - (a.size || 0);
+      default:
+        return new Date(b.uploadedAt) - new Date(a.uploadedAt);
+    }
+  }
+  getFiltered() {
+    const { records, searchQuery, folderFilter, typeFilter, sortBy, layoutMode } = this.store._raw;
+    let result = records.slice();
+    if (folderFilter !== "all") result = result.filter((m) => m.folder === folderFilter);
+    if (typeFilter === "images") result = result.filter((m) => getMediaKind(m) === "image");
+    else if (typeFilter === "videos") result = result.filter((m) => getMediaKind(m) === "video");
+    else if (typeFilter === "documents") result = result.filter((m) => getMediaKind(m) === "document");
+    else if (typeFilter === "others") result = result.filter((m) => getMediaKind(m) === "other");
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter(
+        (m) => m.name.toLowerCase().includes(q) || (m.alt || "").toLowerCase().includes(q) || (FOLDER_META[m.folder]?.label || m.folder).toLowerCase().includes(q)
+      );
+    }
+    const sortByValue = sortBy || "newest";
+    const grouped = layoutMode === "grouped";
+    return result.sort((a, b) => {
+      if (grouped) {
+        const byFolder = folderRank(a.folder) - folderRank(b.folder);
+        if (byFolder !== 0) return byFolder;
+        if (this._entityByUrl) {
+          const groupA = this.getGroupInfo(a);
+          const groupB = this.getGroupInfo(b);
+          const byGroup = String(groupA.title).localeCompare(String(groupB.title), void 0, { sensitivity: "base" });
+          if (byGroup !== 0) return byGroup;
+          if (groupA.key !== groupB.key) return groupA.key.localeCompare(groupB.key);
+        }
+      }
+      return this.compareBySort(a, b, sortByValue);
+    });
+  }
+  renderStats() {
+    const records = this.store.get("records");
+    const set = (id, val) => {
+      const el = $id(id);
+      if (el) el.textContent = val;
+    };
+    const images = records.filter((m) => getMediaKind(m) === "image").length;
+    const videos = records.filter((m) => getMediaKind(m) === "video").length;
+    const documents = records.filter((m) => getMediaKind(m) === "document").length;
+    const others = records.filter((m) => getMediaKind(m) === "other").length;
+    set("paMediaStatTotal", records.length);
+    set("paMediaStatImages", images);
+    set("paMediaStatVideos", videos);
+    set("paMediaStatDocuments", documents);
+    set("paMediaStatOthers", others);
+    setStatTrend("paMediaStatTotalTrend", records);
+    setStatTrend("paMediaStatImagesTrend", records, (m) => getMediaKind(m) === "image");
+    setStatTrend("paMediaStatVideosTrend", records, (m) => getMediaKind(m) === "video");
+    setStatTrend("paMediaStatDocumentsTrend", records, (m) => getMediaKind(m) === "document");
+    setStatTrend("paMediaStatOthersTrend", records, (m) => getMediaKind(m) === "other");
+  }
+  syncTypeFilter() {
+    const el = $id("paTypeFilter");
+    if (el) el.value = this.store.get("typeFilter") || "all";
+  }
+  findById(id) {
+    return this.store.get("records").find((m) => String(m.id) === String(id));
+  }
+  mediaIdKey(id) {
+    return String(id);
+  }
+  buildCard(item, index) {
+    const selectMode = this.store.get("selectMode");
+    const isSelected = this.store.get("selectedIds").has(this.mediaIdKey(item.id));
+    const checkboxHtml = selectMode ? `<button type="button" class="pa-media-card__select" data-select-id="${item.id}" role="checkbox" aria-checked="${isSelected}" aria-label="Select ${escapeHtml(item.name)}"><i class="${isSelected ? "ri-checkbox-fill" : "ri-checkbox-blank-line"}"></i></button>` : "";
+    return renderPaMediaCard(item, {
+      selectCheckbox: checkboxHtml,
+      isSelected,
+      animationDelay: Math.min(index, 11) * 35
+    });
+  }
+  syncLayoutFilter() {
+    const el = $id("paMediaLayout");
+    if (el) el.value = this.store.get("layoutMode") || "flat";
+  }
+  async render() {
+    const layoutMode = this.store.get("layoutMode") || "flat";
+    if (layoutMode === "grouped") await this.ensureEntityIndex();
+    this.renderStats();
+    this.syncTypeFilter();
+    this.syncLayoutFilter();
+    const sortEl = $id("paMediaSort");
+    const sortVal = this.store.get("sortBy") || "newest";
+    if (sortEl && sortEl.value !== sortVal) sortEl.value = sortVal;
+    const all = this.getFiltered();
+    const totalItems = all.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+    let page = this.store.get("page");
+    if (page > totalPages) page = totalPages;
+    if (page < 1) page = 1;
+    this.store.set("page", page);
+    const start = (page - 1) * PAGE_SIZE;
+    const pageItems = all.slice(start, start + PAGE_SIZE);
+    const grid = $id("paMediaGrid");
+    const isList = this.store.get("viewMode") === "list";
+    if (grid) {
+      applyListGridClasses(grid, isList);
+      if (pageItems.length === 0) {
+        const hasFilters = this.store.get("searchQuery").trim() || this.store.get("folderFilter") !== "all" || this.store.get("typeFilter") !== "all";
+        grid.innerHTML = `<div class="pa-empty-state"><i class="ri-image-line"></i><div class="pa-empty-state-title">${hasFilters ? "No media matches your filters" : "No media files yet"}</div><div class="pa-empty-state-text">${hasFilters ? "Try adjusting your search or folder filter to find what you're looking for." : "Upload your first image to start building your media library."}</div>${hasFilters ? `<button class="pa-empty-state-btn" id="paMediaEmptyResetBtn">Reset filters</button>` : `<button class="pa-empty-state-btn" id="paMediaEmptyUploadBtn">+ Upload Media</button>`}</div>`;
+        this.on($id("paMediaEmptyResetBtn"), "click", () => this.resetFilters());
+        this.on($id("paMediaEmptyUploadBtn"), "click", () => this.openUploadPanel());
+      } else if (isList) {
+        const columns = [
+          { label: "#", className: "pa-lv-col-num" },
+          { label: "File", className: "pa-lv-col-project" },
+          { label: "Folder" },
+          { label: "Type", className: "pa-lv-col-status" },
+          { label: "Uploaded", className: "pa-lv-col-date" },
+          { label: "Actions", className: "pa-lv-col-actions" }
+        ];
+        const rows = pageItems.map((item, i) => renderPaMediaListRow(item, {
+          rowIndex: start + i + 1,
+          cardClass: this.store.get("selectedIds")?.has?.(String(item.id)) ? "pa-selected" : ""
+        })).join("");
+        grid.innerHTML = renderListTableShell(columns, rows);
+      } else if (layoutMode === "grouped") {
+        grid.innerHTML = this.renderGroupedCards(pageItems, all);
+      } else {
+        grid.innerHTML = pageItems.map((item, i) => this.buildCard(item, i)).join("");
+      }
+    }
+    syncListPaginationChrome(isList && pageItems.length > 0, $id("paMediaPaginationBtns")?.closest(".pa-pagination"));
+    this.renderPagination(totalItems, totalPages, page);
+    this.attachCardListeners();
+    this.updateBulkBar();
+    this.setViewModeFromStore();
+  }
+  setViewModeFromStore() {
+    const mode = this.store.get("viewMode") || "grid";
+    const gridBtn = $id("paGridViewBtn");
+    const listBtn = $id("paListViewBtn");
+    if (gridBtn) {
+      gridBtn.classList.toggle("active", mode === "grid");
+    }
+    if (listBtn) {
+      listBtn.classList.toggle("active", mode === "list");
+    }
+    document.querySelectorAll(".pa-view-btn[data-view]").forEach((btn) => {
+      const view = btn.dataset.view;
+      if (view === "grid") {
+        btn.classList.toggle("active", mode === "grid");
+      } else if (view === "list") {
+        btn.classList.toggle("active", mode === "list");
+      }
+    });
+  }
+  renderPagination(totalItems, totalPages, page) {
+    const btnsWrap = $id("paMediaPaginationBtns");
+    const info = $id("paMediaPaginationInfo");
+    if (!btnsWrap || !info) return;
+    if (totalItems === 0) {
+      btnsWrap.innerHTML = "";
+      info.textContent = "Showing 0 of 0 files";
+      return;
+    }
+    let html = `<div class="pa-page-nav ${page === 1 ? "disabled" : ""}" id="paMediaPagePrev" role="button" aria-label="Previous page"><i class="ri-arrow-left-s-line"></i></div>`;
+    let lastShown = 0;
+    for (let p = 1; p <= totalPages; p++) {
+      const show = p === 1 || p === totalPages || Math.abs(p - page) <= 1;
+      if (!show) continue;
+      if (p - lastShown > 1) html += `<span style="color:var(--pa-text-faint);padding:0 4px;font-size:12px;">\u2026</span>`;
+      html += `<button class="pa-page-btn ${p === page ? "active" : ""}" data-page="${p}">${p}</button>`;
+      lastShown = p;
+    }
+    html += `<div class="pa-page-nav ${page === totalPages ? "disabled" : ""}" id="paMediaPageNext" role="button" aria-label="Next page"><i class="ri-arrow-right-s-line"></i></div>`;
+    btnsWrap.innerHTML = html;
+    const startN = (page - 1) * PAGE_SIZE + 1;
+    const endN = Math.min(page * PAGE_SIZE, totalItems);
+    info.textContent = `Showing ${startN} to ${endN} of ${totalItems} files`;
+    btnsWrap.querySelectorAll(".pa-page-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this.store.set("page", parseInt(btn.dataset.page, 10));
+        this.render();
+        $id("paMediaBody")?.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    });
+    const prev = $id("paMediaPagePrev");
+    const next = $id("paMediaPageNext");
+    if (prev && !prev.classList.contains("disabled")) prev.addEventListener("click", () => {
+      this.store.set("page", page - 1);
+      this.render();
+    });
+    if (next && !next.classList.contains("disabled")) next.addEventListener("click", () => {
+      this.store.set("page", page + 1);
+      this.render();
+    });
+  }
+  resetFilters() {
+    this.store.batch(() => {
+      this.store.set("searchQuery", "");
+      this.store.set("folderFilter", "all");
+      this.store.set("typeFilter", "all");
+      this.store.set("sortBy", "newest");
+      this.store.set("layoutMode", "flat");
+      this.store.set("page", 1);
+    });
+    const searchInput = $id("paSearchInput");
+    if (searchInput) {
+      searchInput.value = "";
+      $id("paSearchWrap")?.classList.remove("has-value");
+    }
+    const folderFilter = $id("paFolderFilter");
+    if (folderFilter) folderFilter.value = "all";
+    const typeFilter = $id("paTypeFilter");
+    if (typeFilter) typeFilter.value = "all";
+    const sortEl = $id("paMediaSort");
+    if (sortEl) sortEl.value = "newest";
+    const layoutEl = $id("paMediaLayout");
+    if (layoutEl) layoutEl.value = "flat";
+    this.render();
+  }
+  attachCardListeners() {
+    const grid = $id("paMediaGrid");
+    if (!grid) return;
+    $all(".pa-action-view", grid).forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const m = this.findById(parseInt(btn.dataset.mediaId, 10));
+        if (m) openMediaPreviewModal(m);
+      });
+    });
+    $all(".pa-action-edit", grid).forEach((btn) => btn.addEventListener("click", () => this.openMediaEditPanel(parseInt(btn.dataset.mediaId, 10))));
+    $all(".pa-action-delete", grid).forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const m = this.findById(parseInt(btn.dataset.mediaId, 10));
+        if (m) requestDelete(m.id, "media", m.name);
+      });
+    });
+    $all(".pa-action-more", grid).forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const host = btn.closest(".pa-media-card__thumb-more, .pa-media-card__footer-more, .pa-media-card__list-more, .pa-lv-more-wrap");
+        const menu = host?.querySelector(".pa-card-menu");
+        if (menu) toggleCardMenu(menu, btn);
+      });
+    });
+    $all(".pa-action-history", grid).forEach((btn) => {
+      btn.addEventListener("click", () => {
+        void this.openMediaHistory(parseInt(btn.dataset.mediaId, 10));
+      });
+    });
+    $all(".pa-card-menu-item", grid).forEach((item) => {
+      item.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const action = item.dataset.action;
+        const id = parseInt(item.dataset.mediaId, 10);
+        closeAllCardMenus();
+        if (action === "edit") this.openMediaEditPanel(id);
+        else if (action === "delete") {
+          const m = this.findById(id);
+          if (m) requestDelete(id, "media", m.name);
+        } else if (action === "duplicate") this.duplicateMedia(id);
+        else if (action === "copy-url") this.copyMediaUrl(id);
+        else if (action === "download") this.downloadMedia(id);
+      });
+    });
+    $all(".pa-media-card__select", grid).forEach((box) => {
+      box.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (box.dataset.selectId != null) this.toggleSelect(box.dataset.selectId);
+      });
+    });
+    $all(".pa-media-card", grid).forEach((card) => {
+      card.addEventListener("click", (e) => {
+        if (!this.store.get("selectMode")) return;
+        if (e.target.closest(".pa-media-card__actions, .pa-media-card__list-actions, .pa-media-card__select, .pa-media-card__thumb-more, .pa-media-card__footer-more, .pa-media-card__list-more")) return;
+        if (card.dataset.mediaId != null) this.toggleSelect(card.dataset.mediaId);
+      });
+    });
+  }
+  toggleSelect(id) {
+    const key = this.mediaIdKey(id);
+    const set = this.store.get("selectedIds");
+    if (set.has(key)) set.delete(key);
+    else set.add(key);
+    this.render();
+  }
+  toggleSelectMode() {
+    const next = !this.store.get("selectMode");
+    this.store.set("selectMode", next);
+    $id("paSelectModeBtn")?.classList.toggle("active", next);
+    if (!next) {
+      this.store.get("selectedIds").clear();
+      this.updateBulkBar();
+    }
+    this.render();
+  }
+  selectAllVisible() {
+    const set = this.store.get("selectedIds");
+    const visible = this.getFiltered();
+    visible.forEach((m) => set.add(this.mediaIdKey(m.id)));
+    this.updateBulkBar();
+    this.render();
+    this.toast(`Selected ${set.size} item${set.size === 1 ? "" : "s"}.`, "info", 1800);
+  }
+  clearSelection() {
+    this.store.get("selectedIds").clear();
+    this.updateBulkBar();
+    this.render();
+    this.toast("Selection cleared.", "info", 1500);
+  }
+  updateBulkBar() {
+    const bar = $id("paBulkActionBar");
+    if (!bar) return;
+    const size = this.store.get("selectedIds").size;
+    const selectMode = this.store.get("selectMode");
+    if (selectMode && size > 0) {
+      bar.style.display = "flex";
+      const count = $id("paBulkSelectedCount");
+      if (count) count.textContent = `${size} selected`;
+    } else {
+      bar.style.display = "none";
+    }
+  }
+  requestBulkDelete() {
+    const n = this.store.get("selectedIds").size;
+    if (n === 0) return;
+    requestBulkAction({
+      title: `Delete selected file${n > 1 ? "s" : ""}?`,
+      message: `This will permanently remove <strong>${n}</strong> selected file${n > 1 ? "s" : ""}. This action cannot be undone.`,
+      onConfirm: () => this.performBulkDelete()
+    });
+  }
+  closeBulkConfirm() {
+    $id("paBulkConfirmOverlay")?.classList.remove("visible");
+  }
+  async performBulkDelete() {
+    const selected = this.store.get("selectedIds");
+    const idList = [...selected].map((id) => this.mediaIdKey(id));
+    const n = idList.length;
+    if (n === 0) return;
+    const idSet = new Set(idList);
+    const prev = this.store.get("records");
+    this.store.set("records", prev.filter((m) => !idSet.has(this.mediaIdKey(m.id))));
+    selected.clear();
+    this.statusToast(`Deleting ${n} file${n > 1 ? "s" : ""}\u2026`, "info", 12e4);
+    try {
+      for (const id of idList) {
+        const payload = await this.requestMediaItemApi("DELETE", { id });
+        this.applyMediaItemPropagation(payload);
+      }
+      storage.invalidate("pa_media_library");
+      const fresh = await storage.revalidate("pa_media_library", []);
+      if (Array.isArray(fresh)) {
+        this.nextId = Math.max(0, ...fresh.map((m) => Number(m.id) || 0)) + 1;
+        this.store.set("records", fresh);
+      }
+      this._entityByUrl = null;
+      await this.refreshLinkedCachesAfterMediaChange();
+      this.closeBulkConfirm();
+      this.updateBulkBar();
+      this.render();
+      this.statusToast(`${n} file${n > 1 ? "s" : ""} deleted.`, "danger");
+      this.notify(`${n} media file${n > 1 ? "s" : ""} deleted in bulk.`, "ri-delete-bin-line");
+    } catch {
+      this.store.set("records", prev);
+      this.render();
+      this.statusToast("Could not delete files. Please try again.", "danger");
+    }
+  }
+  async duplicateMedia(id) {
+    const m = this.findById(id);
+    if (!m) return;
+    const copy = { ...m, id: this.nextId++, name: appendCopySuffix(m.name), uploadedAt: (/* @__PURE__ */ new Date()).toISOString(), usageCount: 0 };
+    const prev = this.store.get("records");
+    this.store.set("records", prev.concat(copy));
+    try {
+      await this.persist();
+      this.render();
+      this.statusToast(`Duplicated as "${copy.name}".`, "info");
+    } catch {
+      this.store.set("records", prev);
+      this.statusToast("Could not duplicate file. Please try again.", "danger");
+    }
+  }
+  copyMediaUrl(id) {
+    const m = this.findById(id);
+    if (!m) return;
+    navigator.clipboard?.writeText(m.url).then(() => this.toast("URL copied to clipboard.", "success", 2e3), () => this.toast("Clipboard not available.", "danger"));
+  }
+  downloadMedia(id) {
+    const m = this.findById(id);
+    if (!m) return;
+    const a = document.createElement("a");
+    a.href = m.url;
+    a.download = m.name;
+    a.target = "_blank";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    this.toast(`Downloading "${m.name}"\u2026`, "info", 1800);
+  }
+  async deleteById(id) {
+    const m = this.findById(id);
+    if (!m) return;
+    const prev = this.store.get("records");
+    const name = m.name;
+    this.statusToast(`Deleting "${name}"\u2026`, "info", 12e4);
+    this.store.set("records", prev.filter((x) => String(x.id) !== String(id)));
+    try {
+      const payload = await this.requestMediaItemApi("DELETE", { id: m.id });
+      this.applyMediaItemPropagation(payload);
+      storage.invalidate("pa_media_library");
+      const fresh = await storage.revalidate("pa_media_library", []);
+      if (Array.isArray(fresh)) {
+        this.nextId = Math.max(0, ...fresh.map((row) => Number(row.id) || 0)) + 1;
+        this.store.set("records", fresh);
+      }
+      this._entityByUrl = null;
+      await this.refreshLinkedCachesAfterMediaChange();
+      closePanels();
+      this.render();
+      this.statusToast(`"${name}" was deleted.`, "success");
+      this.toast(`"${name}" was deleted.`, "success");
+      this.notify(`"${name}" was deleted.`, "ri-delete-bin-line");
+    } catch {
+      this.store.set("records", prev);
+      this.render();
+      this.statusToast("Could not delete file. Please try again.", "danger");
+      this.toast("Could not delete file. Please try again.", "danger");
+    }
+  }
+  async openMediaHistory(id) {
+    const m = this.findById(id);
+    if (!m) return;
+    const usageRefs = await findMediaUsage(m.url);
+    openMediaHistoryModal(m, usageRefs);
+  }
+  openUploadPanel() {
+    if (PAGE !== "media") return;
+    this.stagedFiles = [];
+    this.renderStagedGrid();
+    $id("paUploadFolder").value = "general";
+    $id("paUploadAlt").value = "";
+    $id("paUploadFilesError").classList.remove("visible");
+    $id("paUploadDropzone").classList.remove("error");
+    openPanel("paUploadPanel", ["paEditDetailsPanel"]);
+    setTimeout(() => $id("paUploadDropzone")?.focus(), 320);
+  }
+  renderStagedGrid() {
+    const grid = $id("paUploadStagedGrid");
+    if (!grid) return;
+    grid.innerHTML = this.stagedFiles.map((sf, i) => `<div class="pa-gallery-thumb"><img src="${escapeHtml(sf.previewUrl || sf.url || "")}" alt="${escapeHtml(sf.name)}" /><div class="pa-gallery-thumb-remove" data-i="${i}" role="button" aria-label="Remove ${escapeHtml(sf.name)}"><i class="ri-close-line"></i></div></div>`).join("");
+    grid.querySelectorAll(".pa-gallery-thumb-remove").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this.stagedFiles.splice(parseInt(btn.dataset.i, 10), 1);
+        this.renderStagedGrid();
+      });
+    });
+    if (this.stagedFiles.length > 0) {
+      $id("paUploadFilesError")?.classList.remove("visible");
+      $id("paUploadDropzone")?.classList.remove("error");
+    }
+  }
+  async stageFiles(fileList) {
+    const files = Array.from(fileList || []);
+    let accepted = 0;
+    for (const file of files) {
+      if (!handleFileValidation(file)) continue;
+      try {
+        const previewUrl = URL.createObjectURL(file);
+        this.stagedFiles.push({ file, previewUrl, url: "", name: file.name, size: file.size, type: file.type });
+        accepted++;
+      } catch {
+        this.toast(`Could not read "${file.name}".`, "danger");
+      }
+    }
+    this.renderStagedGrid();
+    if (accepted > 0) this.toast(`${accepted} file${accepted > 1 ? "s" : ""} ready to upload.`, "success", 2e3);
+  }
+  setupEditImageDropzone() {
+    const dropzone = $id("paEditImageDropzone");
+    const fileInput = $id("paEditImageFileInput");
+    if (!dropzone || !fileInput) return;
+    this.on(dropzone, "click", () => fileInput.click());
+    this.on(dropzone, "keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
+    dropzone.setAttribute("tabindex", "0");
+    dropzone.setAttribute("role", "button");
+    this.on(fileInput, "change", async () => {
+      const file = fileInput.files?.[0];
+      fileInput.value = "";
+      if (file) await this.stageEditImage(file);
+    });
+    ["dragenter", "dragover"].forEach((evt) => {
+      this.on(dropzone, evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.add("dragover");
+      });
+    });
+    ["dragleave", "drop"].forEach((evt) => {
+      this.on(dropzone, evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("dragover");
+      });
+    });
+    this.on(dropzone, "drop", async (e) => {
+      const file = e.dataTransfer?.files?.[0];
+      if (file) await this.stageEditImage(file);
+    });
+  }
+  async stageEditImage(file) {
+    if (!handleFileValidation(file)) {
+      $id("paEditImageError")?.classList.add("visible");
+      return;
+    }
+    try {
+      const previewUrl = URL.createObjectURL(file);
+      this.editPendingImage = {
+        file,
+        previewUrl,
+        name: file.name,
+        size: file.size,
+        type: file.type
+      };
+      $id("paEditImageError")?.classList.remove("visible");
+      this.updateEditPreview();
+      this.toast("New image selected. Save to apply changes.", "info", 2200);
+    } catch {
+      $id("paEditImageError")?.classList.add("visible");
+      this.toast(`Could not read "${file.name}".`, "danger");
+    }
+  }
+  updateEditPreview() {
+    const img = $id("paEditPreviewImg");
+    const revertBtn = $id("paEditRevertImageBtn");
+    const sizeEl = $id("paEditFileSize");
+    const pending = this.editPendingImage;
+    const original = this.editOriginalImage;
+    if (img) {
+      const src = pending?.previewUrl || pending?.url || original?.url || "";
+      img.src = src;
+      const alt = $id("paEditAlt")?.value.trim() || $id("paEditFileName")?.value.trim() || "";
+      img.alt = alt;
+    }
+    if (revertBtn) {
+      revertBtn.style.display = pending ? "" : "none";
+    }
+    if (sizeEl) {
+      const size = pending?.size ?? original?.size;
+      const url = pending?.previewUrl || pending?.url || original?.url;
+      sizeEl.textContent = size != null || url ? formatFileSize(size, url) : "\u2014";
+    }
+  }
+  revertEditImage() {
+    this.editPendingImage = null;
+    $id("paEditImageError")?.classList.remove("visible");
+    this.updateEditPreview();
+    this.toast("Reverted to original image.", "info", 1800);
+  }
+  resetEditImageState(m) {
+    this.editPendingImage = null;
+    this.editOriginalImage = m ? { url: m.url, size: m.size, type: m.type, name: m.name } : null;
+    $id("paEditImageError")?.classList.remove("visible");
+    const editFileInput = $id("paEditImageFileInput");
+    if (editFileInput) editFileInput.value = "";
+    this.updateEditPreview();
+  }
+  setupUploadDropzone() {
+    const dropzone = $id("paUploadDropzone");
+    const fileInput = $id("paUploadFileInput");
+    if (!dropzone || !fileInput) return;
+    this.on(dropzone, "click", () => fileInput.click());
+    this.on(dropzone, "keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
+    dropzone.setAttribute("tabindex", "0");
+    dropzone.setAttribute("role", "button");
+    this.on(fileInput, "change", async () => {
+      await this.stageFiles(fileInput.files);
+      fileInput.value = "";
+    });
+    ["dragenter", "dragover"].forEach((evt) => this.on(dropzone, evt, (e) => {
+      e.preventDefault();
+      dropzone.classList.add("dragover");
+    }));
+    ["dragleave", "drop"].forEach((evt) => this.on(dropzone, evt, (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("dragover");
+    }));
+    this.on(dropzone, "drop", async (e) => {
+      const files = e.dataTransfer?.files;
+      if (files && files.length) await this.stageFiles(files);
+    });
+  }
+  async handleUploadSubmit() {
+    if (PAGE !== "media" || this.stagedFiles.length === 0) {
+      $id("paUploadFilesError")?.classList.add("visible");
+      $id("paUploadDropzone")?.classList.add("error");
+      this.toast("Please select at least one file to upload.", "danger");
+      return;
+    }
+    const folder = $id("paUploadFolder").value;
+    const altBase = $id("paUploadAlt").value.trim();
+    const uploadedNames = [];
+    const newRecords = [];
+    this.statusToast("Uploading to storage\u2026", "info", 12e4);
+    let uploadSequence = 0;
+    for (const sf of this.stagedFiles) {
+      uploadSequence += 1;
+      const uploaded = await uploadCmsFile(sf.file, {
+        folder,
+        page: "media-library",
+        purpose: "library-asset",
+        sequence: uploadSequence
+      });
+      const displayName = uploaded.fileName || sf.name;
+      newRecords.push({
+        id: this.nextId++,
+        name: displayName,
+        url: uploaded.url,
+        alt: altBase,
+        folder,
+        size: uploaded.size || sf.size,
+        type: uploaded.mimeType || sf.type,
+        uploadedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        usageCount: 0
+      });
+      uploadedNames.push(displayName);
+      if (sf.previewUrl) URL.revokeObjectURL(sf.previewUrl);
+    }
+    const prev = this.store.get("records");
+    this.store.set("records", prev.concat(newRecords));
+    try {
+      await this.persist();
+      closePanels();
+      this.resetFilters();
+      this.render();
+      const count = uploadedNames.length;
+      this.statusToast(`${count} file${count > 1 ? "s" : ""} uploaded successfully!`, "success");
+      this.notify(count === 1 ? `"${uploadedNames[0]}" was uploaded.` : `${count} files were uploaded.`, "ri-upload-cloud-2-line");
+    } catch {
+      this.store.set("records", prev);
+      this.statusToast("Could not upload files. Please try again.", "danger");
+    }
+  }
+  openMediaEditPanel(id) {
+    if (PAGE !== "media") return;
+    const m = this.findById(id);
+    if (!m) return;
+    this.currentEditId = id;
+    this.resetEditImageState(m);
+    $id("paEditFileName").value = m.name;
+    $id("paEditAlt").value = m.alt || "";
+    $id("paEditFolder").value = m.folder;
+    $id("paEditFileDate").textContent = formatDate(m.uploadedAt);
+    $id("paEditFileUsage").textContent = m.usageCount > 0 ? `${m.usageCount} place${m.usageCount > 1 ? "s" : ""}` : "Not currently used";
+    $id("paEditFileNameError").classList.remove("visible");
+    $id("paEditFileName").classList.remove("error");
+    openPanel("paEditDetailsPanel", ["paUploadPanel"]);
+    setTimeout(() => $id("paEditFileName")?.focus(), 320);
+  }
+  async handleMediaEditSubmit() {
+    if (PAGE !== "media" || this.currentEditId == null) return;
+    const name = $id("paEditFileName").value.trim();
+    if (!name) {
+      $id("paEditFileName").classList.add("error");
+      $id("paEditFileNameError").classList.add("visible");
+      this.toast("Please fill in all required fields.", "danger");
+      return;
+    }
+    $id("paEditFileName").classList.remove("error");
+    $id("paEditFileNameError").classList.remove("visible");
+    const m = this.findById(this.currentEditId);
+    if (!m) return;
+    const snapshot = { ...m };
+    m.name = name;
+    m.alt = $id("paEditAlt").value.trim();
+    m.folder = $id("paEditFolder").value;
+    if (this.editPendingImage?.file) {
+      const uploaded = await uploadCmsFile(this.editPendingImage.file, {
+        folder: m.folder || "general",
+        page: "media-library",
+        purpose: "library-replace"
+      });
+      m.url = uploaded.url;
+      m.size = uploaded.size;
+      m.type = uploaded.mimeType;
+      if (this.editPendingImage.previewUrl) URL.revokeObjectURL(this.editPendingImage.previewUrl);
+    }
+    this.statusToast("Saving changes\u2026", "info", 12e4);
+    try {
+      const payload = await this.requestMediaItemApi("PATCH", {
+        id: m.id,
+        name: m.name,
+        alt: m.alt,
+        folder: m.folder,
+        url: m.url,
+        size: m.size,
+        type: m.type,
+        uploadedAt: m.uploadedAt,
+        usageCount: m.usageCount
+      });
+      this.applyMediaItemPropagation(payload);
+      await this.commitLocalMediaRecords();
+      closePanels();
+      this.editPendingImage = null;
+      this.editOriginalImage = null;
+      this.render();
+      this.statusToast(`"${m.name}" updated successfully!`, "success");
+      this.toast(`"${m.name}" updated successfully!`, "success");
+      this.notify(`"${m.name}" details were updated.`, "ri-pencil-line");
+    } catch {
+      Object.assign(m, snapshot);
+      this.statusToast("Could not save changes. Please try again.", "danger");
+      this.toast("Could not save changes. Please try again.", "danger");
+    }
+  }
+  bindEvents() {
+    this.syncFolderSelects();
+    registerPanel("paUploadPanel");
+    registerPanel("paEditDetailsPanel");
+    bindMediaModalEvents({ onEscape: true });
+    this.setupUploadDropzone();
+    this.setupEditImageDropzone();
+    this.on($id("paUploadNewBtn") || $id("paMediaAddNewBtn"), "click", () => this.openUploadPanel());
+    this.on($id("paUploadPanelClose"), "click", () => closePanels());
+    this.on($id("paEditDetailsPanelClose"), "click", () => closePanels());
+    this.on($id("paUploadCancel"), "click", () => closePanels());
+    this.on($id("paEditDetailsCancel"), "click", () => closePanels());
+    this.on($id("paEditRevertImageBtn"), "click", () => this.revertEditImage());
+    this.on($id("paUploadSubmit"), "click", () => {
+      void this.handleUploadSubmit();
+    });
+    this.on($id("paEditDetailsSubmit"), "click", () => {
+      void this.handleMediaEditSubmit();
+    });
+    this.on($id("paEditDetailsDelete"), "click", () => {
+      const m = this.findById(this.currentEditId);
+      if (m) requestDelete(m.id, "media", m.name);
+    });
+    const searchInput = $id("paSearchInput");
+    if (searchInput) {
+      this.on(searchInput, "input", () => {
+        this.store.set("searchQuery", searchInput.value);
+        this.store.set("page", 1);
+        $id("paSearchWrap")?.classList.toggle("has-value", !!searchInput.value);
+        this.render();
+      });
+    }
+    this.on($id("paSearchClear"), "click", () => {
+      if (searchInput) {
+        searchInput.value = "";
+        this.store.set("searchQuery", "");
+        this.render();
+      }
+    });
+    this.on($id("paFolderFilter"), "change", (e) => {
+      this.store.update({ folderFilter: e.target.value, page: 1 });
+      this.render();
+    });
+    this.on($id("paTypeFilter"), "change", (e) => {
+      this.store.update({ typeFilter: e.target.value, page: 1 });
+      this.render();
+    });
+    this.on($id("paMediaSort"), "change", (e) => {
+      this.store.update({ sortBy: e.target.value, page: 1 });
+      this.render();
+    });
+    this.on($id("paMediaLayout"), "change", (e) => {
+      this.store.update({ layoutMode: e.target.value, page: 1 });
+      this.render();
+    });
+    const gridBtn = $id("paGridViewBtn");
+    const listBtn = $id("paListViewBtn");
+    if (gridBtn) {
+      const parent = gridBtn.parentNode;
+      const newGridBtn = gridBtn.cloneNode(true);
+      parent.replaceChild(newGridBtn, gridBtn);
+      this.on(newGridBtn, "click", () => {
+        this.store.set("viewMode", "grid");
+        this.setViewModeFromStore();
+        this.render();
+      });
+    }
+    if (listBtn) {
+      const parent = listBtn.parentNode;
+      const newListBtn = listBtn.cloneNode(true);
+      parent.replaceChild(newListBtn, listBtn);
+      this.on(newListBtn, "click", () => {
+        this.store.set("viewMode", "list");
+        this.setViewModeFromStore();
+        this.render();
+      });
+    }
+    const selectModeBtn = $id("paSelectModeBtn");
+    if (selectModeBtn) {
+      this.on(selectModeBtn, "click", () => this.toggleSelectMode());
+    }
+    const selectAllBtn = $id("paBulkSelectAllBtn");
+    if (selectAllBtn) {
+      this.on(selectAllBtn, "click", () => this.selectAllVisible());
+    }
+    const clearBtn = $id("paBulkClearBtn");
+    if (clearBtn) {
+      this.on(clearBtn, "click", () => this.clearSelection());
+    }
+    const bulkDeleteBtn = $id("paBulkDeleteBtn");
+    if (bulkDeleteBtn) {
+      bulkDeleteBtn.type = "button";
+      this.on(bulkDeleteBtn, "click", () => this.requestBulkDelete());
+    }
+    this.onBus("bulk-confirm:close", () => this.closeBulkConfirm());
+    this.onBus("confirm:confirmed", ({ id, type }) => {
+      if (type === "media") void this.deleteById(id);
+    });
+    this.onBus("shortcut:new-item", ({ page }) => {
+      if (page === PAGE) this.openUploadPanel();
+    });
+  }
+}
+export {
+  FOLDER_META,
+  MediaModule,
+  SEED_MEDIA
+};
+//# sourceMappingURL=MediaModule.js.map

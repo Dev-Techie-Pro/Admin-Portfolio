@@ -1,7 +1,80 @@
-import{$id as i}from"../../utils/dom.js";import{authService as r}from"../../core/AuthService.js";const v="v1",y="pa_role_access_briefing",d={editor:{title:"Editor account",subtitle:"You can manage portfolio content and update selected settings.",icon:"ri-edit-box-line",allowed:["View every dashboard and content page","Create, edit, and delete projects, media, blog posts, and other CMS data","Moderate blog comments and likes on the Comments & Likes page","Update General, Notifications, Profile, and Security settings","Use appearance and customization options"],restricted:["User management or adding new staff accounts","System settings and database tools","Admin-only sidebar links stay hidden for your role"]},viewer:{title:"Viewer account",subtitle:"Your access is read-only across the portfolio dashboard.",icon:"ri-eye-line",allowed:["View dashboard stats and all content pages","Browse projects, media, messages, and other records","Update Notifications, Profile, and Security settings","Use appearance and customization options"],restricted:["Create, edit, or delete any content or records","Access the Comments & Likes moderation page","Dashboard add actions, bulk actions, and edit panels","Changing General site settings (view only)","User management and system settings"]}};let u=!1;function p(e,s){return`${y}_${v}_${e}_${s}`}function g(e,s){try{return localStorage.getItem(p(e,s))==="1"}catch{return!1}}function h(e,s){try{localStorage.setItem(p(e,s),"1")}catch{}}function A(e){return(e||"staff").replace(/_/g," ")}function f(e,s){return e.map(t=>`<li class="pa-role-access-item pa-role-access-item--${s}">
-      <i class="${s==="allowed"?"ri-check-line":"ri-close-line"}" aria-hidden="true"></i>
-      <span>${t}</span>
-    </li>`).join("")}function m(){if(i("paRoleAccessOverlay"))return;const e=document.createElement("div");e.className="pa-role-access-overlay",e.id="paRoleAccessOverlay",e.hidden=!0,e.setAttribute("role","dialog"),e.setAttribute("aria-modal","true"),e.setAttribute("aria-labelledby","paRoleAccessTitle"),e.innerHTML=`
+import { $id } from "../../utils/dom.js";
+import { authService } from "../../core/AuthService.js";
+const BRIEFING_VERSION = "v1";
+const STORAGE_PREFIX = "pa_role_access_briefing";
+const ROLE_BRIEFINGS = {
+  editor: {
+    title: "Editor account",
+    subtitle: "You can manage portfolio content and update selected settings.",
+    icon: "ri-edit-box-line",
+    allowed: [
+      "View every dashboard and content page",
+      "Create, edit, and delete projects, media, blog posts, and other CMS data",
+      "Moderate blog comments and likes on the Comments & Likes page",
+      "Update General, Notifications, Profile, and Security settings",
+      "Use appearance and customization options"
+    ],
+    restricted: [
+      "User management or adding new staff accounts",
+      "System settings and database tools",
+      "Admin-only sidebar links stay hidden for your role"
+    ]
+  },
+  viewer: {
+    title: "Viewer account",
+    subtitle: "Your access is read-only across the portfolio dashboard.",
+    icon: "ri-eye-line",
+    allowed: [
+      "View dashboard stats and all content pages",
+      "Browse projects, media, messages, and other records",
+      "Update Notifications, Profile, and Security settings",
+      "Use appearance and customization options"
+    ],
+    restricted: [
+      "Create, edit, or delete any content or records",
+      "Access the Comments & Likes moderation page",
+      "Dashboard add actions, bulk actions, and edit panels",
+      "Changing General site settings (view only)",
+      "User management and system settings"
+    ]
+  }
+};
+let bindingsReady = false;
+function storageKey(userId, role) {
+  return `${STORAGE_PREFIX}_${BRIEFING_VERSION}_${userId}_${role}`;
+}
+function hasSeenBriefing(userId, role) {
+  try {
+    return localStorage.getItem(storageKey(userId, role)) === "1";
+  } catch {
+    return false;
+  }
+}
+function markBriefingSeen(userId, role) {
+  try {
+    localStorage.setItem(storageKey(userId, role), "1");
+  } catch {
+  }
+}
+function formatRoleLabel(role) {
+  return (role || "staff").replace(/_/g, " ");
+}
+function renderList(items, variant) {
+  return items.map((item) => `<li class="pa-role-access-item pa-role-access-item--${variant}">
+      <i class="${variant === "allowed" ? "ri-check-line" : "ri-close-line"}" aria-hidden="true"></i>
+      <span>${item}</span>
+    </li>`).join("");
+}
+function ensureModalInDom() {
+  if ($id("paRoleAccessOverlay")) return;
+  const overlay = document.createElement("div");
+  overlay.className = "pa-role-access-overlay";
+  overlay.id = "paRoleAccessOverlay";
+  overlay.hidden = true;
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-labelledby", "paRoleAccessTitle");
+  overlay.innerHTML = `
     <div class="pa-role-access-box">
       <div class="pa-role-access-head">
         <div class="pa-role-access-icon" id="paRoleAccessIcon" aria-hidden="true">
@@ -27,4 +100,94 @@ import{$id as i}from"../../utils/dom.js";import{authService as r}from"../../core
         <p class="pa-role-access-note">These limits are enforced in the sidebar, settings, and API. To request a role change, open Settings \u2192 Security and use the "Request role update" form.</p>
         <button type="button" class="pa-btn pa-btn-primary w-100" id="paRoleAccessOk">Got it</button>
       </div>
-    </div>`,document.body.appendChild(e)}function b(){if(u)return;u=!0;const e=i("paRoleAccessOverlay"),s=i("paRoleAccessOk");if(!e||!s)return;const t=()=>{e.classList.remove("visible"),e.hidden=!0,document.body.classList.remove("pa-role-access-open"),e.dataset.userId="",e.dataset.role=""};s.addEventListener("click",()=>{const a=e.dataset.userId,o=e.dataset.role;a&&o&&h(a,o),t()}),e.addEventListener("click",a=>{a.target===e&&t()}),document.addEventListener("keydown",a=>{a.key==="Escape"&&e.classList.contains("visible")&&t()})}function R(e){const s=d[e];if(!s)return;const t=i("paRoleAccessIcon"),a=i("paRoleAccessEyebrow"),o=i("paRoleAccessTitle"),c=i("paRoleAccessSubtitle"),n=i("paRoleAccessAllowed"),l=i("paRoleAccessRestricted");t&&(t.innerHTML=`<i class="${s.icon}"></i>`),a&&(a.textContent=`${A(e)} access`),o&&(o.textContent=s.title),c&&(c.textContent=s.subtitle),n&&(n.innerHTML=f(s.allowed,"allowed")),l&&(l.innerHTML=f(s.restricted,"restricted"))}function w(e,s){m(),b();const t=i("paRoleAccessOverlay");t&&(R(s),t.dataset.userId=e,t.dataset.role=s,t.hidden=!1,t.classList.add("visible"),document.body.classList.add("pa-role-access-open"),i("paRoleAccessOk")?.focus())}async function S(e=null){if(typeof window>"u"||window.location.pathname.includes("/login"))return;let s=e?.id,t=e?.role;if(!t||!s)try{const a=await r.session();if(s=s||a?.user?.id,!t){const o=await r.getProfile().catch(()=>null);t=o?.role||a?.user?.role,s=s||o?.id}}catch{return}!s||!t||!d[t]||g(s,t)||requestAnimationFrame(()=>{w(s,t)})}function k(){m(),b()}export{k as initRoleAccessModal,S as maybeShowRoleAccessModal};
+    </div>`;
+  document.body.appendChild(overlay);
+}
+function bindModalEvents() {
+  if (bindingsReady) return;
+  bindingsReady = true;
+  const overlay = $id("paRoleAccessOverlay");
+  const okBtn = $id("paRoleAccessOk");
+  if (!overlay || !okBtn) return;
+  const close = () => {
+    overlay.classList.remove("visible");
+    overlay.hidden = true;
+    document.body.classList.remove("pa-role-access-open");
+    overlay.dataset.userId = "";
+    overlay.dataset.role = "";
+  };
+  okBtn.addEventListener("click", () => {
+    const userId = overlay.dataset.userId;
+    const role = overlay.dataset.role;
+    if (userId && role) markBriefingSeen(userId, role);
+    close();
+  });
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overlay.classList.contains("visible")) close();
+  });
+}
+function populateModal(role) {
+  const briefing = ROLE_BRIEFINGS[role];
+  if (!briefing) return;
+  const iconWrap = $id("paRoleAccessIcon");
+  const eyebrow = $id("paRoleAccessEyebrow");
+  const title = $id("paRoleAccessTitle");
+  const subtitle = $id("paRoleAccessSubtitle");
+  const allowed = $id("paRoleAccessAllowed");
+  const restricted = $id("paRoleAccessRestricted");
+  if (iconWrap) iconWrap.innerHTML = `<i class="${briefing.icon}"></i>`;
+  if (eyebrow) eyebrow.textContent = `${formatRoleLabel(role)} access`;
+  if (title) title.textContent = briefing.title;
+  if (subtitle) subtitle.textContent = briefing.subtitle;
+  if (allowed) allowed.innerHTML = renderList(briefing.allowed, "allowed");
+  if (restricted) restricted.innerHTML = renderList(briefing.restricted, "restricted");
+}
+function openModal(userId, role) {
+  ensureModalInDom();
+  bindModalEvents();
+  const overlay = $id("paRoleAccessOverlay");
+  if (!overlay) return;
+  populateModal(role);
+  overlay.dataset.userId = userId;
+  overlay.dataset.role = role;
+  overlay.hidden = false;
+  overlay.classList.add("visible");
+  document.body.classList.add("pa-role-access-open");
+  $id("paRoleAccessOk")?.focus();
+}
+async function maybeShowRoleAccessModal(profile = null) {
+  if (typeof window === "undefined") return;
+  if (window.location.pathname.includes("/login")) return;
+  let userId = profile?.id;
+  let role = profile?.role;
+  if (!role || !userId) {
+    try {
+      const session = await authService.session();
+      userId = userId || session?.user?.id;
+      if (!role) {
+        const loaded = await authService.getProfile().catch(() => null);
+        role = loaded?.role || session?.user?.role;
+        userId = userId || loaded?.id;
+      }
+    } catch {
+      return;
+    }
+  }
+  if (!userId || !role || !ROLE_BRIEFINGS[role]) return;
+  if (hasSeenBriefing(userId, role)) return;
+  requestAnimationFrame(() => {
+    openModal(userId, role);
+  });
+}
+function initRoleAccessModal() {
+  ensureModalInDom();
+  bindModalEvents();
+}
+export {
+  initRoleAccessModal,
+  maybeShowRoleAccessModal
+};
+//# sourceMappingURL=roleAccessModal.js.map

@@ -1,1 +1,49 @@
-import{storage as i}from"../core/StorageService.js";import{loadStackCatalog as y}from"./stackCatalog.js";import{resolveTechnologyByName as S}from"./technologyResolve.js";import{resolveToolByName as d}from"./toolResolve.js";function l(c,o){return{kind:c,id:Number(o.id),name:String(o.name)}}async function p(c,o){const n=String(c||"").trim();if(!n)return null;const a=n.toLowerCase(),s=await y(),e=s.find(t=>t.kind==="technology"&&t.name.toLowerCase()===a),r=s.find(t=>t.kind==="tool"&&t.name.toLowerCase()===a);if(e&&r)return o==="tool"?r:e;if(r)return r;if(e)return e;i.invalidate("pa_tools"),i.invalidate("pa_technologies");const[m,g]=await Promise.all([i.get("pa_tools",[]),i.get("pa_technologies",[])]),u=(Array.isArray(m)?m:[]).find(t=>String(t.name||"").toLowerCase()===a),f=(Array.isArray(g)?g:[]).find(t=>String(t.name||"").toLowerCase()===a);if(u)return l("tool",u);if(f)return l("technology",f);if(o==="tool"){const t=await d(n);return t?l("tool",t):null}if(o==="technology"){const t=await S(n);return t?l("technology",t):null}return null}export{p as resolveStackItemByName};
+import { storage } from "../core/StorageService.js";
+import { loadStackCatalog } from "./stackCatalog.js";
+import { resolveTechnologyByName } from "./technologyResolve.js";
+import { resolveToolByName } from "./toolResolve.js";
+function toStackItem(kind, row) {
+  return { kind, id: Number(row.id), name: String(row.name) };
+}
+async function resolveStackItemByName(name, preferredKind) {
+  const trimmed = String(name || "").trim();
+  if (!trimmed) return null;
+  const lower = trimmed.toLowerCase();
+  const catalog = await loadStackCatalog();
+  const techHit = catalog.find((i) => i.kind === "technology" && i.name.toLowerCase() === lower);
+  const toolHit = catalog.find((i) => i.kind === "tool" && i.name.toLowerCase() === lower);
+  if (techHit && toolHit) {
+    if (preferredKind === "tool") return toolHit;
+    if (preferredKind === "technology") return techHit;
+    return techHit;
+  }
+  if (toolHit) return toolHit;
+  if (techHit) return techHit;
+  storage.invalidate("pa_tools");
+  storage.invalidate("pa_technologies");
+  const [tools, technologies] = await Promise.all([
+    storage.get("pa_tools", []),
+    storage.get("pa_technologies", [])
+  ]);
+  const toolRow = (Array.isArray(tools) ? tools : []).find(
+    (t) => String(t.name || "").toLowerCase() === lower
+  );
+  const techRow = (Array.isArray(technologies) ? technologies : []).find(
+    (t) => String(t.name || "").toLowerCase() === lower
+  );
+  if (toolRow) return toStackItem("tool", toolRow);
+  if (techRow) return toStackItem("technology", techRow);
+  if (preferredKind === "tool") {
+    const created = await resolveToolByName(trimmed);
+    return created ? toStackItem("tool", created) : null;
+  }
+  if (preferredKind === "technology") {
+    const created = await resolveTechnologyByName(trimmed);
+    return created ? toStackItem("technology", created) : null;
+  }
+  return null;
+}
+export {
+  resolveStackItemByName
+};
+//# sourceMappingURL=stackResolve.js.map

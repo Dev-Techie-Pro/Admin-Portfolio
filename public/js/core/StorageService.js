@@ -1,1 +1,331 @@
-import{writeAppearanceCache as c}from"../utils/appearanceCache.js";import{persistentCache as o,isEntryStale as f}from"./PersistentCache.js";import{eventBus as g}from"./EventBus.js";import{canManageSiteSettings as d}from"./cms-access.js";import{isSiteSettingsStorageKey as u}from"../../lib/auth/capabilities.js";class h extends Error{constructor(t,a){super(a||`Storage request failed for "${t}"`),this.name="StorageQuotaError",this.key=t}}const w=["pa_projects","pa_blog_posts","pa_testimonials","pa_tools","pa_contact_messages"],_="pa_recent_activities_scope",p={pa_projects:"/api/projects",pa_category_meta:"/api/categories",pa_technologies:"/api/technologies",pa_media_library:"/api/media",pa_testimonials:"/api/testimonials",pa_blog_posts:"/api/blog-posts?full=1",pa_experience:"/api/experience",pa_contact_messages:"/api/contact-messages?all=1",pa_recent_activities:"/api/recent-activities",pa_tools:"/api/tools",pa_tool_categories:"/api/tool-categories",pa_blog_categories:"/api/blog-categories",pa_project_tag_labels:"/api/project-tags",pa_project_technology_usage:"/api/project-technologies",pa_blog_tags:"/api/blog-tags",pa_project_tags:"/api/project-tags",pa_settings:"/api/settings",appearance_settings_v2:"/api/appearance",pa_msg_column_visibility:"/api/preferences/contact-columns",pa_notification_preferences:"/api/notification-preferences",pa_notifications:"/api/notifications"};class m{constructor(){this._cache=new Map,this._meta=new Map,this._inflight=new Map,this._revalidating=new Set,this._readyPromise=Promise.resolve(),this._bootstrapPromise=null}isBootstrapPending(){const a=(typeof window<"u"?window.__paPrefetch:null)?.__bootstrap;return!!(a&&typeof a.then=="function")}async waitForBootstrap(){!this.isBootstrapPending()&&!this._bootstrapPromise||await this._ensureBootstrapHydrated()}async _persist(t,a,e=Date.now()){this._cache.set(t,a),this._meta.set(t,e),t==="appearance_settings_v2"&&c(a),await o.set(t,a,e)}reconcileRecentActivitiesScope(t){const a=t?.user;if(!a?.id)return;const e=a.capabilities?.canViewAllStaffActivity===!0,i=`${a.id}:${e?"all":"self"}`;try{const s=sessionStorage.getItem(_);s&&s!==i&&this.invalidate("pa_recent_activities"),sessionStorage.setItem(_,i)}catch{}}async _persistBootstrapPayload(t){if(!t)return;const a=t.fetchedAt?Date.parse(t.fetchedAt):Date.now(),e=Object.entries(t.data||{}).filter(([,i])=>i!=null).map(([i,s])=>({key:i,value:s,fetchedAt:a}));t.appearance!==null&&t.appearance!==void 0&&e.push({key:"appearance_settings_v2",value:t.appearance,fetchedAt:a}),e.forEach(({key:i,value:s})=>{this._cache.set(i,s),this._meta.set(i,a),i==="appearance_settings_v2"&&c(s)}),await o.setMany(e,a)}async _ensureBootstrapHydrated(){const t=typeof window<"u"?window.__paPrefetch:null,a=t?.__bootstrap;!a||typeof a.then!="function"||(this._bootstrapPromise||(this._bootstrapPromise=a.then(async e=>{e&&(Object.entries(e.data||{}).forEach(([i,s])=>{s!=null&&this._cache.set(i,s)}),e.appearance!==null&&e.appearance!==void 0&&(this._cache.set("appearance_settings_v2",e.appearance),c(e.appearance)),e.session&&(window.__paBootstrapSession=e.session,this.reconcileRecentActivitiesScope(e.session)),e.profile&&(window.__paBootstrapProfile=e.profile),await this._persistBootstrapPayload(e),delete t.__bootstrap)}).catch(()=>{})),await this._bootstrapPromise)}async hydrateFromPersistentCache(t){const a=Array.isArray(t)?t:[t];if(!a.length)return;const e=await o.getMany(a);Object.entries(e).forEach(([i,s])=>{s.value===null||s.value===void 0||(this._cache.set(i,s.value),this._meta.set(i,s.fetchedAt||0),i==="appearance_settings_v2"&&c(s.value))})}_scheduleRevalidate(t,a,e){if(!a||this.isBootstrapPending()||this._revalidating.has(t))return;const i=this._meta.get(t);i&&!f(i,t)||(this._revalidating.add(t),this._fetchRemote(t,a,e,{background:!0}).catch(()=>{}).finally(()=>this._revalidating.delete(t)))}ready(){return this._readyPromise}prefetch(t){(Array.isArray(t)?t:[t]).forEach(e=>{this._cache.has(e)||this._inflight.has(e)||this.get(e).catch(()=>{})})}_consumeBootPrefetch(t){const a=typeof window<"u"?window.__paPrefetch:null,e=a?.[t];return!e||typeof e.then!="function"?null:(delete a[t],e)}async _fetchRemote(t,a,e,{background:i=!1}={}){try{const s=await fetch(a,{method:"GET",headers:{Accept:"application/json"},credentials:"same-origin"});if(s.status===401)return i||(window.location.href="/login"),e;if(!s.ok)throw new Error(await s.text());const n=await s.json();return n==null?e:(await this._persist(t,n),n)}catch(s){return i||console.warn(`[StorageService] get("${t}") failed, using fallback:`,s),e}}async get(t,a=null){const e=p[t];if(!e)return console.warn(`[StorageService] unknown key "${t}"`),a;if(this._cache.has(t))return this._scheduleRevalidate(t,e,a),this._cache.get(t);if(this._inflight.has(t))return this._inflight.get(t);const i=(async()=>{const s=await o.get(t);if(s?.value!==null&&s?.value!==void 0)return this._cache.set(t,s.value),this._meta.set(t,s.fetchedAt||0),t==="appearance_settings_v2"&&c(s.value),this._scheduleRevalidate(t,e,a),s.value;if(await this._ensureBootstrapHydrated(),this._cache.has(t))return this._scheduleRevalidate(t,e,a),this._cache.get(t);const n=this._consumeBootPrefetch(t);if(n)try{const r=await n;if(r!=null)return await this._persist(t,r),r}catch{}return this._fetchRemote(t,e,a)})();this._inflight.set(t,i);try{return await i}finally{this._inflight.delete(t)}}async persistLocal(t,a,e=Date.now()){await this._persist(t,a,e)}async set(t,a){const e=p[t];if(!e)throw new Error(`Unknown storage key: ${t}`);if(u(t)&&!d())throw new h(t,"Only administrators can change site settings.");this._cache.set(t,a),t==="appearance_settings_v2"&&c(a);try{const i=await fetch(e,{method:"PUT",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(a),credentials:"same-origin"});if(i.status===401)throw window.location.href="/login",new h(t);const s=await i.text();if(!i.ok){let r=s;try{r=JSON.parse(s).error||s}catch{}throw new h(t,r)}let n=null;try{n=s?JSON.parse(s):null}catch{n=null}t==="pa_projects"||t==="pa_blog_posts"?this.invalidate("pa_media_library"):t==="pa_media_library"&&n?.propagation?.changed&&w.forEach(r=>this.invalidate(r)),await this._persist(t,a)}catch(i){throw this._cache.delete(t),this._meta.delete(t),i instanceof h?i:new h(t,i?.message)}}async remove(t){this._cache.delete(t),this._meta.delete(t),await o.delete(t),await this.set(t,Array.isArray(await this.get(t,[]))?[]:{})}async getMany(t,a=null){const e={};return await Promise.all(t.map(async i=>{e[i]=await this.get(i,a)})),e}async setMany(t){await Promise.all(Object.entries(t).map(([a,e])=>this.set(a,e)))}invalidate(t){this._cache.delete(t),this._meta.delete(t),o.delete(t).catch(()=>{}),g.emit("storage:invalidated",t)}async revalidate(t,a=null){const e=p[t];if(!e)throw new Error(`Unknown storage key: ${t}`);return this._cache.delete(t),this._meta.delete(t),await o.delete(t),this._fetchRemote(t,e,a,{background:!1})}clearCache(){this._cache.clear(),this._meta.clear()}async clearPersistentCache(){this.clearCache(),await o.clear()}}const j=new m;export{h as StorageQuotaError,m as StorageService,j as storage};
+import { writeAppearanceCache } from "../utils/appearanceCache.js";
+import { persistentCache, isEntryStale } from "./PersistentCache.js";
+import { eventBus } from "./EventBus.js";
+import { canManageSiteSettings } from "./cms-access.js";
+import { isSiteSettingsStorageKey } from "../../lib/auth/capabilities.js";
+class StorageQuotaError extends Error {
+  constructor(key, detail) {
+    super(detail || `Storage request failed for "${key}"`);
+    this.name = "StorageQuotaError";
+    this.key = key;
+  }
+}
+const MEDIA_LINKED_KEYS = [
+  "pa_projects",
+  "pa_blog_posts",
+  "pa_testimonials",
+  "pa_tools",
+  "pa_contact_messages"
+];
+const RECENT_ACTIVITIES_SCOPE_KEY = "pa_recent_activities_scope";
+const REMOTE_ROUTES = {
+  pa_projects: "/api/projects",
+  pa_category_meta: "/api/categories",
+  pa_technologies: "/api/technologies",
+  pa_media_library: "/api/media",
+  pa_testimonials: "/api/testimonials",
+  pa_blog_posts: "/api/blog-posts?full=1",
+  pa_experience: "/api/experience",
+  pa_contact_messages: "/api/contact-messages?all=1",
+  pa_recent_activities: "/api/recent-activities",
+  pa_tools: "/api/tools",
+  pa_tool_categories: "/api/tool-categories",
+  pa_blog_categories: "/api/blog-categories",
+  pa_project_tag_labels: "/api/project-tags",
+  pa_project_technology_usage: "/api/project-technologies",
+  pa_blog_tags: "/api/blog-tags",
+  pa_project_tags: "/api/project-tags",
+  pa_settings: "/api/settings",
+  appearance_settings_v2: "/api/appearance",
+  pa_msg_column_visibility: "/api/preferences/contact-columns",
+  pa_notification_preferences: "/api/notification-preferences",
+  pa_notifications: "/api/notifications"
+};
+class StorageService {
+  constructor() {
+    this._cache = /* @__PURE__ */ new Map();
+    this._meta = /* @__PURE__ */ new Map();
+    this._inflight = /* @__PURE__ */ new Map();
+    this._revalidating = /* @__PURE__ */ new Set();
+    this._readyPromise = Promise.resolve();
+    this._bootstrapPromise = null;
+  }
+  isBootstrapPending() {
+    const bag = typeof window !== "undefined" ? window.__paPrefetch : null;
+    const pending = bag?.__bootstrap;
+    return !!(pending && typeof pending.then === "function");
+  }
+  /** Wait for the cold-load bootstrap request to finish and persist fresh data. */
+  async waitForBootstrap() {
+    if (!this.isBootstrapPending() && !this._bootstrapPromise) return;
+    await this._ensureBootstrapHydrated();
+  }
+  async _persist(key, value, fetchedAt = Date.now()) {
+    this._cache.set(key, value);
+    this._meta.set(key, fetchedAt);
+    if (key === "appearance_settings_v2") writeAppearanceCache(value);
+    await persistentCache.set(key, value, fetchedAt);
+  }
+  /** Drop scoped activity cache when a different user or scope signs in on this browser. */
+  reconcileRecentActivitiesScope(session) {
+    const user = session?.user;
+    if (!user?.id) return;
+    const scopeAll = user.capabilities?.canViewAllStaffActivity === true;
+    const marker = `${user.id}:${scopeAll ? "all" : "self"}`;
+    try {
+      const prev = sessionStorage.getItem(RECENT_ACTIVITIES_SCOPE_KEY);
+      if (prev && prev !== marker) {
+        this.invalidate("pa_recent_activities");
+      }
+      sessionStorage.setItem(RECENT_ACTIVITIES_SCOPE_KEY, marker);
+    } catch {
+    }
+  }
+  async _persistBootstrapPayload(payload) {
+    if (!payload) return;
+    const fetchedAt = payload.fetchedAt ? Date.parse(payload.fetchedAt) : Date.now();
+    const entries = Object.entries(payload.data || {}).filter(([, value]) => value !== null && value !== void 0).map(([key, value]) => ({ key, value, fetchedAt }));
+    if (payload.appearance !== null && payload.appearance !== void 0) {
+      entries.push({ key: "appearance_settings_v2", value: payload.appearance, fetchedAt });
+    }
+    entries.forEach(({ key, value }) => {
+      this._cache.set(key, value);
+      this._meta.set(key, fetchedAt);
+      if (key === "appearance_settings_v2") writeAppearanceCache(value);
+    });
+    await persistentCache.setMany(entries, fetchedAt);
+  }
+  async _ensureBootstrapHydrated() {
+    const bag = typeof window !== "undefined" ? window.__paPrefetch : null;
+    const pending = bag?.__bootstrap;
+    if (!pending || typeof pending.then !== "function") return;
+    if (!this._bootstrapPromise) {
+      this._bootstrapPromise = pending.then(async (payload) => {
+        if (!payload) return;
+        Object.entries(payload.data || {}).forEach(([key, value]) => {
+          if (value !== null && value !== void 0) this._cache.set(key, value);
+        });
+        if (payload.appearance !== null && payload.appearance !== void 0) {
+          this._cache.set("appearance_settings_v2", payload.appearance);
+          writeAppearanceCache(payload.appearance);
+        }
+        if (payload.session) {
+          window.__paBootstrapSession = payload.session;
+          this.reconcileRecentActivitiesScope(payload.session);
+        }
+        if (payload.profile) window.__paBootstrapProfile = payload.profile;
+        await this._persistBootstrapPayload(payload);
+        delete bag.__bootstrap;
+      }).catch(() => {
+      });
+    }
+    await this._bootstrapPromise;
+  }
+  /** Load cached CMS data from IndexedDB into memory before page modules run. */
+  async hydrateFromPersistentCache(keys) {
+    const list = Array.isArray(keys) ? keys : [keys];
+    if (!list.length) return;
+    const entries = await persistentCache.getMany(list);
+    Object.entries(entries).forEach(([key, entry]) => {
+      if (entry.value === null || entry.value === void 0) return;
+      this._cache.set(key, entry.value);
+      this._meta.set(key, entry.fetchedAt || 0);
+      if (key === "appearance_settings_v2") writeAppearanceCache(entry.value);
+    });
+  }
+  _scheduleRevalidate(key, route, fallback) {
+    if (!route) return;
+    if (this.isBootstrapPending()) return;
+    if (this._revalidating.has(key)) return;
+    const fetchedAt = this._meta.get(key);
+    if (fetchedAt && !isEntryStale(fetchedAt, key)) return;
+    this._revalidating.add(key);
+    this._fetchRemote(key, route, fallback, { background: true }).catch(() => {
+    }).finally(() => this._revalidating.delete(key));
+  }
+  ready() {
+    return this._readyPromise;
+  }
+  /** Fire-and-forget parallel warm-up for one or more keys. */
+  prefetch(keys) {
+    const list = Array.isArray(keys) ? keys : [keys];
+    list.forEach((key) => {
+      if (this._cache.has(key) || this._inflight.has(key)) return;
+      this.get(key).catch(() => {
+      });
+    });
+  }
+  _consumeBootPrefetch(key) {
+    const bag = typeof window !== "undefined" ? window.__paPrefetch : null;
+    const pending = bag?.[key];
+    if (!pending || typeof pending.then !== "function") return null;
+    delete bag[key];
+    return pending;
+  }
+  async _fetchRemote(key, route, fallback, { background = false } = {}) {
+    try {
+      const res = await fetch(route, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        credentials: "same-origin"
+      });
+      if (res.status === 401) {
+        if (!background) window.location.href = "/login";
+        return fallback;
+      }
+      if (!res.ok) throw new Error(await res.text());
+      const value = await res.json();
+      if (value === null || value === void 0) return fallback;
+      await this._persist(key, value);
+      return value;
+    } catch (err) {
+      if (!background) {
+        console.warn(`[StorageService] get("${key}") failed, using fallback:`, err);
+      }
+      return fallback;
+    }
+  }
+  async get(key, fallback = null) {
+    const route = REMOTE_ROUTES[key];
+    if (!route) {
+      console.warn(`[StorageService] unknown key "${key}"`);
+      return fallback;
+    }
+    if (this._cache.has(key)) {
+      this._scheduleRevalidate(key, route, fallback);
+      return this._cache.get(key);
+    }
+    if (this._inflight.has(key)) return this._inflight.get(key);
+    const request = (async () => {
+      const persisted = await persistentCache.get(key);
+      if (persisted?.value !== null && persisted?.value !== void 0) {
+        this._cache.set(key, persisted.value);
+        this._meta.set(key, persisted.fetchedAt || 0);
+        if (key === "appearance_settings_v2") writeAppearanceCache(persisted.value);
+        this._scheduleRevalidate(key, route, fallback);
+        return persisted.value;
+      }
+      await this._ensureBootstrapHydrated();
+      if (this._cache.has(key)) {
+        this._scheduleRevalidate(key, route, fallback);
+        return this._cache.get(key);
+      }
+      const bootPrefetch = this._consumeBootPrefetch(key);
+      if (bootPrefetch) {
+        try {
+          const value = await bootPrefetch;
+          if (value !== null && value !== void 0) {
+            await this._persist(key, value);
+            return value;
+          }
+        } catch {
+        }
+      }
+      return this._fetchRemote(key, route, fallback);
+    })();
+    this._inflight.set(key, request);
+    try {
+      return await request;
+    } finally {
+      this._inflight.delete(key);
+    }
+  }
+  /** Persist to memory + IndexedDB only (after a dedicated API mutation). */
+  async persistLocal(key, value, fetchedAt = Date.now()) {
+    await this._persist(key, value, fetchedAt);
+  }
+  async set(key, value) {
+    const route = REMOTE_ROUTES[key];
+    if (!route) throw new Error(`Unknown storage key: ${key}`);
+    if (isSiteSettingsStorageKey(key) && !canManageSiteSettings()) {
+      throw new StorageQuotaError(key, "Only administrators can change site settings.");
+    }
+    this._cache.set(key, value);
+    if (key === "appearance_settings_v2") writeAppearanceCache(value);
+    try {
+      const res = await fetch(route, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(value),
+        credentials: "same-origin"
+      });
+      if (res.status === 401) {
+        window.location.href = "/login";
+        throw new StorageQuotaError(key);
+      }
+      const raw = await res.text();
+      if (!res.ok) {
+        let detail = raw;
+        try {
+          const parsed = JSON.parse(raw);
+          detail = parsed.error || raw;
+        } catch {
+        }
+        throw new StorageQuotaError(key, detail);
+      }
+      let payload = null;
+      try {
+        payload = raw ? JSON.parse(raw) : null;
+      } catch {
+        payload = null;
+      }
+      if (key === "pa_projects" || key === "pa_blog_posts") {
+        this.invalidate("pa_media_library");
+      } else if (key === "pa_media_library" && payload?.propagation?.changed) {
+        MEDIA_LINKED_KEYS.forEach((linkedKey) => this.invalidate(linkedKey));
+      }
+      await this._persist(key, value);
+    } catch (err) {
+      this._cache.delete(key);
+      this._meta.delete(key);
+      throw err instanceof StorageQuotaError ? err : new StorageQuotaError(key, err?.message);
+    }
+  }
+  async remove(key) {
+    this._cache.delete(key);
+    this._meta.delete(key);
+    await persistentCache.delete(key);
+    await this.set(key, Array.isArray(await this.get(key, [])) ? [] : {});
+  }
+  async getMany(keys, fallback = null) {
+    const out = {};
+    await Promise.all(keys.map(async (k) => {
+      out[k] = await this.get(k, fallback);
+    }));
+    return out;
+  }
+  async setMany(entries) {
+    await Promise.all(Object.entries(entries).map(([key, value]) => this.set(key, value)));
+  }
+  invalidate(key) {
+    this._cache.delete(key);
+    this._meta.delete(key);
+    persistentCache.delete(key).catch(() => {
+    });
+    eventBus.emit("storage:invalidated", key);
+  }
+  /** Drop local caches for a key and load the latest value from the API. */
+  async revalidate(key, fallback = null) {
+    const route = REMOTE_ROUTES[key];
+    if (!route) throw new Error(`Unknown storage key: ${key}`);
+    this._cache.delete(key);
+    this._meta.delete(key);
+    await persistentCache.delete(key);
+    return this._fetchRemote(key, route, fallback, { background: false });
+  }
+  clearCache() {
+    this._cache.clear();
+    this._meta.clear();
+  }
+  async clearPersistentCache() {
+    this.clearCache();
+    await persistentCache.clear();
+  }
+}
+const storage = new StorageService();
+export {
+  StorageQuotaError,
+  StorageService,
+  storage
+};
+//# sourceMappingURL=StorageService.js.map

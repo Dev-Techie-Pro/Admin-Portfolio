@@ -1,1 +1,215 @@
-import{promptUrl as p}from"./url-prompt.js";function L(e){const l=window.getSelection();if(!l?.rangeCount)return null;const t=l.getRangeAt(0);return e.contains(t.commonAncestorContainer)?t.cloneRange():null}function g(e,l){if(!l)return!1;e.focus();const t=window.getSelection();return t?(t.removeAllRanges(),t.addRange(l),!0):!1}function E(e){const l=window.getSelection();if(!l?.rangeCount)return"";let t=l.anchorNode;t?.nodeType===3&&(t=t.parentElement);const n=t?.closest?.("a");return n&&e.contains(n)&&(n.getAttribute("href")||n.href)||""}function x(e,l,t){g(e,t);const n=window.getSelection();if(!l){document.execCommand("unlink",!1,null);return}const r=n?.rangeCount?n.getRangeAt(0):t;let c=r?.commonAncestorContainer;c?.nodeType===3&&(c=c.parentElement);const o=c?.closest?.("a");if(o&&e.contains(o)){o.href=l,o.target="_blank",o.rel="noopener noreferrer";return}if(r&&!r.collapsed){document.execCommand("createLink",!1,l);return}const s=document.createElement("a");if(s.href=l,s.textContent=l,s.target="_blank",s.rel="noopener noreferrer",r){r.deleteContents(),r.insertNode(s);const a=document.createRange();a.setStartAfter(s),a.collapse(!0),n?.removeAllRanges(),n?.addRange(a)}else e.appendChild(document.createTextNode(" ")),e.appendChild(s),e.appendChild(document.createTextNode(" "))}let u=null,m=!1;function y(){document.body.classList.toggle("pa-rte-fullscreen-active",!!document.querySelector(".pa-rte--fullscreen"))}function f(e,l,t,n){const r=t.querySelector("i");n?e.classList.contains("pa-rte--fullscreen")||(u={parent:e.parentNode,next:e.nextSibling},document.body.appendChild(e),e.classList.add("pa-rte--fullscreen")):e.classList.contains("pa-rte--fullscreen")&&(e.classList.remove("pa-rte--fullscreen"),u?.parent&&u.parent.insertBefore(e,u.next),u=null),r&&(r.className=n?"ri-fullscreen-exit-line":"ri-fullscreen-line"),t.title=n?"Exit full screen":"Full screen",t.setAttribute("aria-label",t.title),t.setAttribute("aria-pressed",String(n)),y(),n&&l.focus()}function S(e,l,t){const n=!e.classList.contains("pa-rte--fullscreen");n&&document.querySelectorAll(".pa-rte--fullscreen").forEach(r=>{if(r===e)return;const c=r.querySelector(".pa-rte-fullscreen-btn"),o=r.querySelector(".pa-rte-body");c&&o&&f(r,o,c,!1)}),f(e,l,t,n)}function h(e,l){const t=e.querySelector(".pa-rte-toolbar");if(!t||t.querySelector(".pa-rte-fullscreen-wrap"))return;const n=document.createElement("div");n.className="pa-rte-fullscreen-wrap";const r=document.createElement("button");r.type="button",r.className="pa-rte-btn pa-rte-fullscreen-btn",r.title="Full screen",r.setAttribute("aria-label","Full screen"),r.setAttribute("aria-pressed","false"),r.innerHTML='<i class="ri-fullscreen-line"></i>',r.addEventListener("click",c=>{c.preventDefault(),S(e,l,r)}),n.appendChild(r),t.appendChild(n),m||(m=!0,document.addEventListener("keydown",c=>{if(c.key!=="Escape")return;const o=document.querySelector(".pa-rte--fullscreen");if(!o)return;const i=o.querySelector(".pa-rte-fullscreen-btn"),s=o.querySelector(".pa-rte-body");i&&s&&f(o,s,i,!1)}))}function T(e,l){const t=document.getElementById(e),n=document.getElementById(l);!t||!n||(h(t,n),t.querySelectorAll(".pa-rte-btn[data-cmd]").forEach(r=>{r.addEventListener("click",c=>{c.preventDefault(),n.focus();const o=r.dataset.cmd;if(o==="createLink"){const i=L(n),s=E(n);p({defaultValue:s,title:s?"Edit link":"Insert link",subtitle:s?"Update the URL or remove the link from the selected text.":"Add a web address for the selected text.",confirmLabel:s?"Save link":"Insert link"}).then(a=>{a!==null&&(x(n,a,i),d(t))});return}else o==="formatBlock"?document.execCommand("formatBlock",!1,r.dataset.value||"blockquote"):document.execCommand(o,!1,null);d(t)})}),n.addEventListener("keyup",()=>d(t)),n.addEventListener("mouseup",()=>d(t)),n.addEventListener("paste",r=>{r.preventDefault();const c=(r.clipboardData||window.clipboardData).getData("text/plain");document.execCommand("insertText",!1,c)}))}function k(e){return e?.innerHTML?.trim()||""}function R(e,l){e&&(e.innerHTML=l||"",e.dispatchEvent(new Event("input",{bubbles:!0})))}function d(e){const l={bold:"bold",italic:"italic",underline:"underline",insertUnorderedList:"insertUnorderedList",insertOrderedList:"insertOrderedList"};e.querySelectorAll(".pa-rte-btn[data-cmd]").forEach(t=>{const n=l[t.dataset.cmd];if(n)try{t.classList.toggle("active",document.queryCommandState(n))}catch{}})}export{k as getRteHtml,R as setRteHtml,T as setupRte,d as updateRteButtonStates};
+import { promptUrl } from "./url-prompt.js";
+function saveSelection(body) {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount) return null;
+  const range = sel.getRangeAt(0);
+  if (!body.contains(range.commonAncestorContainer)) return null;
+  return range.cloneRange();
+}
+function restoreSelection(body, savedRange) {
+  if (!savedRange) return false;
+  body.focus();
+  const sel = window.getSelection();
+  if (!sel) return false;
+  sel.removeAllRanges();
+  sel.addRange(savedRange);
+  return true;
+}
+function getSelectedLinkUrl(body) {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount) return "";
+  let node = sel.anchorNode;
+  if (node?.nodeType === 3) node = node.parentElement;
+  const anchor = node?.closest?.("a");
+  if (anchor && body.contains(anchor)) {
+    return anchor.getAttribute("href") || anchor.href || "";
+  }
+  return "";
+}
+function applyLink(body, url, savedRange) {
+  restoreSelection(body, savedRange);
+  const sel = window.getSelection();
+  if (!url) {
+    document.execCommand("unlink", false, null);
+    return;
+  }
+  const range = sel?.rangeCount ? sel.getRangeAt(0) : savedRange;
+  let node = range?.commonAncestorContainer;
+  if (node?.nodeType === 3) node = node.parentElement;
+  const existingAnchor = node?.closest?.("a");
+  if (existingAnchor && body.contains(existingAnchor)) {
+    existingAnchor.href = url;
+    existingAnchor.target = "_blank";
+    existingAnchor.rel = "noopener noreferrer";
+    return;
+  }
+  const hasTextSelection = range && !range.collapsed;
+  if (hasTextSelection) {
+    document.execCommand("createLink", false, url);
+    return;
+  }
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.textContent = url;
+  anchor.target = "_blank";
+  anchor.rel = "noopener noreferrer";
+  if (range) {
+    range.deleteContents();
+    range.insertNode(anchor);
+    const after = document.createRange();
+    after.setStartAfter(anchor);
+    after.collapse(true);
+    sel?.removeAllRanges();
+    sel?.addRange(after);
+  } else {
+    body.appendChild(document.createTextNode(" "));
+    body.appendChild(anchor);
+    body.appendChild(document.createTextNode(" "));
+  }
+}
+let rteFullscreenRestore = null;
+let rteFullscreenEscapeBound = false;
+function syncRteFullscreenBodyLock() {
+  document.body.classList.toggle(
+    "pa-rte-fullscreen-active",
+    !!document.querySelector(".pa-rte--fullscreen")
+  );
+}
+function setRteFullscreen(wrap, body, btn, active) {
+  const icon = btn.querySelector("i");
+  if (active) {
+    if (!wrap.classList.contains("pa-rte--fullscreen")) {
+      rteFullscreenRestore = { parent: wrap.parentNode, next: wrap.nextSibling };
+      document.body.appendChild(wrap);
+      wrap.classList.add("pa-rte--fullscreen");
+    }
+  } else if (wrap.classList.contains("pa-rte--fullscreen")) {
+    wrap.classList.remove("pa-rte--fullscreen");
+    if (rteFullscreenRestore?.parent) {
+      rteFullscreenRestore.parent.insertBefore(wrap, rteFullscreenRestore.next);
+    }
+    rteFullscreenRestore = null;
+  }
+  if (icon) {
+    icon.className = active ? "ri-fullscreen-exit-line" : "ri-fullscreen-line";
+  }
+  btn.title = active ? "Exit full screen" : "Full screen";
+  btn.setAttribute("aria-label", btn.title);
+  btn.setAttribute("aria-pressed", String(active));
+  syncRteFullscreenBodyLock();
+  if (active) body.focus();
+}
+function toggleRteFullscreen(wrap, body, btn) {
+  const active = !wrap.classList.contains("pa-rte--fullscreen");
+  if (active) {
+    document.querySelectorAll(".pa-rte--fullscreen").forEach((other) => {
+      if (other === wrap) return;
+      const otherBtn = other.querySelector(".pa-rte-fullscreen-btn");
+      const otherBody = other.querySelector(".pa-rte-body");
+      if (otherBtn && otherBody) setRteFullscreen(other, otherBody, otherBtn, false);
+    });
+  }
+  setRteFullscreen(wrap, body, btn, active);
+}
+function ensureRteFullscreenButton(wrap, body) {
+  const toolbar = wrap.querySelector(".pa-rte-toolbar");
+  if (!toolbar || toolbar.querySelector(".pa-rte-fullscreen-wrap")) return;
+  const group = document.createElement("div");
+  group.className = "pa-rte-fullscreen-wrap";
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "pa-rte-btn pa-rte-fullscreen-btn";
+  btn.title = "Full screen";
+  btn.setAttribute("aria-label", "Full screen");
+  btn.setAttribute("aria-pressed", "false");
+  btn.innerHTML = '<i class="ri-fullscreen-line"></i>';
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    toggleRteFullscreen(wrap, body, btn);
+  });
+  group.appendChild(btn);
+  toolbar.appendChild(group);
+  if (!rteFullscreenEscapeBound) {
+    rteFullscreenEscapeBound = true;
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      const full = document.querySelector(".pa-rte--fullscreen");
+      if (!full) return;
+      const fullBtn = full.querySelector(".pa-rte-fullscreen-btn");
+      const fullBody = full.querySelector(".pa-rte-body");
+      if (fullBtn && fullBody) setRteFullscreen(full, fullBody, fullBtn, false);
+    });
+  }
+}
+function setupRte(wrapId, bodyId) {
+  const wrap = document.getElementById(wrapId);
+  const body = document.getElementById(bodyId);
+  if (!wrap || !body) return;
+  ensureRteFullscreenButton(wrap, body);
+  wrap.querySelectorAll(".pa-rte-btn[data-cmd]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      body.focus();
+      const cmd = btn.dataset.cmd;
+      if (cmd === "createLink") {
+        const savedRange = saveSelection(body);
+        const existing = getSelectedLinkUrl(body);
+        void promptUrl({
+          defaultValue: existing,
+          title: existing ? "Edit link" : "Insert link",
+          subtitle: existing ? "Update the URL or remove the link from the selected text." : "Add a web address for the selected text.",
+          confirmLabel: existing ? "Save link" : "Insert link"
+        }).then((url) => {
+          if (url === null) return;
+          applyLink(body, url, savedRange);
+          updateRteButtonStates(wrap);
+        });
+        return;
+      } else if (cmd === "formatBlock") {
+        document.execCommand("formatBlock", false, btn.dataset.value || "blockquote");
+      } else {
+        document.execCommand(cmd, false, null);
+      }
+      updateRteButtonStates(wrap);
+    });
+  });
+  body.addEventListener("keyup", () => updateRteButtonStates(wrap));
+  body.addEventListener("mouseup", () => updateRteButtonStates(wrap));
+  body.addEventListener("paste", (e) => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData("text/plain");
+    document.execCommand("insertText", false, text);
+  });
+}
+function getRteHtml(body) {
+  return body?.innerHTML?.trim() || "";
+}
+function setRteHtml(body, html) {
+  if (!body) return;
+  body.innerHTML = html || "";
+  body.dispatchEvent(new Event("input", { bubbles: true }));
+}
+function updateRteButtonStates(wrap) {
+  const map = {
+    bold: "bold",
+    italic: "italic",
+    underline: "underline",
+    insertUnorderedList: "insertUnorderedList",
+    insertOrderedList: "insertOrderedList"
+  };
+  wrap.querySelectorAll(".pa-rte-btn[data-cmd]").forEach((btn) => {
+    const cmd = map[btn.dataset.cmd];
+    if (!cmd) return;
+    try {
+      btn.classList.toggle("active", document.queryCommandState(cmd));
+    } catch {
+    }
+  });
+}
+export {
+  getRteHtml,
+  setRteHtml,
+  setupRte,
+  updateRteButtonStates
+};
+//# sourceMappingURL=rte.js.map

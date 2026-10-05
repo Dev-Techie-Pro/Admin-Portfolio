@@ -1,11 +1,577 @@
-import{$id as t,$all as h,escapeHtml as d}from"../../utils/dom.js";import{syncPaSelect as g}from"../../utils/paSelect.js";import{slugify as C}from"../../utils/strings.js";import{setupRte as T,getRteHtml as y,setRteHtml as v}from"../../utils/rte.js";import{addChip as f,populateChips as S}from"../../utils/chips.js";import{requestDelete as M}from"../shell/confirm.js";import{canManageContent as m}from"../../core/cms-access.js";class ${constructor(e){this.wired=!1;this.wsSlugTouched=!1;this.wsImageData=null;this.wsEditorMode="edit";this.wsOpenMode="edit";this.closing=!1;this.closeTimer=null;this.engagementPostId=null;this.blog=e}bind(){this.wired||!t("paBlogWorkspace")||(this.wired=!0,T("blogWsRteWrap","blogWsContent"),this.blog.setupImageDropzone("blogWs"),this.blog.setupMediaPicker("blogWs"),this.blog.on(t("paBlogWsBackBtn"),"click",()=>this.close()),this.blog.on(t("paBlogWsSaveBtn"),"click",()=>{this.save()}),this.blog.on(t("paBlogWsSaveDraftBtn"),"click",()=>{this.saveAsDraft()}),this.blog.on(t("paBlogWsPublishNowBtn"),"click",()=>{this.publishNow()}),this.blog.on(t("paBlogWsCopyPreviewLinkBtn"),"click",()=>{this.copyPublicPreviewLink()}),this.blog.on(t("paBlogWsDeleteBtn"),"click",()=>this.requestDelete()),h("#paBlogWsModeToggle .pa-view-btn").forEach(s=>{this.blog.on(s,"click",()=>{const o=s.getAttribute("data-ws-mode");o&&this.setEditorMode(o)})}),this.blog.on(t("blogWsTitle"),"input",s=>{const o=s.target;if(this.updateTitleCount(),!this.wsSlugTouched){const n=t("blogWsSlug");n&&(n.value=C(o.value))}}),this.blog.on(t("blogWsSlug"),"input",()=>{this.wsSlugTouched=!0}),this.blog.on(t("blogWsExcerpt"),"input",()=>this.updateExcerptCount()),this.blog.on(t("blogWsMetaTitle"),"input",()=>this.updateMetaCounts()),this.blog.on(t("blogWsMetaDesc"),"input",()=>this.updateMetaCounts()),this.blog.on(t("blogWsTagInput"),"keydown",s=>{(s.key==="Enter"||s.key===",")&&(s.preventDefault(),f(t("blogWsTagChips"),s.target.value),s.target.value="")}),this.blog.on(t("blogWsTagAddBtn"),"click",()=>{const s=t("blogWsTagInput");s&&(f(t("blogWsTagChips"),s.value),s.value="")}),this.blog.on(t("blogWsContentHtml"),"input",()=>{const s=t("blogWsContent");s&&v(s,t("blogWsContentHtml").value)}))}openAdd(){m()&&(this.bind(),this.wsOpenMode="add",this.blog.currentEditId=null,this.resetForm(),this.blog._populateCategorySelects(),this.syncCategorySelect(),this.setEditorMode("edit"),this.show(),t("paBlogWsHeadTitleText").textContent="Add New Post",t("paBlogWsHeadSubtitle").textContent="Create a new article for your portfolio",t("paBlogWsDeleteBtn").setAttribute("hidden",""),this.resetEngagementUi(),setTimeout(()=>t("blogWsTitle")?.focus(),420))}async open(e,s="edit"){if(!m()&&s!=="preview")return;this.bind();let o=this.blog.findById(e);if(!o){this.blog.toast("Post not found","danger");return}if(o.content==null||String(o.content).trim()==="")try{const r=await fetch(`/api/blog-posts/${encodeURIComponent(String(e))}`,{credentials:"same-origin",headers:{Accept:"application/json"}});if(r.ok){const l=await r.json(),a=[...this.blog.store.get("records")],c=a.findIndex(p=>String(p.id)===String(e));c>=0&&(a[c]={...a[c],...l}),this.blog.store.set("records",a),o=this.blog.findById(e)||l}}catch{}this.wsOpenMode=s==="preview"?"preview":"edit",this.blog.currentEditId=e,this.blog._populateCategorySelects(),this.syncCategorySelect(),this.populateForm(o),this.setEditorMode(s==="preview"?"preview":"edit"),this.show(),t("paBlogWsHeadTitleText").textContent="Edit Post",t("paBlogWsHeadSubtitle").textContent=o.slug?`/${o.slug}`:"Update content and publishing settings",t("paBlogWsDeleteBtn")?.removeAttribute("hidden"),this.engagementPostId=e,this.loadEngagement(e),this.loadRevisions(e),s!=="preview"&&setTimeout(()=>t("blogWsTitle")?.focus(),420)}close(){const e=t("paBlogBody"),s=t("paBlogWorkspace");if(!e||!s)return;if(this.closeTimer&&(clearTimeout(this.closeTimer),this.closeTimer=null),!s.classList.contains("is-open")){this.finishClose();return}if(this.closing)return;this.closing=!0,s.classList.add("is-closing"),s.classList.remove("is-open"),e.classList.remove("pa-blog-page-body--editing");const o=()=>{this.closing&&this.finishClose()};s.addEventListener("transitionend",n=>{n.target===s&&o()},{once:!0}),this.closeTimer=window.setTimeout(o,520)}finishClose(){const e=t("paBlogWorkspace");this.closeTimer&&(clearTimeout(this.closeTimer),this.closeTimer=null),this.closing=!1,e&&(e.classList.remove("is-closing"),e.setAttribute("aria-hidden","true")),this.wsImageData=null}show(){const e=t("paBlogBody"),s=t("paBlogWorkspace");!e||!s||(this.closeTimer&&(clearTimeout(this.closeTimer),this.closeTimer=null),this.closing=!1,s.classList.remove("is-closing"),e.classList.add("pa-blog-page-body--editing"),s.setAttribute("aria-hidden","false"),requestAnimationFrame(()=>{requestAnimationFrame(()=>{s.classList.add("is-open")})}),e.scrollTo?.(0,0))}syncCategorySelect(){const s=(this.blog._blogCategories||[]).map(n=>`<option value="${d(n.key)}">${d(n.label)}</option>`).join(""),o=t("blogWsCategory");o&&(o.innerHTML='<option value="">Select category</option>'+s,g(o))}resetForm(){this.wsSlugTouched=!1,this.wsImageData=null,["blogWsTitle","blogWsSlug","blogWsExcerpt","blogWsImageAlt","blogWsSortOrder","blogWsMetaTitle","blogWsMetaDesc"].forEach(e=>{const s=t(e);s&&(s.value="")}),t("blogWsContent").innerHTML="",t("blogWsContentHtml").value="",t("blogWsTagChips").innerHTML="",t("blogWsTagInput").value="",t("blogWsStatus").value="Draft",t("blogWsFeatured").value="0",t("blogWsPublishedDate").value=new Date().toISOString().slice(0,10),t("blogWsCommentsEnabled").value="1",t("blogWsLikesEnabled").value="1",t("blogWsCommentsAutoApprove").value="0",g(t("blogWsCommentsEnabled")),g(t("blogWsLikesEnabled")),g(t("blogWsCommentsAutoApprove")),this.engagementPostId=null,this.resetEngagementUi(),this.blog.setFeaturedPreview("blogWs",null),this.updateTitleCount(),this.updateExcerptCount(),this.updateMetaCounts(),this.clearFieldErrors()}populateForm(e){this.wsSlugTouched=!0,t("blogWsTitle").value=String(e.title||""),t("blogWsSlug").value=String(e.slug||""),t("blogWsCategory").value=String(e.category||""),g(t("blogWsCategory")),t("blogWsExcerpt").value=String(e.excerpt||""),v(t("blogWsContent"),String(e.content||"")),t("blogWsContentHtml").value=String(e.content||""),S(t("blogWsTagChips"),Array.isArray(e.tags)?e.tags:[]),t("blogWsImageAlt").value=String(e.imageAlt||""),t("blogWsStatus").value=String(e.status||"Draft"),g(t("blogWsStatus")),t("blogWsFeatured").value=e.featured?"1":"0",g(t("blogWsFeatured")),t("blogWsPublishedDate").value=String(e.publishedAt||new Date().toISOString().slice(0,10)),t("blogWsSortOrder").value=e.sortOrder!=null?String(e.sortOrder):"",t("blogWsMetaTitle").value=String(e.metaTitle||""),t("blogWsMetaDesc").value=String(e.metaDesc||""),t("blogWsCommentsEnabled").value=e.commentsEnabled===!1?"0":"1",t("blogWsLikesEnabled").value=e.likesEnabled===!1?"0":"1",t("blogWsCommentsAutoApprove").value=e.commentsAutoApprove?"1":"0",g(t("blogWsCommentsEnabled")),g(t("blogWsLikesEnabled")),g(t("blogWsCommentsAutoApprove")),this.wsImageData=e.imageUrl||null,this.blog.setFeaturedPreview("blogWs",this.wsImageData,String(e.imageAlt||"")),this.updateTitleCount(),this.updateExcerptCount(),this.updateMetaCounts(),this.clearFieldErrors()}setEditorMode(e){this.wsEditorMode=e,h("#paBlogWsModeToggle .pa-view-btn").forEach(l=>{l.classList.toggle("active",l.getAttribute("data-ws-mode")===e)});const s=t("paBlogWsEditorPane"),o=t("paBlogWsPreviewPane"),n=t("blogWsContent");if(e==="preview"){s&&(s.hidden=!0),o&&(o.hidden=!1);const l=y(n),a=t("paBlogWsPreviewContent");a&&(a.innerHTML=l);return}o&&(o.hidden=!0),s&&(s.hidden=!1);const r=t("blogWsRteWrap");r&&(r.hidden=!1)}updateTitleCount(){const e=t("blogWsTitle"),s=t("blogWsTitleCount");e&&s&&(s.textContent=`${e.value.length}/100`)}updateExcerptCount(){const e=t("blogWsExcerpt"),s=t("blogWsExcerptCount");e&&s&&(s.textContent=String(e.value.length))}updateMetaCounts(){const e=t("blogWsMetaTitle"),s=t("blogWsMetaDesc");e&&(t("blogWsMetaTitleCount").textContent=String(e.value.length)),s&&(t("blogWsMetaDescCount").textContent=String(s.value.length))}clearFieldErrors(){["Title","Slug","Category","Excerpt","Content"].forEach(e=>{t(`blogWs${e}Error`)?.classList.remove("visible"),t(e==="Content"?"blogWsRteWrap":`blogWs${e}`)?.classList.remove("error")})}getWsImageData(){return this.wsImageData}setWsImageData(e){this.wsImageData=e}async saveAsDraft(){t("blogWsStatus").value="Draft",g(t("blogWsStatus")),await this.save()}async publishNow(){t("blogWsStatus").value="Published",g(t("blogWsStatus")),await this.save()}async save(){if(!m())return;const e=this.blog.validateForm("ws");if(!e.valid)return;const s=t("paBlogWsSaveBtn");s?.classList.add("loading");try{if(this.wsOpenMode==="add"){const o=this.blog.buildNewRecord(e);o.id=this.blog.nextId++;const n=[...this.blog.store.get("records"),o];this.blog.store.set("records",n),await this.blog.persist(),await this.blog.refreshEngagementSummaries(),this.blog.render(),this.blog.toast("Blog post added","success"),this.blog.notify(`New blog post "${o.title}" was added.`,"ri-article-line"),this.close()}else{const o=this.blog.findById(this.blog.currentEditId);if(!o)return;this.blog.applyEditToRecord(o,e),await this.blog.persist(),await this.blog.refreshEngagementSummaries(),this.blog.render(),this.blog.toast("Blog post saved","success"),this.engagementPostId&&this.loadEngagement(this.engagementPostId),t("paBlogWsHeadSubtitle").textContent=o.slug?`/${o.slug}`:""}}catch{this.blog.toast("Could not save changes","danger")}finally{s?.classList.remove("loading")}}requestDelete(){if(!m())return;const e=this.blog.currentEditId;if(!e)return;const s=this.blog.findById(e);s&&M(e,this.blog.config.deleteType,this.blog.getDeleteName(s))}resetEngagementUi(){t("paBlogWsLikeCount").textContent="0",t("paBlogWsCommentCount").textContent="0",t("paBlogWsPendingCount").textContent="0",t("paBlogWsPendingWrap").hidden=!0;const e=t("paBlogWsEngagementBadge");e&&(e.hidden=!0,e.textContent="");const s=t("paBlogWsCommentsList"),o=t("paBlogWsCommentsEmpty");s&&o&&(s.querySelectorAll(".pa-blog-ws-comment-item").forEach(n=>n.remove()),o.hidden=!1)}renderEngagement(e){const s=e.likeCount??0,o=e.comments||[],n=o.filter(i=>i.status==="approved").length,r=o.filter(i=>i.status==="pending").length;t("paBlogWsLikeCount").textContent=String(s),t("paBlogWsCommentCount").textContent=String(n),t("paBlogWsPendingCount").textContent=String(r),t("paBlogWsPendingWrap").hidden=r===0;const l=t("paBlogWsEngagementBadge");l&&(r>0?(l.hidden=!1,l.textContent=`${r} pending`):(l.hidden=!0,l.textContent=""));const a=t("paBlogWsCommentsList"),c=t("paBlogWsCommentsEmpty");if(!a||!c)return;if(a.querySelectorAll(".pa-blog-ws-comment-item").forEach(i=>i.remove()),!o.length){c.hidden=!1;return}c.hidden=!0;const p=this.engagementPostId;o.forEach(i=>{const u=document.createElement("article");u.className="pa-blog-ws-comment-item",u.dataset.commentId=i.id;const b=d(i.status),W=d(new Date(i.createdAt).toLocaleString()),E=i.authorEmail?`<span class="pa-blog-ws-comment-email">${d(i.authorEmail)}</span>`:"",w=i.status==="pending"?`<button type="button" class="pa-btn pa-btn-cancel pa-btn-sm" data-comment-action="approve" data-comment-id="${d(i.id)}">Approve</button>
-           <button type="button" class="pa-btn pa-btn-cancel pa-btn-sm" data-comment-action="spam" data-comment-id="${d(i.id)}">Spam</button>`:`<button type="button" class="pa-btn pa-btn-cancel pa-btn-sm" data-comment-action="reject" data-comment-id="${d(i.id)}">Hide</button>`;u.innerHTML=`
+import { $id, $all, escapeHtml } from "../../utils/dom.js";
+import { syncPaSelect } from "../../utils/paSelect.js";
+import { slugify } from "../../utils/strings.js";
+import { setupRte, getRteHtml, setRteHtml } from "../../utils/rte.js";
+import { addChip, populateChips } from "../../utils/chips.js";
+import { requestDelete } from "../shell/confirm.js";
+import { canManageContent } from "../../core/cms-access.js";
+class BlogPostWorkspace {
+  constructor(blog) {
+    this.wired = false;
+    this.wsSlugTouched = false;
+    this.wsImageData = null;
+    this.wsEditorMode = "edit";
+    this.wsOpenMode = "edit";
+    this.closing = false;
+    this.closeTimer = null;
+    this.engagementPostId = null;
+    this.blog = blog;
+  }
+  bind() {
+    if (this.wired) return;
+    const root = $id("paBlogWorkspace");
+    if (!root) return;
+    this.wired = true;
+    setupRte("blogWsRteWrap", "blogWsContent");
+    this.blog.setupImageDropzone("blogWs");
+    this.blog.setupMediaPicker("blogWs");
+    this.blog.on($id("paBlogWsBackBtn"), "click", () => this.close());
+    this.blog.on($id("paBlogWsSaveBtn"), "click", () => {
+      void this.save();
+    });
+    this.blog.on($id("paBlogWsSaveDraftBtn"), "click", () => {
+      void this.saveAsDraft();
+    });
+    this.blog.on($id("paBlogWsPublishNowBtn"), "click", () => {
+      void this.publishNow();
+    });
+    this.blog.on($id("paBlogWsCopyPreviewLinkBtn"), "click", () => {
+      void this.copyPublicPreviewLink();
+    });
+    this.blog.on($id("paBlogWsDeleteBtn"), "click", () => this.requestDelete());
+    $all("#paBlogWsModeToggle .pa-view-btn").forEach((btn) => {
+      this.blog.on(btn, "click", () => {
+        const mode = btn.getAttribute("data-ws-mode");
+        if (mode) this.setEditorMode(mode);
+      });
+    });
+    this.blog.on($id("blogWsTitle"), "input", (e) => {
+      const el = e.target;
+      this.updateTitleCount();
+      if (!this.wsSlugTouched) {
+        const slugEl = $id("blogWsSlug");
+        if (slugEl) slugEl.value = slugify(el.value);
+      }
+    });
+    this.blog.on($id("blogWsSlug"), "input", () => {
+      this.wsSlugTouched = true;
+    });
+    this.blog.on($id("blogWsExcerpt"), "input", () => this.updateExcerptCount());
+    this.blog.on($id("blogWsMetaTitle"), "input", () => this.updateMetaCounts());
+    this.blog.on($id("blogWsMetaDesc"), "input", () => this.updateMetaCounts());
+    this.blog.on($id("blogWsTagInput"), "keydown", (e) => {
+      if (e.key === "Enter" || e.key === ",") {
+        e.preventDefault();
+        addChip($id("blogWsTagChips"), e.target.value);
+        e.target.value = "";
+      }
+    });
+    this.blog.on($id("blogWsTagAddBtn"), "click", () => {
+      const input = $id("blogWsTagInput");
+      if (!input) return;
+      addChip($id("blogWsTagChips"), input.value);
+      input.value = "";
+    });
+    this.blog.on($id("blogWsContentHtml"), "input", () => {
+      const body = $id("blogWsContent");
+      if (body) setRteHtml(body, $id("blogWsContentHtml").value);
+    });
+  }
+  openAdd() {
+    if (!canManageContent()) return;
+    this.bind();
+    this.wsOpenMode = "add";
+    this.blog.currentEditId = null;
+    this.resetForm();
+    this.blog._populateCategorySelects();
+    this.syncCategorySelect();
+    this.setEditorMode("edit");
+    this.show();
+    $id("paBlogWsHeadTitleText").textContent = "Add New Post";
+    $id("paBlogWsHeadSubtitle").textContent = "Create a new article for your portfolio";
+    $id("paBlogWsDeleteBtn").setAttribute("hidden", "");
+    this.resetEngagementUi();
+    setTimeout(() => $id("blogWsTitle")?.focus(), 420);
+  }
+  async open(id, mode = "edit") {
+    if (!canManageContent() && mode !== "preview") return;
+    this.bind();
+    let record = this.blog.findById(id);
+    if (!record) {
+      this.blog.toast("Post not found", "danger");
+      return;
+    }
+    const contentMissing = record.content == null || String(record.content).trim() === "";
+    if (contentMissing) {
+      try {
+        const res = await fetch(`/api/blog-posts/${encodeURIComponent(String(id))}`, {
+          credentials: "same-origin",
+          headers: { Accept: "application/json" }
+        });
+        if (res.ok) {
+          const full = await res.json();
+          const records = [...this.blog.store.get("records")];
+          const idx = records.findIndex((p) => String(p.id) === String(id));
+          if (idx >= 0) records[idx] = { ...records[idx], ...full };
+          this.blog.store.set("records", records);
+          record = this.blog.findById(id) || full;
+        }
+      } catch {
+      }
+    }
+    this.wsOpenMode = mode === "preview" ? "preview" : "edit";
+    this.blog.currentEditId = id;
+    this.blog._populateCategorySelects();
+    this.syncCategorySelect();
+    this.populateForm(record);
+    this.setEditorMode(mode === "preview" ? "preview" : "edit");
+    this.show();
+    $id("paBlogWsHeadTitleText").textContent = "Edit Post";
+    $id("paBlogWsHeadSubtitle").textContent = record.slug ? `/${record.slug}` : "Update content and publishing settings";
+    $id("paBlogWsDeleteBtn")?.removeAttribute("hidden");
+    this.engagementPostId = id;
+    void this.loadEngagement(id);
+    void this.loadRevisions(id);
+    if (mode !== "preview") setTimeout(() => $id("blogWsTitle")?.focus(), 420);
+  }
+  close() {
+    const body = $id("paBlogBody");
+    const ws = $id("paBlogWorkspace");
+    if (!body || !ws) return;
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer);
+      this.closeTimer = null;
+    }
+    if (!ws.classList.contains("is-open")) {
+      this.finishClose();
+      return;
+    }
+    if (this.closing) return;
+    this.closing = true;
+    ws.classList.add("is-closing");
+    ws.classList.remove("is-open");
+    body.classList.remove("pa-blog-page-body--editing");
+    const finish = () => {
+      if (!this.closing) return;
+      this.finishClose();
+    };
+    ws.addEventListener("transitionend", (e) => {
+      if (e.target === ws) finish();
+    }, { once: true });
+    this.closeTimer = window.setTimeout(finish, 520);
+  }
+  finishClose() {
+    const ws = $id("paBlogWorkspace");
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer);
+      this.closeTimer = null;
+    }
+    this.closing = false;
+    if (ws) {
+      ws.classList.remove("is-closing");
+      ws.setAttribute("aria-hidden", "true");
+    }
+    this.wsImageData = null;
+  }
+  show() {
+    const body = $id("paBlogBody");
+    const ws = $id("paBlogWorkspace");
+    if (!body || !ws) return;
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer);
+      this.closeTimer = null;
+    }
+    this.closing = false;
+    ws.classList.remove("is-closing");
+    body.classList.add("pa-blog-page-body--editing");
+    ws.setAttribute("aria-hidden", "false");
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        ws.classList.add("is-open");
+      });
+    });
+    body.scrollTo?.(0, 0);
+  }
+  syncCategorySelect() {
+    const sorted = this.blog._blogCategories || [];
+    const options = sorted.map((c) => `<option value="${escapeHtml(c.key)}">${escapeHtml(c.label)}</option>`).join("");
+    const select = $id("blogWsCategory");
+    if (!select) return;
+    select.innerHTML = '<option value="">Select category</option>' + options;
+    syncPaSelect(select);
+  }
+  resetForm() {
+    this.wsSlugTouched = false;
+    this.wsImageData = null;
+    ["blogWsTitle", "blogWsSlug", "blogWsExcerpt", "blogWsImageAlt", "blogWsSortOrder", "blogWsMetaTitle", "blogWsMetaDesc"].forEach((id) => {
+      const el = $id(id);
+      if (el) el.value = "";
+    });
+    $id("blogWsContent").innerHTML = "";
+    $id("blogWsContentHtml").value = "";
+    $id("blogWsTagChips").innerHTML = "";
+    $id("blogWsTagInput").value = "";
+    $id("blogWsStatus").value = "Draft";
+    $id("blogWsFeatured").value = "0";
+    $id("blogWsPublishedDate").value = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    $id("blogWsCommentsEnabled").value = "1";
+    $id("blogWsLikesEnabled").value = "1";
+    $id("blogWsCommentsAutoApprove").value = "0";
+    syncPaSelect($id("blogWsCommentsEnabled"));
+    syncPaSelect($id("blogWsLikesEnabled"));
+    syncPaSelect($id("blogWsCommentsAutoApprove"));
+    this.engagementPostId = null;
+    this.resetEngagementUi();
+    this.blog.setFeaturedPreview("blogWs", null);
+    this.updateTitleCount();
+    this.updateExcerptCount();
+    this.updateMetaCounts();
+    this.clearFieldErrors();
+  }
+  populateForm(p) {
+    this.wsSlugTouched = true;
+    $id("blogWsTitle").value = String(p.title || "");
+    $id("blogWsSlug").value = String(p.slug || "");
+    $id("blogWsCategory").value = String(p.category || "");
+    syncPaSelect($id("blogWsCategory"));
+    $id("blogWsExcerpt").value = String(p.excerpt || "");
+    setRteHtml($id("blogWsContent"), String(p.content || ""));
+    $id("blogWsContentHtml").value = String(p.content || "");
+    populateChips($id("blogWsTagChips"), Array.isArray(p.tags) ? p.tags : []);
+    $id("blogWsImageAlt").value = String(p.imageAlt || "");
+    $id("blogWsStatus").value = String(p.status || "Draft");
+    syncPaSelect($id("blogWsStatus"));
+    $id("blogWsFeatured").value = p.featured ? "1" : "0";
+    syncPaSelect($id("blogWsFeatured"));
+    $id("blogWsPublishedDate").value = String(p.publishedAt || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10));
+    $id("blogWsSortOrder").value = p.sortOrder != null ? String(p.sortOrder) : "";
+    $id("blogWsMetaTitle").value = String(p.metaTitle || "");
+    $id("blogWsMetaDesc").value = String(p.metaDesc || "");
+    $id("blogWsCommentsEnabled").value = p.commentsEnabled === false ? "0" : "1";
+    $id("blogWsLikesEnabled").value = p.likesEnabled === false ? "0" : "1";
+    $id("blogWsCommentsAutoApprove").value = p.commentsAutoApprove ? "1" : "0";
+    syncPaSelect($id("blogWsCommentsEnabled"));
+    syncPaSelect($id("blogWsLikesEnabled"));
+    syncPaSelect($id("blogWsCommentsAutoApprove"));
+    this.wsImageData = p.imageUrl || null;
+    this.blog.setFeaturedPreview("blogWs", this.wsImageData, String(p.imageAlt || ""));
+    this.updateTitleCount();
+    this.updateExcerptCount();
+    this.updateMetaCounts();
+    this.clearFieldErrors();
+  }
+  setEditorMode(mode) {
+    this.wsEditorMode = mode;
+    $all("#paBlogWsModeToggle .pa-view-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.getAttribute("data-ws-mode") === mode);
+    });
+    const editorPane = $id("paBlogWsEditorPane");
+    const previewPane = $id("paBlogWsPreviewPane");
+    const body = $id("blogWsContent");
+    if (mode === "preview") {
+      if (editorPane) editorPane.hidden = true;
+      if (previewPane) previewPane.hidden = false;
+      const html = getRteHtml(body);
+      const preview = $id("paBlogWsPreviewContent");
+      if (preview) preview.innerHTML = html;
+      return;
+    }
+    if (previewPane) previewPane.hidden = true;
+    if (editorPane) editorPane.hidden = false;
+    const rteWrap = $id("blogWsRteWrap");
+    if (rteWrap) rteWrap.hidden = false;
+  }
+  updateTitleCount() {
+    const el = $id("blogWsTitle");
+    const count = $id("blogWsTitleCount");
+    if (el && count) count.textContent = `${el.value.length}/100`;
+  }
+  updateExcerptCount() {
+    const el = $id("blogWsExcerpt");
+    const count = $id("blogWsExcerptCount");
+    if (el && count) count.textContent = String(el.value.length);
+  }
+  updateMetaCounts() {
+    const title = $id("blogWsMetaTitle");
+    const desc = $id("blogWsMetaDesc");
+    if (title) $id("blogWsMetaTitleCount").textContent = String(title.value.length);
+    if (desc) $id("blogWsMetaDescCount").textContent = String(desc.value.length);
+  }
+  clearFieldErrors() {
+    ["Title", "Slug", "Category", "Excerpt", "Content"].forEach((f) => {
+      $id(`blogWs${f}Error`)?.classList.remove("visible");
+      $id(f === "Content" ? "blogWsRteWrap" : `blogWs${f}`)?.classList.remove("error");
+    });
+  }
+  getWsImageData() {
+    return this.wsImageData;
+  }
+  setWsImageData(url) {
+    this.wsImageData = url;
+  }
+  async saveAsDraft() {
+    $id("blogWsStatus").value = "Draft";
+    syncPaSelect($id("blogWsStatus"));
+    await this.save();
+  }
+  async publishNow() {
+    $id("blogWsStatus").value = "Published";
+    syncPaSelect($id("blogWsStatus"));
+    await this.save();
+  }
+  async save() {
+    if (!canManageContent()) return;
+    const f = this.blog.validateForm("ws");
+    if (!f.valid) return;
+    const btn = $id("paBlogWsSaveBtn");
+    btn?.classList.add("loading");
+    try {
+      if (this.wsOpenMode === "add") {
+        const newPost = this.blog.buildNewRecord(f);
+        newPost.id = this.blog.nextId++;
+        const records = [...this.blog.store.get("records"), newPost];
+        this.blog.store.set("records", records);
+        await this.blog.persist();
+        await this.blog.refreshEngagementSummaries();
+        this.blog.render();
+        this.blog.toast("Blog post added", "success");
+        this.blog.notify(`New blog post "${newPost.title}" was added.`, "ri-article-line");
+        this.close();
+      } else {
+        const record = this.blog.findById(this.blog.currentEditId);
+        if (!record) return;
+        this.blog.applyEditToRecord(record, f);
+        await this.blog.persist();
+        await this.blog.refreshEngagementSummaries();
+        this.blog.render();
+        this.blog.toast("Blog post saved", "success");
+        if (this.engagementPostId) void this.loadEngagement(this.engagementPostId);
+        $id("paBlogWsHeadSubtitle").textContent = record.slug ? `/${record.slug}` : "";
+      }
+    } catch {
+      this.blog.toast("Could not save changes", "danger");
+    } finally {
+      btn?.classList.remove("loading");
+    }
+  }
+  requestDelete() {
+    if (!canManageContent()) return;
+    const id = this.blog.currentEditId;
+    if (!id) return;
+    const record = this.blog.findById(id);
+    if (!record) return;
+    requestDelete(id, this.blog.config.deleteType, this.blog.getDeleteName(record));
+  }
+  resetEngagementUi() {
+    $id("paBlogWsLikeCount").textContent = "0";
+    $id("paBlogWsCommentCount").textContent = "0";
+    $id("paBlogWsPendingCount").textContent = "0";
+    $id("paBlogWsPendingWrap").hidden = true;
+    const badge = $id("paBlogWsEngagementBadge");
+    if (badge) {
+      badge.hidden = true;
+      badge.textContent = "";
+    }
+    const list = $id("paBlogWsCommentsList");
+    const empty = $id("paBlogWsCommentsEmpty");
+    if (list && empty) {
+      list.querySelectorAll(".pa-blog-ws-comment-item").forEach((el) => el.remove());
+      empty.hidden = false;
+    }
+  }
+  renderEngagement(data) {
+    const likes = data.likeCount ?? 0;
+    const comments = data.comments || [];
+    const approved = comments.filter((c) => c.status === "approved").length;
+    const pending = comments.filter((c) => c.status === "pending").length;
+    $id("paBlogWsLikeCount").textContent = String(likes);
+    $id("paBlogWsCommentCount").textContent = String(approved);
+    $id("paBlogWsPendingCount").textContent = String(pending);
+    $id("paBlogWsPendingWrap").hidden = pending === 0;
+    const badge = $id("paBlogWsEngagementBadge");
+    if (badge) {
+      if (pending > 0) {
+        badge.hidden = false;
+        badge.textContent = `${pending} pending`;
+      } else {
+        badge.hidden = true;
+        badge.textContent = "";
+      }
+    }
+    const list = $id("paBlogWsCommentsList");
+    const empty = $id("paBlogWsCommentsEmpty");
+    if (!list || !empty) return;
+    list.querySelectorAll(".pa-blog-ws-comment-item").forEach((el) => el.remove());
+    if (!comments.length) {
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+    const postId = this.engagementPostId;
+    comments.forEach((c) => {
+      const item = document.createElement("article");
+      item.className = "pa-blog-ws-comment-item";
+      item.dataset.commentId = c.id;
+      const statusLabel = escapeHtml(c.status);
+      const date = escapeHtml(new Date(c.createdAt).toLocaleString());
+      const email = c.authorEmail ? `<span class="pa-blog-ws-comment-email">${escapeHtml(c.authorEmail)}</span>` : "";
+      const modActions = c.status === "pending" ? `<button type="button" class="pa-btn pa-btn-cancel pa-btn-sm" data-comment-action="approve" data-comment-id="${escapeHtml(c.id)}">Approve</button>
+           <button type="button" class="pa-btn pa-btn-cancel pa-btn-sm" data-comment-action="spam" data-comment-id="${escapeHtml(c.id)}">Spam</button>` : `<button type="button" class="pa-btn pa-btn-cancel pa-btn-sm" data-comment-action="reject" data-comment-id="${escapeHtml(c.id)}">Hide</button>`;
+      item.innerHTML = `
         <header class="pa-blog-ws-comment-head">
-          <strong>${d(i.authorName)}</strong>${E}
-          <span class="pa-blog-ws-comment-meta">${b} \xB7 ${W}</span>
+          <strong>${escapeHtml(c.authorName)}</strong>${email}
+          <span class="pa-blog-ws-comment-meta">${statusLabel} \xB7 ${date}</span>
         </header>
-        <p class="pa-blog-ws-comment-body">${d(i.body)}</p>
+        <p class="pa-blog-ws-comment-body">${escapeHtml(c.body)}</p>
         <div class="pa-blog-ws-comment-actions">
-          ${w}
-          <button type="button" class="pa-btn pa-btn-cancel pa-btn-sm pa-blog-ws-comment-delete" data-comment-action="delete" data-comment-id="${d(i.id)}">Delete</button>
-        </div>`,a.appendChild(u)}),p&&h("[data-comment-action]",a).forEach(i=>{this.blog.on(i,"click",()=>{const u=i.getAttribute("data-comment-action"),b=i.getAttribute("data-comment-id");!u||!b||this.moderateComment(p,b,u)})})}async loadEngagement(e){try{const s=await fetch(`/api/blog-posts/${encodeURIComponent(String(e))}/engagement`,{credentials:"same-origin",headers:{Accept:"application/json"}});if(!s.ok){this.resetEngagementUi();return}const o=await s.json();o?.commentsEnabled!=null&&(t("blogWsCommentsEnabled").value=o.commentsEnabled?"1":"0",t("blogWsLikesEnabled").value=o.likesEnabled?"1":"0",t("blogWsCommentsAutoApprove").value=o.commentsAutoApprove?"1":"0",g(t("blogWsCommentsEnabled")),g(t("blogWsLikesEnabled")),g(t("blogWsCommentsAutoApprove"))),this.renderEngagement(o)}catch{this.resetEngagementUi()}}async moderateComment(e,s,o){const n={approve:"approved",reject:"rejected",spam:"spam"};try{if(o==="delete"){const c=await fetch(`/api/blog-posts/${encodeURIComponent(String(e))}/engagement?commentId=${encodeURIComponent(s)}`,{method:"DELETE",credentials:"same-origin"});if(!c.ok)throw new Error("delete failed");const p=await c.json();this.renderEngagement(p.engagement||{}),this.blog.toast("Comment removed","success"),this.blog.refreshEngagementSummaries();return}const r=n[o];if(!r)return;const l=await fetch(`/api/blog-posts/${encodeURIComponent(String(e))}/engagement`,{method:"PATCH",credentials:"same-origin",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({commentId:s,status:r})});if(!l.ok)throw new Error("update failed");const a=await l.json();this.renderEngagement(a.engagement||{}),this.blog.toast(o==="approve"?"Comment approved":"Comment updated","success"),this.blog.refreshEngagementSummaries()}catch{this.blog.toast("Could not update comment","danger")}}async copyPublicPreviewLink(){const e=this.blog.currentEditId;if(!(e==null||!m()))try{const s=await fetch(`/api/blog-posts/${encodeURIComponent(String(e))}/preview-token`,{method:"POST",credentials:"same-origin",headers:{Accept:"application/json"}}),o=await s.json().catch(()=>({}));if(!s.ok)throw new Error(o.error||"Could not create preview link");const n=o.previewUrl;if(!n)throw new Error("No preview URL returned");await navigator.clipboard.writeText(n),this.blog.toast("Preview API URL copied (1h)","success")}catch(s){this.blog.toast(s.message||"Could not copy preview link","danger")}}async loadRevisions(e){const s=t("paBlogWsRevisionsList"),o=t("paBlogWsRevisionsEmpty");if(!(!s||!o)){if(s.innerHTML="",e==null){o.hidden=!1;return}try{const n=await fetch(`/api/content-revisions?entityType=blog_post&legacyId=${encodeURIComponent(String(e))}`,{credentials:"same-origin"});if(!n.ok)throw new Error("load failed");const r=await n.json(),l=Array.isArray(r.revisions)?r.revisions:[];o.hidden=l.length>0,s.innerHTML=l.map(a=>{const c=new Date(a.created_at).toLocaleString();return`<li class="pa-blog-ws-revision-item"><span>${d(c)}</span><button type="button" class="pa-btn pa-btn-cancel" data-revision-restore="${d(a.id)}">Restore</button></li>`}).join(""),s.querySelectorAll("[data-revision-restore]").forEach(a=>{this.blog.on(a,"click",()=>{const c=a.getAttribute("data-revision-restore");this.restoreRevision(c)})})}catch{o.hidden=!1}}}async restoreRevision(e){if(!(!e||!m())&&window.confirm("Restore this version into the editor? Click Save to persist changes."))try{const s=await fetch(`/api/content-revisions/${encodeURIComponent(e)}/restore`,{method:"POST",credentials:"same-origin"});if(!s.ok)throw new Error("restore failed");const n=(await s.json()).legacyId??this.blog.currentEditId;n!=null&&(this.openEdit(n),this.blog.toast("Revision restored \u2014 review and save","success"))}catch{this.blog.toast("Could not restore revision","danger")}}}export{$ as BlogPostWorkspace};
+          ${modActions}
+          <button type="button" class="pa-btn pa-btn-cancel pa-btn-sm pa-blog-ws-comment-delete" data-comment-action="delete" data-comment-id="${escapeHtml(c.id)}">Delete</button>
+        </div>`;
+      list.appendChild(item);
+    });
+    if (postId) {
+      $all("[data-comment-action]", list).forEach((btn) => {
+        this.blog.on(btn, "click", () => {
+          const action = btn.getAttribute("data-comment-action");
+          const commentId = btn.getAttribute("data-comment-id");
+          if (!action || !commentId) return;
+          void this.moderateComment(postId, commentId, action);
+        });
+      });
+    }
+  }
+  async loadEngagement(postId) {
+    try {
+      const res = await fetch(`/api/blog-posts/${encodeURIComponent(String(postId))}/engagement`, {
+        credentials: "same-origin",
+        headers: { Accept: "application/json" }
+      });
+      if (!res.ok) {
+        this.resetEngagementUi();
+        return;
+      }
+      const data = await res.json();
+      if (data?.commentsEnabled != null) {
+        $id("blogWsCommentsEnabled").value = data.commentsEnabled ? "1" : "0";
+        $id("blogWsLikesEnabled").value = data.likesEnabled ? "1" : "0";
+        $id("blogWsCommentsAutoApprove").value = data.commentsAutoApprove ? "1" : "0";
+        syncPaSelect($id("blogWsCommentsEnabled"));
+        syncPaSelect($id("blogWsLikesEnabled"));
+        syncPaSelect($id("blogWsCommentsAutoApprove"));
+      }
+      this.renderEngagement(data);
+    } catch {
+      this.resetEngagementUi();
+    }
+  }
+  async moderateComment(postId, commentId, action) {
+    const statusMap = {
+      approve: "approved",
+      reject: "rejected",
+      spam: "spam"
+    };
+    try {
+      if (action === "delete") {
+        const res2 = await fetch(
+          `/api/blog-posts/${encodeURIComponent(String(postId))}/engagement?commentId=${encodeURIComponent(commentId)}`,
+          { method: "DELETE", credentials: "same-origin" }
+        );
+        if (!res2.ok) throw new Error("delete failed");
+        const payload2 = await res2.json();
+        this.renderEngagement(payload2.engagement || {});
+        this.blog.toast("Comment removed", "success");
+        void this.blog.refreshEngagementSummaries();
+        return;
+      }
+      const status = statusMap[action];
+      if (!status) return;
+      const res = await fetch(`/api/blog-posts/${encodeURIComponent(String(postId))}/engagement`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ commentId, status })
+      });
+      if (!res.ok) throw new Error("update failed");
+      const payload = await res.json();
+      this.renderEngagement(payload.engagement || {});
+      this.blog.toast(action === "approve" ? "Comment approved" : "Comment updated", "success");
+      void this.blog.refreshEngagementSummaries();
+    } catch {
+      this.blog.toast("Could not update comment", "danger");
+    }
+  }
+  async copyPublicPreviewLink() {
+    const id = this.blog.currentEditId;
+    if (id == null || !canManageContent()) return;
+    try {
+      const res = await fetch(`/api/blog-posts/${encodeURIComponent(String(id))}/preview-token`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { Accept: "application/json" }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not create preview link");
+      const url = data.previewUrl;
+      if (!url) throw new Error("No preview URL returned");
+      await navigator.clipboard.writeText(url);
+      this.blog.toast("Preview API URL copied (1h)", "success");
+    } catch (err) {
+      this.blog.toast(err.message || "Could not copy preview link", "danger");
+    }
+  }
+  async loadRevisions(postId) {
+    const list = $id("paBlogWsRevisionsList");
+    const empty = $id("paBlogWsRevisionsEmpty");
+    if (!list || !empty) return;
+    list.innerHTML = "";
+    if (postId == null) {
+      empty.hidden = false;
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/content-revisions?entityType=blog_post&legacyId=${encodeURIComponent(String(postId))}`,
+        { credentials: "same-origin" }
+      );
+      if (!res.ok) throw new Error("load failed");
+      const data = await res.json();
+      const revisions = Array.isArray(data.revisions) ? data.revisions : [];
+      empty.hidden = revisions.length > 0;
+      list.innerHTML = revisions.map((row) => {
+        const when = new Date(row.created_at).toLocaleString();
+        return `<li class="pa-blog-ws-revision-item"><span>${escapeHtml(when)}</span><button type="button" class="pa-btn pa-btn-cancel" data-revision-restore="${escapeHtml(row.id)}">Restore</button></li>`;
+      }).join("");
+      list.querySelectorAll("[data-revision-restore]").forEach((btn) => {
+        this.blog.on(btn, "click", () => {
+          const id = btn.getAttribute("data-revision-restore");
+          void this.restoreRevision(id);
+        });
+      });
+    } catch {
+      empty.hidden = false;
+    }
+  }
+  async restoreRevision(revisionId) {
+    if (!revisionId || !canManageContent()) return;
+    if (!window.confirm("Restore this version into the editor? Click Save to persist changes.")) return;
+    try {
+      const res = await fetch(`/api/content-revisions/${encodeURIComponent(revisionId)}/restore`, {
+        method: "POST",
+        credentials: "same-origin"
+      });
+      if (!res.ok) throw new Error("restore failed");
+      const data = await res.json();
+      const id = data.legacyId ?? this.blog.currentEditId;
+      if (id != null) {
+        this.openEdit(id);
+        this.blog.toast("Revision restored \u2014 review and save", "success");
+      }
+    } catch {
+      this.blog.toast("Could not restore revision", "danger");
+    }
+  }
+}
+export {
+  BlogPostWorkspace
+};
+//# sourceMappingURL=BlogPostWorkspace.js.map

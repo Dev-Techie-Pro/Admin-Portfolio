@@ -1,1 +1,327 @@
-const m="pa_sidebar_collapsed",g="(min-width: 861px)",v={Dashboard:"Dashboard",Settings:"Settings",general:"General",profile:"Profile",security:"Security",notifications:"Notifications"};let y=!1,h=!1,L=!1,c=null;function s(){return window.matchMedia(g).matches}function i(){return document.getElementById("paSidebar")}function w(){return document.getElementById("paSidebarCollapseHost")||document.querySelector(".pa-sidebar-panel-head")||document.querySelector(".pa-header-top-left")||document.querySelector(".pa-header-page-left")}function B(t){if(t.classList.contains("pa-logo-link"))return"Portfolio Dashboard";if(t.id==="paLogoutBtn"||t.classList.contains("pa-rail-logout"))return"Logout";if(t.classList.contains("pa-rail-btn")&&t.dataset.railTarget)return t.getAttribute("aria-label")||t.dataset.railTarget;if(t.classList.contains("pa-sidebar-collapse"))return t.getAttribute("aria-label")||"Toggle sidebar";const n=t.dataset.nav||t.dataset.settingsTab;if(n&&v[n])return v[n];if(n)return n.replace(/([a-z])([A-Z])/g,"$1 $2");const e=t.querySelector("i"),a=t.querySelector(".pa-nav-item-label");return a?.textContent?.trim()?a.textContent.trim():(t.textContent||"").replace(e?.textContent||"","").trim()||null}function F(){return document.querySelector('[data-nav-group="settings"]')}function S(t){return t?t.querySelector(":scope > .pa-nav-parent-row"):null}function N(t){return t?t.querySelector(":scope > .pa-nav-submenu"):null}function E(t){const n=t.classList.contains("collapsed");t.querySelectorAll(".pa-logo-link, .pa-rail-btn, .pa-nav-item, .pa-nav-subitem, .pa-logout, #paLogoutBtn").forEach(e=>{if(n&&e.closest("[data-nav-group]")){e.removeAttribute("data-sidebar-tooltip");return}const a=B(e);a?e.setAttribute("data-sidebar-tooltip",a):e.removeAttribute("data-sidebar-tooltip")})}function q(){let t=document.getElementById("paSidebarTooltip");return t||(t=document.createElement("div"),t.id="paSidebarTooltip",t.className="pa-sidebar-tooltip",t.setAttribute("role","tooltip"),document.body.appendChild(t)),t}function l(){const t=document.getElementById("paSidebarTooltip");t&&(t.classList.remove("visible"),t.textContent="")}function I(){let t=document.getElementById("paNavFlyout");return t||(t=document.createElement("div"),t.id="paNavFlyout",t.className="pa-nav-flyout",t.setAttribute("role","menu"),t.setAttribute("aria-label","Navigation submenu"),t.setAttribute("aria-hidden","true"),document.body.appendChild(t)),t}function x(t){if(!t)return!1;const n=document.getElementById("paNavFlyout");return!!(n&&n.contains(t)||c&&c.contains(t))}function r(){const t=document.getElementById("paNavFlyout");t?.classList.remove("visible"),t?.setAttribute("aria-hidden","true"),c?.classList.remove("flyout-open"),c=null}function A(t){const n=i();if(!t||!n?.classList.contains("collapsed")||!s()){r();return}const e=N(t),a=t.dataset.navGroup,p=(a?document.querySelector(`.pa-rail-btn[data-rail-target="${a}"]`):null)||S(t);if(!e||!p)return;l(),r();const o=I();o.innerHTML=e.innerHTML,o.querySelectorAll(".pa-nav-group").forEach(T=>T.classList.add("open")),o.setAttribute("aria-hidden","false"),o.setAttribute("aria-label",t.querySelector(".pa-nav-section-label-text")?.textContent?.trim()||t.dataset.navGroup||"Navigation submenu");const f=p.getBoundingClientRect();o.style.top=`${Math.max(8,f.top)}px`,o.style.left=`${f.right+4}px`,o.classList.add("visible"),t.classList.add("flyout-open"),c=t;const b=o.getBoundingClientRect();b.bottom>window.innerHeight-60&&(o.style.top=`${Math.max(60,window.innerHeight-b.height-60)}px`)}function z(){r()}function O(t=F()){A(t)}function D(){return!!i()?.classList.contains("collapsed")&&s()}function M(){h||(h=!0,document.addEventListener("mouseover",t=>{const n=i();if(!n?.classList.contains("collapsed")||!s())return;const e=t.target.closest(".pa-nav-group[data-nav-group]");!e||!n.contains(e)||!S(e)||!e.contains(t.target)||t.target.closest(".pa-nav-parent-row")&&A(e)},!0),document.addEventListener("mouseout",t=>{if(!i()?.classList.contains("collapsed")||!(t.target.closest(".pa-nav-group[data-nav-group]")||t.target.closest("#paNavFlyout")))return;const a=t.relatedTarget;x(a)||r()},!0),document.addEventListener("click",t=>{D()&&(x(t.target)||r())},!0),document.addEventListener("scroll",r,!0),window.addEventListener("blur",r))}function H(t){if(!i()?.classList.contains("collapsed")||!s()){l();return}const e=t.getAttribute("data-sidebar-tooltip");if(!e){l();return}const a=q();a.textContent=e;const u=t.getBoundingClientRect();a.style.top=`${u.top+u.height/2}px`,a.style.left=`${u.right+4}px`,a.classList.add("visible")}function R(){y||(y=!0,document.addEventListener("mouseover",t=>{const n=i();if(!n?.classList.contains("collapsed")||!s()||t.target.closest(".pa-nav-group[data-nav-group]"))return;const e=t.target.closest("[data-sidebar-tooltip]");!e||!n.contains(e)||H(e)},!0),document.addEventListener("mouseout",t=>{const n=i();if(!n?.classList.contains("collapsed"))return;const e=t.target.closest("[data-sidebar-tooltip]");if(!e||!n.contains(e))return;const a=t.relatedTarget;a&&e.contains(a)||l()},!0),document.addEventListener("scroll",l,!0),window.addEventListener("blur",l))}function $(t){t.querySelectorAll(".pa-nav-group.open").forEach(n=>{n.classList.remove("open"),n.querySelector(".pa-nav-toggle")?.setAttribute("aria-expanded","false")}),r()}function d(t,n){n&&s()?(t.classList.add("collapsed"),$(t)):(t.classList.remove("collapsed"),l(),r());const e=document.getElementById("paSidebarCollapse");if(e){const a=t.classList.contains("collapsed");e.setAttribute("aria-expanded",a?"false":"true"),e.setAttribute("aria-label",a?"Expand sidebar":"Collapse sidebar")}E(t)}function C(){try{return localStorage.getItem(m)==="1"}catch{return!1}}function k(t){try{localStorage.setItem(m,t?"1":"0")}catch{}}function G(t){const n=w();if(!n)return null;let e=document.getElementById("paSidebarCollapse");return e||(e=document.createElement("button"),e.type="button",e.className="pa-sidebar-collapse",e.id="paSidebarCollapse",e.setAttribute("aria-label","Collapse sidebar"),e.setAttribute("aria-expanded","true"),e.innerHTML='<i class="ri-menu-fold-line" aria-hidden="true"></i>',e.addEventListener("click",()=>{if(!s())return;const a=!t.classList.contains("collapsed");d(t,a),k(a)})),e.parentElement!==n&&n.insertBefore(e,n.firstChild),e}function _(t){if(L)return;L=!0;const n=window.matchMedia(g),e=()=>{t.isConnected&&d(t,C())};n.addEventListener("change",e),window.addEventListener("resize",e,{passive:!0})}function P(){const t=i();t&&(R(),M(),G(t),E(t),d(t,C()),_(t))}export{r as hideNavFlyout,z as hideSettingsFlyout,P as initSidebarCollapse,D as isSidebarCollapsedDesktop,A as showNavFlyout,O as showSettingsFlyout};
+const STORAGE_KEY = "pa_sidebar_collapsed";
+const DESKTOP_MQ = "(min-width: 861px)";
+const LABEL_OVERRIDES = {
+  Dashboard: "Dashboard",
+  Settings: "Settings",
+  general: "General",
+  profile: "Profile",
+  security: "Security",
+  notifications: "Notifications"
+};
+let tooltipDelegationBound = false;
+let navFlyoutBound = false;
+let resizeBound = false;
+let activeFlyoutGroup = null;
+function isDesktop() {
+  return window.matchMedia(DESKTOP_MQ).matches;
+}
+function getSidebar() {
+  return document.getElementById("paSidebar");
+}
+function getCollapseHost() {
+  return document.getElementById("paSidebarCollapseHost") || document.querySelector(".pa-sidebar-panel-head") || document.querySelector(".pa-header-top-left") || document.querySelector(".pa-header-page-left");
+}
+function getTooltipLabel(el) {
+  if (el.classList.contains("pa-logo-link")) return "Portfolio Dashboard";
+  if (el.id === "paLogoutBtn" || el.classList.contains("pa-rail-logout")) return "Logout";
+  if (el.classList.contains("pa-rail-btn") && el.dataset.railTarget) {
+    return el.getAttribute("aria-label") || el.dataset.railTarget;
+  }
+  if (el.classList.contains("pa-sidebar-collapse")) {
+    return el.getAttribute("aria-label") || "Toggle sidebar";
+  }
+  const fromData = el.dataset.nav || el.dataset.settingsTab;
+  if (fromData && LABEL_OVERRIDES[fromData]) return LABEL_OVERRIDES[fromData];
+  if (fromData) return fromData.replace(/([a-z])([A-Z])/g, "$1 $2");
+  const icon = el.querySelector("i");
+  const labelEl = el.querySelector(".pa-nav-item-label");
+  if (labelEl?.textContent?.trim()) return labelEl.textContent.trim();
+  const text = (el.textContent || "").replace(icon?.textContent || "", "").trim();
+  return text || null;
+}
+function getSettingsGroup() {
+  return document.querySelector('[data-nav-group="settings"]');
+}
+function getFlyoutAnchor(group) {
+  if (!group) return null;
+  return group.querySelector(":scope > .pa-nav-parent-row");
+}
+function getFlyoutSubmenu(group) {
+  if (!group) return null;
+  return group.querySelector(":scope > .pa-nav-submenu");
+}
+function refreshSidebarTooltips(sidebar) {
+  const collapsed = sidebar.classList.contains("collapsed");
+  sidebar.querySelectorAll(
+    ".pa-logo-link, .pa-rail-btn, .pa-nav-item, .pa-nav-subitem, .pa-logout, #paLogoutBtn"
+  ).forEach((el) => {
+    if (collapsed && el.closest("[data-nav-group]")) {
+      el.removeAttribute("data-sidebar-tooltip");
+      return;
+    }
+    const label = getTooltipLabel(el);
+    if (label) el.setAttribute("data-sidebar-tooltip", label);
+    else el.removeAttribute("data-sidebar-tooltip");
+  });
+}
+function ensureTooltipEl() {
+  let tip = document.getElementById("paSidebarTooltip");
+  if (!tip) {
+    tip = document.createElement("div");
+    tip.id = "paSidebarTooltip";
+    tip.className = "pa-sidebar-tooltip";
+    tip.setAttribute("role", "tooltip");
+    document.body.appendChild(tip);
+  }
+  return tip;
+}
+function hideSidebarTooltip() {
+  const tip = document.getElementById("paSidebarTooltip");
+  if (!tip) return;
+  tip.classList.remove("visible");
+  tip.textContent = "";
+}
+function ensureNavFlyout() {
+  let flyout = document.getElementById("paNavFlyout");
+  if (!flyout) {
+    flyout = document.createElement("div");
+    flyout.id = "paNavFlyout";
+    flyout.className = "pa-nav-flyout";
+    flyout.setAttribute("role", "menu");
+    flyout.setAttribute("aria-label", "Navigation submenu");
+    flyout.setAttribute("aria-hidden", "true");
+    document.body.appendChild(flyout);
+  }
+  return flyout;
+}
+function isNavFlyoutHoverTarget(node) {
+  if (!node) return false;
+  const flyout = document.getElementById("paNavFlyout");
+  if (flyout && flyout.contains(node)) return true;
+  if (activeFlyoutGroup && activeFlyoutGroup.contains(node)) return true;
+  return false;
+}
+function hideNavFlyout() {
+  const flyout = document.getElementById("paNavFlyout");
+  flyout?.classList.remove("visible");
+  flyout?.setAttribute("aria-hidden", "true");
+  activeFlyoutGroup?.classList.remove("flyout-open");
+  activeFlyoutGroup = null;
+}
+function showNavFlyout(group) {
+  const sidebar = getSidebar();
+  if (!group || !sidebar?.classList.contains("collapsed") || !isDesktop()) {
+    hideNavFlyout();
+    return;
+  }
+  const submenu = getFlyoutSubmenu(group);
+  const groupId = group.dataset.navGroup;
+  const railAnchor = groupId ? document.querySelector(`.pa-rail-btn[data-rail-target="${groupId}"]`) : null;
+  const anchor = railAnchor || getFlyoutAnchor(group);
+  if (!submenu || !anchor) return;
+  hideSidebarTooltip();
+  hideNavFlyout();
+  const flyout = ensureNavFlyout();
+  flyout.innerHTML = submenu.innerHTML;
+  flyout.querySelectorAll(".pa-nav-group").forEach((nested) => nested.classList.add("open"));
+  flyout.setAttribute("aria-hidden", "false");
+  flyout.setAttribute("aria-label", group.querySelector(".pa-nav-section-label-text")?.textContent?.trim() || group.dataset.navGroup || "Navigation submenu");
+  const rect = anchor.getBoundingClientRect();
+  flyout.style.top = `${Math.max(8, rect.top)}px`;
+  flyout.style.left = `${rect.right + 4}px`;
+  flyout.classList.add("visible");
+  group.classList.add("flyout-open");
+  activeFlyoutGroup = group;
+  const flyoutRect = flyout.getBoundingClientRect();
+  if (flyoutRect.bottom > window.innerHeight - 60) {
+    flyout.style.top = `${Math.max(60, window.innerHeight - flyoutRect.height - 60)}px`;
+  }
+}
+function hideSettingsFlyout() {
+  hideNavFlyout();
+}
+function showSettingsFlyout(group = getSettingsGroup()) {
+  showNavFlyout(group);
+}
+function isSidebarCollapsedDesktop() {
+  const sidebar = getSidebar();
+  return !!sidebar?.classList.contains("collapsed") && isDesktop();
+}
+function bindNavFlyoutDelegation() {
+  if (navFlyoutBound) return;
+  navFlyoutBound = true;
+  document.addEventListener(
+    "mouseover",
+    (e) => {
+      const sidebar = getSidebar();
+      if (!sidebar?.classList.contains("collapsed") || !isDesktop()) return;
+      const group = e.target.closest(".pa-nav-group[data-nav-group]");
+      if (!group || !sidebar.contains(group)) return;
+      const anchor = getFlyoutAnchor(group);
+      if (!anchor || !group.contains(e.target)) return;
+      if (!e.target.closest(".pa-nav-parent-row")) return;
+      showNavFlyout(group);
+    },
+    true
+  );
+  document.addEventListener(
+    "mouseout",
+    (e) => {
+      const sidebar = getSidebar();
+      if (!sidebar?.classList.contains("collapsed")) return;
+      const inFlyoutArea = e.target.closest(".pa-nav-group[data-nav-group]") || e.target.closest("#paNavFlyout");
+      if (!inFlyoutArea) return;
+      const related = e.relatedTarget;
+      if (isNavFlyoutHoverTarget(related)) return;
+      hideNavFlyout();
+    },
+    true
+  );
+  document.addEventListener("click", (e) => {
+    if (!isSidebarCollapsedDesktop()) return;
+    if (isNavFlyoutHoverTarget(e.target)) return;
+    hideNavFlyout();
+  }, true);
+  document.addEventListener("scroll", hideNavFlyout, true);
+  window.addEventListener("blur", hideNavFlyout);
+}
+function showSidebarTooltip(target) {
+  const sidebar = getSidebar();
+  if (!sidebar?.classList.contains("collapsed") || !isDesktop()) {
+    hideSidebarTooltip();
+    return;
+  }
+  const label = target.getAttribute("data-sidebar-tooltip");
+  if (!label) {
+    hideSidebarTooltip();
+    return;
+  }
+  const tip = ensureTooltipEl();
+  tip.textContent = label;
+  const rect = target.getBoundingClientRect();
+  tip.style.top = `${rect.top + rect.height / 2}px`;
+  tip.style.left = `${rect.right + 4}px`;
+  tip.classList.add("visible");
+}
+function bindSidebarTooltipDelegation() {
+  if (tooltipDelegationBound) return;
+  tooltipDelegationBound = true;
+  document.addEventListener(
+    "mouseover",
+    (e) => {
+      const sidebar = getSidebar();
+      if (!sidebar?.classList.contains("collapsed") || !isDesktop()) return;
+      if (e.target.closest(".pa-nav-group[data-nav-group]")) return;
+      const target = e.target.closest("[data-sidebar-tooltip]");
+      if (!target || !sidebar.contains(target)) return;
+      showSidebarTooltip(target);
+    },
+    true
+  );
+  document.addEventListener(
+    "mouseout",
+    (e) => {
+      const sidebar = getSidebar();
+      if (!sidebar?.classList.contains("collapsed")) return;
+      const target = e.target.closest("[data-sidebar-tooltip]");
+      if (!target || !sidebar.contains(target)) return;
+      const related = e.relatedTarget;
+      if (related && target.contains(related)) return;
+      hideSidebarTooltip();
+    },
+    true
+  );
+  document.addEventListener("scroll", hideSidebarTooltip, true);
+  window.addEventListener("blur", hideSidebarTooltip);
+}
+function closeFlyoutMenus(sidebar) {
+  sidebar.querySelectorAll(".pa-nav-group.open").forEach((group) => {
+    group.classList.remove("open");
+    group.querySelector(".pa-nav-toggle")?.setAttribute("aria-expanded", "false");
+  });
+  hideNavFlyout();
+}
+function applyCollapsedState(sidebar, collapsed) {
+  if (collapsed && isDesktop()) {
+    sidebar.classList.add("collapsed");
+    closeFlyoutMenus(sidebar);
+  } else {
+    sidebar.classList.remove("collapsed");
+    hideSidebarTooltip();
+    hideNavFlyout();
+  }
+  const btn = document.getElementById("paSidebarCollapse");
+  if (btn) {
+    const isCollapsed = sidebar.classList.contains("collapsed");
+    btn.setAttribute("aria-expanded", isCollapsed ? "false" : "true");
+    btn.setAttribute("aria-label", isCollapsed ? "Expand sidebar" : "Collapse sidebar");
+  }
+  refreshSidebarTooltips(sidebar);
+}
+function readStoredCollapsed() {
+  try {
+    return localStorage.getItem(STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function storeCollapsed(collapsed) {
+  try {
+    localStorage.setItem(STORAGE_KEY, collapsed ? "1" : "0");
+  } catch {
+  }
+}
+function ensureCollapseButton(sidebar) {
+  const host = getCollapseHost();
+  if (!host) return null;
+  let btn = document.getElementById("paSidebarCollapse");
+  if (!btn) {
+    btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "pa-sidebar-collapse";
+    btn.id = "paSidebarCollapse";
+    btn.setAttribute("aria-label", "Collapse sidebar");
+    btn.setAttribute("aria-expanded", "true");
+    btn.innerHTML = '<i class="ri-menu-fold-line" aria-hidden="true"></i>';
+    btn.addEventListener("click", () => {
+      if (!isDesktop()) return;
+      const next = !sidebar.classList.contains("collapsed");
+      applyCollapsedState(sidebar, next);
+      storeCollapsed(next);
+    });
+  }
+  if (btn.parentElement !== host) {
+    host.insertBefore(btn, host.firstChild);
+  }
+  return btn;
+}
+function bindResponsiveCollapse(sidebar) {
+  if (resizeBound) return;
+  resizeBound = true;
+  const mq = window.matchMedia(DESKTOP_MQ);
+  const sync = () => {
+    if (!sidebar.isConnected) return;
+    applyCollapsedState(sidebar, readStoredCollapsed());
+  };
+  mq.addEventListener("change", sync);
+  window.addEventListener("resize", sync, { passive: true });
+}
+function initSidebarCollapse() {
+  const sidebar = getSidebar();
+  if (!sidebar) return;
+  bindSidebarTooltipDelegation();
+  bindNavFlyoutDelegation();
+  ensureCollapseButton(sidebar);
+  refreshSidebarTooltips(sidebar);
+  applyCollapsedState(sidebar, readStoredCollapsed());
+  bindResponsiveCollapse(sidebar);
+}
+export {
+  hideNavFlyout,
+  hideSettingsFlyout,
+  initSidebarCollapse,
+  isSidebarCollapsedDesktop,
+  showNavFlyout,
+  showSettingsFlyout
+};
+//# sourceMappingURL=sidebarCollapse.js.map

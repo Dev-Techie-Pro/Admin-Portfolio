@@ -1,1 +1,91 @@
-const m=899;let c=null,r=null;function l(){return document.querySelector(".pa-header-top-left .pa-search, .pa-header-right .pa-search")}function u(){return l()?.querySelector("input")}function d(){return window.innerWidth<=899}function p(){return r?.classList.contains("pa-header-top--search-open")??!1}function i(){if(!r)return;r.classList.remove("pa-header-top--search-open"),document.documentElement.classList.remove("pa-mobile-search-active"),document.getElementById("paMobileSearchToggle")?.setAttribute("aria-expanded","false")}function h(){return!l()||!r||!d()?!1:(document.getElementById("paNotifWrap")?.classList.remove("open"),r.classList.add("pa-header-top--search-open"),document.documentElement.classList.add("pa-mobile-search-active"),document.getElementById("paMobileSearchToggle")?.setAttribute("aria-expanded","true"),requestAnimationFrame(()=>u()?.focus()),!0)}function g(){c?.abort(),c=new AbortController;const{signal:a}=c;r=document.querySelector(".pa-header-top");const n=l(),s=document.querySelector(".pa-header-top-right");if(!r||!n||!s){r=null;return}i();let e=document.getElementById("paMobileSearchToggle");e||(e=document.createElement("button"),e.type="button",e.id="paMobileSearchToggle",e.className="pa-mobile-search-toggle",e.setAttribute("aria-label","Open search"),e.setAttribute("aria-expanded","false"),e.setAttribute("aria-controls",n.id||"paSearchWrap"),e.innerHTML='<i class="ri-search-line" aria-hidden="true"></i>',s.insertBefore(e,s.firstChild));let t=n.querySelector(".pa-mobile-search-dismiss");t||(t=document.createElement("button"),t.type="button",t.className="pa-mobile-search-dismiss",t.setAttribute("aria-label","Close search"),t.innerHTML='<i class="ri-close-line" aria-hidden="true"></i>',n.appendChild(t)),e.addEventListener("click",()=>{p()?i():h()},{signal:a}),t.addEventListener("click",o=>{o.preventDefault(),i()},{signal:a}),window.addEventListener("resize",()=>{d()||i()},{signal:a}),document.addEventListener("keydown",o=>{o.key!=="Escape"||!p()||(o.preventDefault(),o.stopPropagation(),i())},{signal:a,capture:!0})}export{i as closeMobileHeaderSearch,g as initMobileHeaderSearch,p as isMobileHeaderSearchOpen,h as openMobileHeaderSearch};
+const MOBILE_SEARCH_MAX = 899;
+let abortController = null;
+let headerTop = null;
+function getSearchWrap() {
+  return document.querySelector(".pa-header-top-left .pa-search, .pa-header-right .pa-search");
+}
+function getSearchInput() {
+  return getSearchWrap()?.querySelector("input");
+}
+function isMobileSearchViewport() {
+  return window.innerWidth <= MOBILE_SEARCH_MAX;
+}
+function isMobileHeaderSearchOpen() {
+  return headerTop?.classList.contains("pa-header-top--search-open") ?? false;
+}
+function closeMobileHeaderSearch() {
+  if (!headerTop) return;
+  headerTop.classList.remove("pa-header-top--search-open");
+  document.documentElement.classList.remove("pa-mobile-search-active");
+  const toggle = document.getElementById("paMobileSearchToggle");
+  toggle?.setAttribute("aria-expanded", "false");
+}
+function openMobileHeaderSearch() {
+  const wrap = getSearchWrap();
+  if (!wrap || !headerTop || !isMobileSearchViewport()) return false;
+  document.getElementById("paNotifWrap")?.classList.remove("open");
+  headerTop.classList.add("pa-header-top--search-open");
+  document.documentElement.classList.add("pa-mobile-search-active");
+  const toggle = document.getElementById("paMobileSearchToggle");
+  toggle?.setAttribute("aria-expanded", "true");
+  requestAnimationFrame(() => getSearchInput()?.focus());
+  return true;
+}
+function initMobileHeaderSearch() {
+  abortController?.abort();
+  abortController = new AbortController();
+  const { signal } = abortController;
+  headerTop = document.querySelector(".pa-header-top");
+  const searchWrap = getSearchWrap();
+  const headerTopRight = document.querySelector(".pa-header-top-right");
+  if (!headerTop || !searchWrap || !headerTopRight) {
+    headerTop = null;
+    return;
+  }
+  closeMobileHeaderSearch();
+  let toggle = document.getElementById("paMobileSearchToggle");
+  if (!toggle) {
+    toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.id = "paMobileSearchToggle";
+    toggle.className = "pa-mobile-search-toggle";
+    toggle.setAttribute("aria-label", "Open search");
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-controls", searchWrap.id || "paSearchWrap");
+    toggle.innerHTML = '<i class="ri-search-line" aria-hidden="true"></i>';
+    headerTopRight.insertBefore(toggle, headerTopRight.firstChild);
+  }
+  let dismiss = searchWrap.querySelector(".pa-mobile-search-dismiss");
+  if (!dismiss) {
+    dismiss = document.createElement("button");
+    dismiss.type = "button";
+    dismiss.className = "pa-mobile-search-dismiss";
+    dismiss.setAttribute("aria-label", "Close search");
+    dismiss.innerHTML = '<i class="ri-close-line" aria-hidden="true"></i>';
+    searchWrap.appendChild(dismiss);
+  }
+  toggle.addEventListener("click", () => {
+    if (isMobileHeaderSearchOpen()) closeMobileHeaderSearch();
+    else openMobileHeaderSearch();
+  }, { signal });
+  dismiss.addEventListener("click", (e) => {
+    e.preventDefault();
+    closeMobileHeaderSearch();
+  }, { signal });
+  window.addEventListener("resize", () => {
+    if (!isMobileSearchViewport()) closeMobileHeaderSearch();
+  }, { signal });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !isMobileHeaderSearchOpen()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeMobileHeaderSearch();
+  }, { signal, capture: true });
+}
+export {
+  closeMobileHeaderSearch,
+  initMobileHeaderSearch,
+  isMobileHeaderSearchOpen,
+  openMobileHeaderSearch
+};
+//# sourceMappingURL=mobileHeaderSearch.js.map

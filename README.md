@@ -187,7 +187,7 @@ Portfolio-Admin-main/
 │   └── images/                   # Favicons, manifest
 │
 ├── supabase/
-│   ├── migrations/               # PostgreSQL schema migrations (53 files)
+│   ├── migrations/               # Squashed baseline + new incremental migrations
 │   └── README.md                 # Detailed database documentation
 │
 ├── scripts/                      # Optional dev utilities (not runtime)
@@ -242,7 +242,7 @@ supabase link --project-ref YOUR_PROJECT_REF
 npm run db:push
 ```
 
-Alternatively, run the SQL files in `supabase/migrations/` in order via the Supabase Dashboard SQL Editor. Full schema documentation is in [supabase/README.md](supabase/README.md).
+Alternatively, run the baseline SQL in `supabase/migrations/` on a **new** empty project via the Supabase Dashboard SQL Editor. Full schema documentation is in [supabase/README.md](supabase/README.md).
 
 ### 4. Promote your first admin user
 
@@ -310,7 +310,7 @@ The PostgreSQL schema covers:
 
 Theme and UI customization live in `site_settings.appearance_settings` (JSON). Contact inbox column visibility is in `site_settings.contact_message_columns`. **Removed features:** `integrations` table (`20260925160000_drop_integrations_table.sql`), content-agent learning table `agent_suggestion_feedback` (`20260930120000_drop_content_agent_learning.sql`).
 
-Migrations are in `supabase/migrations/` (**53 files**) and should be applied in filename order. For tables, RLS policies, roles, and RPCs, see [supabase/README.md](supabase/README.md).
+Migrations: one squashed baseline in `supabase/migrations/` plus any newer incremental files. Archived history is in `supabase/migrations_archive/`. See [supabase/README.md](supabase/README.md) for tables, RLS, roles, and RPCs.
 
 **npm database scripts:**
 

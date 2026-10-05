@@ -1,1 +1,11 @@
-import{AuthModule as e}from"./AuthModule.js";import{LoginModule as d}from"./LoginModule.js";import{ForgotPasswordModule as u}from"./ForgotPasswordModule.js";import{ResetPasswordModule as l}from"./ResetPasswordModule.js";export{e as AuthModule,u as ForgotPasswordModule,d as LoginModule,l as ResetPasswordModule};
+import { AuthModule } from "./AuthModule.js";
+import { LoginModule } from "./LoginModule.js";
+import { ForgotPasswordModule } from "./ForgotPasswordModule.js";
+import { ResetPasswordModule } from "./ResetPasswordModule.js";
+export {
+  AuthModule,
+  ForgotPasswordModule,
+  LoginModule,
+  ResetPasswordModule
+};
+//# sourceMappingURL=index.js.map

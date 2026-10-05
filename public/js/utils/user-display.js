@@ -1,1 +1,87 @@
-import{applyCapabilityGatedElements as p,setAccessCapabilities as n,setAccessFromRole as s}from"../core/access.js";import{deriveAccessCapabilities as i}from"../../lib/auth/capabilities.js";function l(e,a,{alt:r=""}={}){if(!e||(e.innerHTML="",!a))return;const t=document.createElement("img");t.src=a,t.alt=r,t.decoding="async",e.appendChild(t)}function d(e){if(!e)return;const a=e.fullName||e.username||e.email||"User",r=e.role?e.role.replace(/_/g," "):"Staff";document.querySelectorAll(".pa-user-name").forEach(t=>{t.textContent=a}),document.querySelectorAll(".pa-user-role").forEach(t=>{t.textContent=r}),document.querySelectorAll(".pa-user-email").forEach(t=>{t.textContent=e.email||""}),document.querySelectorAll("#paUserMenuAvatar, #paUserMenu .pa-avatar, .pa-header-user .pa-avatar, #paUserDropdownAvatar .pa-avatar, #paRailAvatar .pa-rail-profile-mark").forEach(t=>{o(t,e.avatarUrl)}),c(e.role,e.capabilities)}function c(e,a){const r=a??i(e);n(r),p(r)}function o(e,a){e&&(a?l(e,a):e.innerHTML='<i class="ri-user-3-fill"></i>')}function u(e){document.querySelectorAll("#paUserMenuAvatar, #paUserMenu .pa-avatar, .pa-header-user .pa-avatar, #paUserDropdownAvatar .pa-avatar, #paRailAvatar .pa-rail-profile-mark").forEach(a=>{o(a,e)})}function v(e,a){e&&(a?l(e,a,{alt:"Profile photo"}):e.innerHTML='<i class="ri-user-3-fill"></i>')}function A(e,a){const r=e?.tagName==="IMG"?e:document.getElementById("coverImage");r&&(a?(r.src=a,r.hidden=!1,r.removeAttribute("hidden")):(r.removeAttribute("src"),r.hidden=!0))}export{c as applyRoleBasedAccess,d as applyUserDisplay,i as deriveAccessCapabilities,u as previewUserAvatar,o as renderAvatarElement,v as renderPreviewAvatar,s as setAccessFromRole,A as setCoverImage};
+import {
+  applyCapabilityGatedElements,
+  setAccessCapabilities,
+  setAccessFromRole
+} from "../core/access.js";
+import { deriveAccessCapabilities } from "../../lib/auth/capabilities.js";
+function setImageSrc(container, url, { alt = "" } = {}) {
+  if (!container) return;
+  container.innerHTML = "";
+  if (!url) return;
+  const img = document.createElement("img");
+  img.src = url;
+  img.alt = alt;
+  img.decoding = "async";
+  container.appendChild(img);
+}
+function applyUserDisplay(user) {
+  if (!user) return;
+  const displayName = user.fullName || user.username || user.email || "User";
+  const displayRole = user.role ? user.role.replace(/_/g, " ") : "Staff";
+  document.querySelectorAll(".pa-user-name").forEach((el) => {
+    el.textContent = displayName;
+  });
+  document.querySelectorAll(".pa-user-role").forEach((el) => {
+    el.textContent = displayRole;
+  });
+  document.querySelectorAll(".pa-user-email").forEach((el) => {
+    el.textContent = user.email || "";
+  });
+  document.querySelectorAll(
+    "#paUserMenuAvatar, #paUserMenu .pa-avatar, .pa-header-user .pa-avatar, #paUserDropdownAvatar .pa-avatar, #paRailAvatar .pa-rail-profile-mark"
+  ).forEach((el) => {
+    renderAvatarElement(el, user.avatarUrl);
+  });
+  applyRoleBasedAccess(user.role, user.capabilities);
+}
+function applyRoleBasedAccess(role, capabilitiesFromServer) {
+  const capabilities = capabilitiesFromServer ?? deriveAccessCapabilities(role);
+  setAccessCapabilities(capabilities);
+  applyCapabilityGatedElements(capabilities);
+}
+function renderAvatarElement(container, url) {
+  if (!container) return;
+  if (url) {
+    setImageSrc(container, url);
+  } else {
+    container.innerHTML = '<i class="ri-user-3-fill"></i>';
+  }
+}
+function previewUserAvatar(url) {
+  document.querySelectorAll(
+    "#paUserMenuAvatar, #paUserMenu .pa-avatar, .pa-header-user .pa-avatar, #paUserDropdownAvatar .pa-avatar, #paRailAvatar .pa-rail-profile-mark"
+  ).forEach((el) => {
+    renderAvatarElement(el, url);
+  });
+}
+function renderPreviewAvatar(container, url) {
+  if (!container) return;
+  if (url) {
+    setImageSrc(container, url, { alt: "Profile photo" });
+  } else {
+    container.innerHTML = '<i class="ri-user-3-fill"></i>';
+  }
+}
+function setCoverImage(imgEl, url) {
+  const img = imgEl?.tagName === "IMG" ? imgEl : document.getElementById("coverImage");
+  if (!img) return;
+  if (url) {
+    img.src = url;
+    img.hidden = false;
+    img.removeAttribute("hidden");
+  } else {
+    img.removeAttribute("src");
+    img.hidden = true;
+  }
+}
+export {
+  applyRoleBasedAccess,
+  applyUserDisplay,
+  deriveAccessCapabilities,
+  previewUserAvatar,
+  renderAvatarElement,
+  renderPreviewAvatar,
+  setAccessFromRole,
+  setCoverImage
+};
+//# sourceMappingURL=user-display.js.map

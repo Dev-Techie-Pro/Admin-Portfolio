@@ -1,1 +1,222 @@
-import{escapeHtml as y}from"./dom.js";import{mountFloatingLayer as K}from"./floatingLayer.js";import{addStackChip as N,getStackChipSelections as B}from"./chips.js";import{loadStackCatalog as O}from"./stackCatalog.js";import{resolveStackItemByName as q}from"./stackResolve.js";import{promptStackKind as G}from"./stackKindPrompt.js";const P=8;function U(e){return new Set(B(e).map(f=>`${f.kind}:${f.id}`))}function j(e){return e==="tool"?"Tool":"Technology"}function Q(e,f,n,L={}){if(!e||!f||!n)return null;let g=[],a=[],r=-1,u=null,m=null;const I=e.closest(".pa-tech-suggest")||e.parentElement;n.id||(n.id=`pa-tech-suggest-${Math.random().toString(36).slice(2,9)}`);async function v(){g=await O()}function $(){n.hidden||(m?m.reposition():m=K(n,e,{maxHeight:220,align:"match-width"}),e.setAttribute("aria-expanded","true"))}function k(t,o){if(!t.length){n.hidden=!0,n.innerHTML="",m?.release(),m=null,e.setAttribute("aria-expanded","false");return}n.hidden=!1,n.innerHTML=t.map((c,s)=>{const i=s===o?" active":"",d=y(c.name||""),D=y(j(c.kind));return`<button type="button" class="pa-tech-suggest-item${i}" role="option" aria-selected="${s===o}" data-chip-kind="${y(c.kind)}" data-legacy-id="${y(String(c.id))}"><span class="pa-tech-suggest-name">${d}</span><span class="pa-tech-suggest-kind">${D}</span></button>`}).join(""),requestAnimationFrame(()=>$())}function h(){m?.release(),m=null,n.hidden=!0,n.innerHTML="",r=-1,a=[],e.setAttribute("aria-expanded","false")}function p(t){const o=t.trim().toLowerCase(),c=U(f);a=g.filter(s=>!c.has(`${s.kind}:${s.id}`)).filter(s=>!o||String(s.name).toLowerCase().includes(o)).slice(0,P),r=a.length?0:-1,k(a,r)}function F(){u&&clearTimeout(u),u=setTimeout(()=>h(),180)}function b(){u&&(clearTimeout(u),u=null)}function l(t){t&&(N(f,t.kind,t.id,t.name),e.value="",h(),e.focus())}async function S(){const t=e.value.trim();if(!t)return;const o=t.toLowerCase(),c=g.find(i=>i.kind==="technology"&&i.name.toLowerCase()===o),s=g.find(i=>i.kind==="tool"&&i.name.toLowerCase()===o);if(c&&s){l(r>=0&&a[r]?a[r]:c);return}if(s){l(s);return}if(c){l(c);return}if(r>=0&&a[r]){l(a[r]);return}try{const i=await G(t);if(!i)return;const d=await q(t,i);if(d){L.onStackItemCreated?.(d),await v(),l(d);return}L.onCreateFailed?.("Could not add item. Add a tool category under Tech & Tools first.")}catch(i){const d=i instanceof Error?i.message:"Could not save item.";L.onCreateFailed?.(d)}}function T(){b(),p(e.value)}function C(){b(),v().then(()=>p(e.value))}function w(){F()}function M(t){if(t.key==="ArrowDown"){if(t.preventDefault(),!a.length){v().then(()=>{p(e.value),a.length&&(r=0),k(a,r)});return}r=Math.min(a.length-1,r+1),k(a,r);return}if(t.key==="ArrowUp"){if(!a.length)return;t.preventDefault(),r=Math.max(0,r-1),k(a,r);return}if(t.key==="Escape"){h();return}if(t.key==="Enter"||t.key===","){t.preventDefault(),S();return}}function A(t){t.preventDefault(),b()}function H(t){const o=t.target.closest(".pa-tech-suggest-item");if(!o)return;const c=o.getAttribute("data-chip-kind")==="tool"?"tool":"technology",s=Number(o.getAttribute("data-legacy-id")),i=g.find(d=>d.kind===c&&Number(d.id)===s)||a.find(d=>d.kind===c&&Number(d.id)===s);i&&l(i)}function x(t){const o=t.target;o instanceof Node&&(I?.contains(o)||n.contains(o)||o instanceof Element&&o.closest(".pa-tech-suggest-list, .pa-tech-suggest-item")||h())}return e.setAttribute("autocomplete","off"),e.setAttribute("role","combobox"),e.setAttribute("aria-expanded","false"),e.setAttribute("aria-controls",n.id),n.setAttribute("role","listbox"),e.addEventListener("input",T),e.addEventListener("focus",C),e.addEventListener("blur",w),e.addEventListener("keydown",M),n.addEventListener("mousedown",A),n.addEventListener("click",H),document.addEventListener("click",x,!0),v(),{refreshCatalog:v,commit:S,destroy:()=>{e.removeEventListener("input",T),e.removeEventListener("focus",C),e.removeEventListener("blur",w),e.removeEventListener("keydown",M),n.removeEventListener("mousedown",A),n.removeEventListener("click",H),document.removeEventListener("click",x,!0),u&&clearTimeout(u),h()}}}export{Q as bindTechnologySuggest};
+import { escapeHtml } from "./dom.js";
+import { mountFloatingLayer } from "./floatingLayer.js";
+import { addStackChip, getStackChipSelections } from "./chips.js";
+import { loadStackCatalog } from "./stackCatalog.js";
+import { resolveStackItemByName } from "./stackResolve.js";
+import { promptStackKind } from "./stackKindPrompt.js";
+const MAX_SUGGESTIONS = 8;
+function selectedKeys(chipsEl) {
+  return new Set(
+    getStackChipSelections(chipsEl).map((row) => `${row.kind}:${row.id}`)
+  );
+}
+function kindLabel(kind) {
+  return kind === "tool" ? "Tool" : "Technology";
+}
+function bindTechnologySuggest(inputEl, chipsEl, listEl, options = {}) {
+  if (!inputEl || !chipsEl || !listEl) return null;
+  let catalog = [];
+  let visible = [];
+  let highlight = -1;
+  let hideTimer = null;
+  let floating = null;
+  const wrap = inputEl.closest(".pa-tech-suggest") || inputEl.parentElement;
+  if (!listEl.id) {
+    listEl.id = `pa-tech-suggest-${Math.random().toString(36).slice(2, 9)}`;
+  }
+  async function refreshCatalog() {
+    catalog = await loadStackCatalog();
+  }
+  function positionList() {
+    if (listEl.hidden) return;
+    if (!floating) {
+      floating = mountFloatingLayer(listEl, inputEl, { maxHeight: 220, align: "match-width" });
+    } else {
+      floating.reposition();
+    }
+    inputEl.setAttribute("aria-expanded", "true");
+  }
+  function renderSuggestionList(items, highlightIndex) {
+    if (!items.length) {
+      listEl.hidden = true;
+      listEl.innerHTML = "";
+      floating?.release();
+      floating = null;
+      inputEl.setAttribute("aria-expanded", "false");
+      return;
+    }
+    listEl.hidden = false;
+    listEl.innerHTML = items.map((item, i) => {
+      const active = i === highlightIndex ? " active" : "";
+      const name = escapeHtml(item.name || "");
+      const badge = escapeHtml(kindLabel(item.kind));
+      return `<button type="button" class="pa-tech-suggest-item${active}" role="option" aria-selected="${i === highlightIndex}" data-chip-kind="${escapeHtml(item.kind)}" data-legacy-id="${escapeHtml(String(item.id))}"><span class="pa-tech-suggest-name">${name}</span><span class="pa-tech-suggest-kind">${badge}</span></button>`;
+    }).join("");
+    requestAnimationFrame(() => positionList());
+  }
+  function hideList() {
+    floating?.release();
+    floating = null;
+    listEl.hidden = true;
+    listEl.innerHTML = "";
+    highlight = -1;
+    visible = [];
+    inputEl.setAttribute("aria-expanded", "false");
+  }
+  function filterVisible(query) {
+    const q = query.trim().toLowerCase();
+    const taken = selectedKeys(chipsEl);
+    visible = catalog.filter((item) => !taken.has(`${item.kind}:${item.id}`)).filter((item) => !q || String(item.name).toLowerCase().includes(q)).slice(0, MAX_SUGGESTIONS);
+    highlight = visible.length ? 0 : -1;
+    renderSuggestionList(visible, highlight);
+  }
+  function scheduleHide() {
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => hideList(), 180);
+  }
+  function cancelHide() {
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
+    }
+  }
+  function pickItem(item) {
+    if (!item) return;
+    addStackChip(chipsEl, item.kind, item.id, item.name);
+    inputEl.value = "";
+    hideList();
+    inputEl.focus();
+  }
+  async function commitFreeText() {
+    const raw = inputEl.value.trim();
+    if (!raw) return;
+    const lower = raw.toLowerCase();
+    const exactTech = catalog.find((i) => i.kind === "technology" && i.name.toLowerCase() === lower);
+    const exactTool = catalog.find((i) => i.kind === "tool" && i.name.toLowerCase() === lower);
+    if (exactTech && exactTool) {
+      pickItem(highlight >= 0 && visible[highlight] ? visible[highlight] : exactTech);
+      return;
+    }
+    if (exactTool) {
+      pickItem(exactTool);
+      return;
+    }
+    if (exactTech) {
+      pickItem(exactTech);
+      return;
+    }
+    if (highlight >= 0 && visible[highlight]) {
+      pickItem(visible[highlight]);
+      return;
+    }
+    try {
+      const kind = await promptStackKind(raw);
+      if (!kind) return;
+      const created = await resolveStackItemByName(raw, kind);
+      if (created) {
+        options.onStackItemCreated?.(created);
+        await refreshCatalog();
+        pickItem(created);
+        return;
+      }
+      options.onCreateFailed?.("Could not add item. Add a tool category under Tech & Tools first.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not save item.";
+      options.onCreateFailed?.(msg);
+    }
+  }
+  function onInput() {
+    cancelHide();
+    filterVisible(inputEl.value);
+  }
+  function onFocus() {
+    cancelHide();
+    void refreshCatalog().then(() => filterVisible(inputEl.value));
+  }
+  function onBlur() {
+    scheduleHide();
+  }
+  function onKeyDown(e) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (!visible.length) {
+        void refreshCatalog().then(() => {
+          filterVisible(inputEl.value);
+          if (visible.length) highlight = 0;
+          renderSuggestionList(visible, highlight);
+        });
+        return;
+      }
+      highlight = Math.min(visible.length - 1, highlight + 1);
+      renderSuggestionList(visible, highlight);
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      if (!visible.length) return;
+      e.preventDefault();
+      highlight = Math.max(0, highlight - 1);
+      renderSuggestionList(visible, highlight);
+      return;
+    }
+    if (e.key === "Escape") {
+      hideList();
+      return;
+    }
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      void commitFreeText();
+      return;
+    }
+  }
+  function onListMouseDown(e) {
+    e.preventDefault();
+    cancelHide();
+  }
+  function onListClick(e) {
+    const btn = e.target.closest(".pa-tech-suggest-item");
+    if (!btn) return;
+    const kind = btn.getAttribute("data-chip-kind") === "tool" ? "tool" : "technology";
+    const id = Number(btn.getAttribute("data-legacy-id"));
+    const item = catalog.find((i) => i.kind === kind && Number(i.id) === id) || visible.find((i) => i.kind === kind && Number(i.id) === id);
+    if (item) pickItem(item);
+  }
+  function onDocClick(e) {
+    const t = e.target;
+    if (!(t instanceof Node)) return;
+    if (wrap?.contains(t) || listEl.contains(t)) return;
+    if (t instanceof Element && t.closest(".pa-tech-suggest-list, .pa-tech-suggest-item")) return;
+    hideList();
+  }
+  inputEl.setAttribute("autocomplete", "off");
+  inputEl.setAttribute("role", "combobox");
+  inputEl.setAttribute("aria-expanded", "false");
+  inputEl.setAttribute("aria-controls", listEl.id);
+  listEl.setAttribute("role", "listbox");
+  inputEl.addEventListener("input", onInput);
+  inputEl.addEventListener("focus", onFocus);
+  inputEl.addEventListener("blur", onBlur);
+  inputEl.addEventListener("keydown", onKeyDown);
+  listEl.addEventListener("mousedown", onListMouseDown);
+  listEl.addEventListener("click", onListClick);
+  document.addEventListener("click", onDocClick, true);
+  void refreshCatalog();
+  return {
+    refreshCatalog,
+    commit: commitFreeText,
+    destroy: () => {
+      inputEl.removeEventListener("input", onInput);
+      inputEl.removeEventListener("focus", onFocus);
+      inputEl.removeEventListener("blur", onBlur);
+      inputEl.removeEventListener("keydown", onKeyDown);
+      listEl.removeEventListener("mousedown", onListMouseDown);
+      listEl.removeEventListener("click", onListClick);
+      document.removeEventListener("click", onDocClick, true);
+      if (hideTimer) clearTimeout(hideTimer);
+      hideList();
+    }
+  };
+}
+export {
+  bindTechnologySuggest
+};
+//# sourceMappingURL=technologySuggest.js.map

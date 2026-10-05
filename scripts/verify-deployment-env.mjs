@@ -52,7 +52,7 @@ const migration = path.join(
   root,
   'supabase',
   'migrations',
-  '20261005120000_public_api_hardening.sql',
+  '20261011120000_portfolio_admin_baseline.sql',
 );
 if (!fs.existsSync(checklist)) warnings.push('docs/DEPLOYMENT_CHECKLIST.md is missing.');
 if (!fs.existsSync(migration)) warnings.push('Public API hardening migration file is missing.');

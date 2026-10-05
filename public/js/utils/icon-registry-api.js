@@ -1,1 +1,108 @@
-const c="https://thesvg.org/api/registry.json",u="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/src/data/icons.json",g="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons",f="https://thesvg.org/icons",a="pa_thesvg_registry_v1";let o=null,i=null;function m(r,t="default",e=!0){const s=String(r||"").trim();return s?`${e?g:f}/${encodeURIComponent(s)}/${t}.svg`:""}function h(r){return(Array.isArray(r?.icons)?r.icons:[]).filter(e=>e?.slug).map(e=>({slug:e.slug,title:e.title||e.slug,aliases:Array.isArray(e.aliases)?e.aliases:[],categories:Array.isArray(e.categories)?e.categories:[],hex:e.hex||""})).sort((e,s)=>e.slug.localeCompare(s.slug))}function y(){try{const r=sessionStorage.getItem(a);if(!r)return null;const t=JSON.parse(r);return Array.isArray(t)?t:null}catch{return null}}function p(r){try{sessionStorage.setItem(a,JSON.stringify(r))}catch{}}async function l(r){const t=await fetch(r);if(!t.ok)throw new Error(`Registry fetch failed (${t.status})`);const e=await t.json();return h(e)}async function R(){if(i)return i;const r=y();return r?.length?(i=r,i):(o||(o=l(c).catch(()=>l(u)).then(t=>(i=t,p(t),t)).catch(t=>{throw o=null,t})),o)}function d(r,t=""){const e=t.trim().toLowerCase();return e?r.filter(s=>!!(s.slug.includes(e)||s.title.toLowerCase().includes(e)||s.aliases.some(n=>n.toLowerCase().includes(e))||s.categories.some(n=>n.toLowerCase().includes(e)))):r}function C(r){const t=new Map;return r.forEach(e=>{e.categories.forEach(s=>{t.set(s,(t.get(s)||0)+1)})}),Array.from(t.entries()).sort((e,s)=>e[0].localeCompare(s[0])).map(([e,s])=>({name:e,count:s}))}function S(r,{query:t="",category:e="all"}={}){let s=r;return e&&e!=="all"&&(s=s.filter(n=>n.categories.includes(e))),t.trim()&&(s=d(s,t)),s}function w(r,t){return t&&r.find(e=>e.slug===t)||null}export{S as filterRegistryIcons,C as getRegistryCategories,w as getRegistryIcon,m as getSvgUrl,R as loadRegistry,d as searchRegistryIcons};
+const REGISTRY_URL = "https://thesvg.org/api/registry.json";
+const REGISTRY_CDN_URL = "https://cdn.jsdelivr.net/gh/glincker/thesvg@main/src/data/icons.json";
+const SVG_CDN_BASE = "https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons";
+const SVG_ORIGIN_BASE = "https://thesvg.org/icons";
+const CACHE_KEY = "pa_thesvg_registry_v1";
+let registryPromise = null;
+let cachedIcons = null;
+function getSvgUrl(slug, variant = "default", preferCdn = true) {
+  const safe = String(slug || "").trim();
+  if (!safe) return "";
+  const base = preferCdn ? SVG_CDN_BASE : SVG_ORIGIN_BASE;
+  return `${base}/${encodeURIComponent(safe)}/${variant}.svg`;
+}
+function normalizeRegistry(data) {
+  const icons = Array.isArray(data?.icons) ? data.icons : [];
+  return icons.filter((icon) => icon?.slug).map((icon) => ({
+    slug: icon.slug,
+    title: icon.title || icon.slug,
+    aliases: Array.isArray(icon.aliases) ? icon.aliases : [],
+    categories: Array.isArray(icon.categories) ? icon.categories : [],
+    hex: icon.hex || ""
+  })).sort((a, b) => a.slug.localeCompare(b.slug));
+}
+function readSessionCache() {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+function writeSessionCache(icons) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(icons));
+  } catch {
+  }
+}
+async function fetchRegistryJson(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Registry fetch failed (${res.status})`);
+  const data = await res.json();
+  return normalizeRegistry(data);
+}
+async function loadRegistry() {
+  if (cachedIcons) return cachedIcons;
+  const sessionCached = readSessionCache();
+  if (sessionCached?.length) {
+    cachedIcons = sessionCached;
+    return cachedIcons;
+  }
+  if (!registryPromise) {
+    registryPromise = fetchRegistryJson(REGISTRY_URL).catch(() => fetchRegistryJson(REGISTRY_CDN_URL)).then((icons) => {
+      cachedIcons = icons;
+      writeSessionCache(icons);
+      return icons;
+    }).catch((err) => {
+      registryPromise = null;
+      throw err;
+    });
+  }
+  return registryPromise;
+}
+function searchRegistryIcons(icons, query = "") {
+  const q = query.trim().toLowerCase();
+  if (!q) return icons;
+  return icons.filter((icon) => {
+    if (icon.slug.includes(q)) return true;
+    if (icon.title.toLowerCase().includes(q)) return true;
+    if (icon.aliases.some((alias) => alias.toLowerCase().includes(q))) return true;
+    if (icon.categories.some((cat) => cat.toLowerCase().includes(q))) return true;
+    return false;
+  });
+}
+function getRegistryCategories(icons) {
+  const counts = /* @__PURE__ */ new Map();
+  icons.forEach((icon) => {
+    icon.categories.forEach((cat) => {
+      counts.set(cat, (counts.get(cat) || 0) + 1);
+    });
+  });
+  return Array.from(counts.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([name, count]) => ({ name, count }));
+}
+function filterRegistryIcons(icons, { query = "", category = "all" } = {}) {
+  let result = icons;
+  if (category && category !== "all") {
+    result = result.filter((icon) => icon.categories.includes(category));
+  }
+  if (query.trim()) {
+    result = searchRegistryIcons(result, query);
+  }
+  return result;
+}
+function getRegistryIcon(icons, slug) {
+  if (!slug) return null;
+  return icons.find((icon) => icon.slug === slug) || null;
+}
+export {
+  filterRegistryIcons,
+  getRegistryCategories,
+  getRegistryIcon,
+  getSvgUrl,
+  loadRegistry,
+  searchRegistryIcons
+};
+//# sourceMappingURL=icon-registry-api.js.map

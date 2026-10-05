@@ -1,4 +1,250 @@
-import{CrudCardModule as y}from"../../core/CrudCardModule.js";import{escapeHtml as d,$id as a}from"../../utils/dom.js";import{formatMonthYear as n,parseSortInput as m,sortByNewestFirst as f}from"../../utils/format.js";import{activateTab as x,openPanel as E}from"../../modules/shell/panels.js";import{renderPaCatCard as v,renderPaCatListRow as C}from"../../utils/paCatCard.js";import{categoryKeyFromAccentHex as h}from"../../utils/categoryClassOptions.js";import{setStatTrend as o,setStatValue as p}from"../../utils/pageStats.js";const s={"full-time":{label:"Full-time",icon:"ri-briefcase-line",color:"#60a5fa"},"part-time":{label:"Part-time",icon:"ri-time-line",color:"#34d399"},contract:{label:"Contract",icon:"ri-file-list-3-line",color:"#fb923c"},freelance:{label:"Freelance",icon:"ri-quill-pen-line",color:"#a78bfa"},internship:{label:"Internship",icon:"ri-graduation-cap-line",color:"#f472b6"}},L=[];class w extends y{constructor(){super({name:"Experience",storageKey:"pa_experience",deleteType:"experience",page:"experience",pageSize:9,listTable:!0,cardIdAttr:"data-exp-id",bulkLabel:"experience entry",defaultFilters:{type:"all"},filterSelectIds:[{id:"paExpTypeFilter",key:"type"}],addFocusId:"expAddTitle",editFocusId:"expEditTitle",ids:{grid:"paExpGrid",resultCount:"paExpResultCount",paginationBtns:"paExpPaginationBtns",paginationInfo:"paExpPaginationInfo",pagePrev:"paExpPagePrev",pageNext:"paExpPageNext",bodyScroll:"paExpBody",emptyResetBtn:"paExpEmptyResetBtn",emptyAddBtn:"paExpEmptyAddBtn",addPanel:"paExpAddPanel",editPanel:"paExpEditPanel",addSubmit:"paExpAddSubmit",editSubmit:"paExpEditSubmit",editDelete:"paExpEditDelete",addNewBtn:"paExpAddNewBtn",addPanelClose:"paExpAddPanelClose",editPanelClose:"paExpEditPanelClose",addCancel:"paExpAddCancel",editCancel:"paExpEditCancel"},menuActions:{"copy-title":function(e){this.copyTitle(e)}}})}seedData(){return[]}sortRecords(t){return f(t)}matchesFilters(t,e){return e.type==="all"||t.type===e.type}matchesSearch(t,e){const i=e.trim().toLowerCase();return t.title.toLowerCase().includes(i)||(t.company||"").toLowerCase().includes(i)||(t.location||"").toLowerCase().includes(i)||(t.desc||"").toLowerCase().includes(i)}getDeleteName(t){return t.title}renderStats(){const t=this.store.get("records");p("paExpStatTotal",t.length),p("paExpStatCurrent",t.filter(e=>e.current).length),p("paExpStatFullTime",t.filter(e=>e.type==="full-time").length),p("paExpStatOther",t.filter(e=>e.type&&e.type!=="full-time").length),o("paExpStatTotalTrend",t),o("paExpStatCurrentTrend",t,e=>e.current),o("paExpStatFullTimeTrend",t,e=>e.type==="full-time"),o("paExpStatOtherTrend",t,e=>e.type&&e.type!=="full-time")}renderCardMenu(t){const e=d(String(t.id)),i=d(t.title);return`<div class="pa-card-menu" data-exp-id="${e}">
-      <div class="pa-card-menu-item" data-action="duplicate" data-exp-id="${e}"><i class="ri-file-copy-line"></i> Duplicate</div>
-      <div class="pa-card-menu-item" data-action="copy-title" data-exp-id="${e}"><i class="ri-clipboard-line"></i> Copy title</div>
-    </div>`}renderListRow(t,e){const i=s[t.type]||s["full-time"],r=`${n(t.startDate)} \u2014 ${t.current?"Present":n(t.endDate)||"\u2014"}`;return C({rowIndex:e,idAttr:"data-exp-id",id:t.id,iconHtml:`<i class="${d(i.icon)}"></i>`,title:t.title,category:t.company||"\u2014",status:t.current?"Active":"Completed",created:r,cardClass:this.bulkSelect?.cardClass(t.id)||""})}renderCard(t,e){const i=s[t.type]||s["full-time"],r=`${n(t.startDate)} \u2014 ${t.current?"Present":n(t.endDate)||"\u2014"}`,l=t.current?'<span class="pa-cat-card__builtin">Current</span>':"";return v({idAttr:"data-exp-id",id:t.id,catKey:h(i.color),cardClass:this.bulkSelect?.cardClass(t.id)||"",animationDelay:0,bulkCheckbox:this.bulkSelect?.checkboxHtml(t.id,`Select ${d(t.title)}`)||"",iconHtml:`<i class="${d(i.icon)}"></i>`,badge:l,title:t.title,slug:t.company||"\u2014",desc:t.desc||"",countIcon:"ri-calendar-line",countLabel:r,status:i.label,dateLabel:t.location?"Location":"Period",dateValue:t.location||r,menuHtml:this.renderCardMenu(t)})}copyTitle(t){const e=this.findById(t);e&&navigator.clipboard?.writeText(e.title).then(()=>this.toast("Title copied to clipboard","success"))}buildDuplicate(t,e){return{...t,id:e,title:`${t.title} (Copy)`}}openAddPanel(){this.resetAddForm(),E(this.config.ids.addPanel,[this.config.ids.editPanel]),x("expAdd","details"),setTimeout(()=>a("expAddTitle")?.focus(),320)}openEditPanel(t){const e=this.findById(t);e&&(this.currentEditId=t,this.populateEditForm(e),E(this.config.ids.editPanel,[this.config.ids.addPanel]),x("expEdit","details"),setTimeout(()=>a("expEditTitle")?.focus(),320))}bindEvents(){super.bindEvents(),["expAddCurrent","expEditCurrent"].forEach(t=>{this.on(a(t),"change",e=>{const i=t.replace("Current",""),r=a(`${i}EndDateRow`);r&&(r.style.display=e.target.value==="1"?"none":"block")})})}resetAddForm(){["expAddTitle","expAddCompany","expAddLocation","expAddStartDate","expAddEndDate","expAddDesc","expAddSort"].forEach(e=>{const i=a(e);i&&(i.value="")}),a("expAddType").value="",a("expAddCurrent").value="0";const t=a("expAddEndDateRow");t&&(t.style.display="block"),["Title","Company","Type","StartDate"].forEach(e=>{a(`expAdd${e}Error`)?.classList.remove("visible"),a(`expAdd${e}`)?.classList.remove("error")})}populateEditForm(t){a("expEditTitle").value=t.title,a("expEditCompany").value=t.company,a("expEditLocation").value=t.location||"",a("expEditType").value=t.type,a("expEditStartDate").value=t.startDate,a("expEditEndDate").value=t.endDate||"",a("expEditCurrent").value=t.current?"1":"0",a("expEditDesc").value=t.desc||"",a("expEditSort").value=t.sortOrder!=null?String(t.sortOrder):"";const e=a("expEditEndDateRow");e&&(e.style.display=t.current?"none":"block"),["Title","Company","Type","StartDate"].forEach(i=>{a(`expEdit${i}Error`)?.classList.remove("visible"),a(`expEdit${i}`)?.classList.remove("error")})}validateForm(t){let e=!0;const i=t==="add"?"expAdd":"expEdit",r=a(`${i}Title`).value.trim();this._err(`${i}Title`,!r),r||(e=!1);const l=a(`${i}Company`).value.trim();this._err(`${i}Company`,!l),l||(e=!1);const c=a(`${i}Type`).value;this._err(`${i}Type`,!c),c||(e=!1);const u=a(`${i}StartDate`).value;return this._err(`${i}StartDate`,!u),u||(e=!1),e||x(i,!r||!l?"details":"dates"),{valid:e,title:r,company:l,type:c,startDate:u}}_err(t,e){a(t)?.classList.toggle("error",e),a(`${t}Error`)?.classList.toggle("visible",e)}buildNewRecord(t){const e=a("expAddCurrent").value==="1";return{title:t.title,company:t.company,location:a("expAddLocation").value.trim(),type:t.type,startDate:t.startDate,endDate:e?"":a("expAddEndDate").value,current:e,desc:a("expAddDesc").value.trim(),sortOrder:m(a("expAddSort").value,this.store.get("records").length+1),createdAt:new Date().toISOString()}}applyEditToRecord(t,e){const i=a("expEditCurrent").value==="1";t.title=e.title,t.company=e.company,t.location=a("expEditLocation").value.trim(),t.type=e.type,t.startDate=e.startDate,t.endDate=i?"":a("expEditEndDate").value,t.current=i,t.desc=a("expEditDesc").value.trim(),t.sortOrder=m(a("expEditSort").value,t.sortOrder)}}export{s as EXP_TYPE_META,w as ExperienceModule,L as SEED_EXPERIENCE};
+import { CrudCardModule } from "../../core/CrudCardModule.js";
+import { escapeHtml, $id } from "../../utils/dom.js";
+import { formatMonthYear, parseSortInput, sortByNewestFirst } from "../../utils/format.js";
+import { activateTab, openPanel } from "../../modules/shell/panels.js";
+import { renderPaCatCard, renderPaCatListRow } from "../../utils/paCatCard.js";
+import { categoryKeyFromAccentHex } from "../../utils/categoryClassOptions.js";
+import { setStatTrend, setStatValue } from "../../utils/pageStats.js";
+const EXP_TYPE_META = {
+  "full-time": { label: "Full-time", icon: "ri-briefcase-line", color: "#60a5fa" },
+  "part-time": { label: "Part-time", icon: "ri-time-line", color: "#34d399" },
+  contract: { label: "Contract", icon: "ri-file-list-3-line", color: "#fb923c" },
+  freelance: { label: "Freelance", icon: "ri-quill-pen-line", color: "#a78bfa" },
+  internship: { label: "Internship", icon: "ri-graduation-cap-line", color: "#f472b6" }
+};
+const SEED_EXPERIENCE = [];
+class ExperienceModule extends CrudCardModule {
+  constructor() {
+    super({
+      name: "Experience",
+      storageKey: "pa_experience",
+      deleteType: "experience",
+      page: "experience",
+      pageSize: 9,
+      listTable: true,
+      cardIdAttr: "data-exp-id",
+      bulkLabel: "experience entry",
+      defaultFilters: { type: "all" },
+      filterSelectIds: [{ id: "paExpTypeFilter", key: "type" }],
+      addFocusId: "expAddTitle",
+      editFocusId: "expEditTitle",
+      ids: {
+        grid: "paExpGrid",
+        resultCount: "paExpResultCount",
+        paginationBtns: "paExpPaginationBtns",
+        paginationInfo: "paExpPaginationInfo",
+        pagePrev: "paExpPagePrev",
+        pageNext: "paExpPageNext",
+        bodyScroll: "paExpBody",
+        emptyResetBtn: "paExpEmptyResetBtn",
+        emptyAddBtn: "paExpEmptyAddBtn",
+        addPanel: "paExpAddPanel",
+        editPanel: "paExpEditPanel",
+        addSubmit: "paExpAddSubmit",
+        editSubmit: "paExpEditSubmit",
+        editDelete: "paExpEditDelete",
+        addNewBtn: "paExpAddNewBtn",
+        addPanelClose: "paExpAddPanelClose",
+        editPanelClose: "paExpEditPanelClose",
+        addCancel: "paExpAddCancel",
+        editCancel: "paExpEditCancel"
+      },
+      menuActions: { "copy-title": function copyTitle(id) {
+        this.copyTitle(id);
+      } }
+    });
+  }
+  seedData() {
+    return [];
+  }
+  sortRecords(records) {
+    return sortByNewestFirst(records);
+  }
+  matchesFilters(record, filters) {
+    return filters.type === "all" || record.type === filters.type;
+  }
+  matchesSearch(record, query) {
+    const q = query.trim().toLowerCase();
+    return record.title.toLowerCase().includes(q) || (record.company || "").toLowerCase().includes(q) || (record.location || "").toLowerCase().includes(q) || (record.desc || "").toLowerCase().includes(q);
+  }
+  getDeleteName(record) {
+    return record.title;
+  }
+  renderStats() {
+    const records = this.store.get("records");
+    setStatValue("paExpStatTotal", records.length);
+    setStatValue("paExpStatCurrent", records.filter((e) => e.current).length);
+    setStatValue("paExpStatFullTime", records.filter((e) => e.type === "full-time").length);
+    setStatValue("paExpStatOther", records.filter((e) => e.type && e.type !== "full-time").length);
+    setStatTrend("paExpStatTotalTrend", records);
+    setStatTrend("paExpStatCurrentTrend", records, (e) => e.current);
+    setStatTrend("paExpStatFullTimeTrend", records, (e) => e.type === "full-time");
+    setStatTrend("paExpStatOtherTrend", records, (e) => e.type && e.type !== "full-time");
+  }
+  renderCardMenu(e) {
+    const id = escapeHtml(String(e.id));
+    const title = escapeHtml(e.title);
+    return `<div class="pa-card-menu" data-exp-id="${id}">
+      <div class="pa-card-menu-item" data-action="duplicate" data-exp-id="${id}"><i class="ri-file-copy-line"></i> Duplicate</div>
+      <div class="pa-card-menu-item" data-action="copy-title" data-exp-id="${id}"><i class="ri-clipboard-line"></i> Copy title</div>
+    </div>`;
+  }
+  renderListRow(e, rowIndex) {
+    const tm = EXP_TYPE_META[e.type] || EXP_TYPE_META["full-time"];
+    const dateRange = `${formatMonthYear(e.startDate)} \u2014 ${e.current ? "Present" : formatMonthYear(e.endDate) || "\u2014"}`;
+    return renderPaCatListRow({
+      rowIndex,
+      idAttr: "data-exp-id",
+      id: e.id,
+      iconHtml: `<i class="${escapeHtml(tm.icon)}"></i>`,
+      title: e.title,
+      category: e.company || "\u2014",
+      status: e.current ? "Active" : "Completed",
+      created: dateRange,
+      cardClass: this.bulkSelect?.cardClass(e.id) || ""
+    });
+  }
+  renderCard(e, index) {
+    const tm = EXP_TYPE_META[e.type] || EXP_TYPE_META["full-time"];
+    const dateRange = `${formatMonthYear(e.startDate)} \u2014 ${e.current ? "Present" : formatMonthYear(e.endDate) || "\u2014"}`;
+    const badge = e.current ? '<span class="pa-cat-card__builtin">Current</span>' : "";
+    return renderPaCatCard({
+      idAttr: "data-exp-id",
+      id: e.id,
+      catKey: categoryKeyFromAccentHex(tm.color),
+      cardClass: this.bulkSelect?.cardClass(e.id) || "",
+      animationDelay: 0,
+      bulkCheckbox: this.bulkSelect?.checkboxHtml(e.id, `Select ${escapeHtml(e.title)}`) || "",
+      iconHtml: `<i class="${escapeHtml(tm.icon)}"></i>`,
+      badge,
+      title: e.title,
+      slug: e.company || "\u2014",
+      desc: e.desc || "",
+      countIcon: "ri-calendar-line",
+      countLabel: dateRange,
+      status: tm.label,
+      dateLabel: e.location ? "Location" : "Period",
+      dateValue: e.location || dateRange,
+      menuHtml: this.renderCardMenu(e)
+    });
+  }
+  copyTitle(id) {
+    const e = this.findById(id);
+    if (!e) return;
+    navigator.clipboard?.writeText(e.title).then(() => this.toast("Title copied to clipboard", "success"));
+  }
+  buildDuplicate(record, newId) {
+    return { ...record, id: newId, title: `${record.title} (Copy)` };
+  }
+  openAddPanel() {
+    this.resetAddForm();
+    openPanel(this.config.ids.addPanel, [this.config.ids.editPanel]);
+    activateTab("expAdd", "details");
+    setTimeout(() => $id("expAddTitle")?.focus(), 320);
+  }
+  openEditPanel(id) {
+    const record = this.findById(id);
+    if (!record) return;
+    this.currentEditId = id;
+    this.populateEditForm(record);
+    openPanel(this.config.ids.editPanel, [this.config.ids.addPanel]);
+    activateTab("expEdit", "details");
+    setTimeout(() => $id("expEditTitle")?.focus(), 320);
+  }
+  bindEvents() {
+    super.bindEvents();
+    ["expAddCurrent", "expEditCurrent"].forEach((id) => {
+      this.on($id(id), "change", (e) => {
+        const prefix = id.replace("Current", "");
+        const endDateRow = $id(`${prefix}EndDateRow`);
+        if (endDateRow) endDateRow.style.display = e.target.value === "1" ? "none" : "block";
+      });
+    });
+  }
+  resetAddForm() {
+    ["expAddTitle", "expAddCompany", "expAddLocation", "expAddStartDate", "expAddEndDate", "expAddDesc", "expAddSort"].forEach((id) => {
+      const el = $id(id);
+      if (el) el.value = "";
+    });
+    $id("expAddType").value = "";
+    $id("expAddCurrent").value = "0";
+    const endRow = $id("expAddEndDateRow");
+    if (endRow) endRow.style.display = "block";
+    ["Title", "Company", "Type", "StartDate"].forEach((f) => {
+      $id(`expAdd${f}Error`)?.classList.remove("visible");
+      $id(`expAdd${f}`)?.classList.remove("error");
+    });
+  }
+  populateEditForm(e) {
+    $id("expEditTitle").value = e.title;
+    $id("expEditCompany").value = e.company;
+    $id("expEditLocation").value = e.location || "";
+    $id("expEditType").value = e.type;
+    $id("expEditStartDate").value = e.startDate;
+    $id("expEditEndDate").value = e.endDate || "";
+    $id("expEditCurrent").value = e.current ? "1" : "0";
+    $id("expEditDesc").value = e.desc || "";
+    $id("expEditSort").value = e.sortOrder != null ? String(e.sortOrder) : "";
+    const endRow = $id("expEditEndDateRow");
+    if (endRow) endRow.style.display = e.current ? "none" : "block";
+    ["Title", "Company", "Type", "StartDate"].forEach((f) => {
+      $id(`expEdit${f}Error`)?.classList.remove("visible");
+      $id(`expEdit${f}`)?.classList.remove("error");
+    });
+  }
+  validateForm(prefix) {
+    let valid = true;
+    const p = prefix === "add" ? "expAdd" : "expEdit";
+    const title = $id(`${p}Title`).value.trim();
+    this._err(`${p}Title`, !title);
+    if (!title) valid = false;
+    const company = $id(`${p}Company`).value.trim();
+    this._err(`${p}Company`, !company);
+    if (!company) valid = false;
+    const type = $id(`${p}Type`).value;
+    this._err(`${p}Type`, !type);
+    if (!type) valid = false;
+    const startDate = $id(`${p}StartDate`).value;
+    this._err(`${p}StartDate`, !startDate);
+    if (!startDate) valid = false;
+    if (!valid) activateTab(p, !title || !company ? "details" : "dates");
+    return { valid, title, company, type, startDate };
+  }
+  _err(id, isError) {
+    $id(id)?.classList.toggle("error", isError);
+    $id(`${id}Error`)?.classList.toggle("visible", isError);
+  }
+  buildNewRecord(f) {
+    const current = $id("expAddCurrent").value === "1";
+    return {
+      title: f.title,
+      company: f.company,
+      location: $id("expAddLocation").value.trim(),
+      type: f.type,
+      startDate: f.startDate,
+      endDate: current ? "" : $id("expAddEndDate").value,
+      current,
+      desc: $id("expAddDesc").value.trim(),
+      sortOrder: parseSortInput($id("expAddSort").value, this.store.get("records").length + 1),
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+  }
+  applyEditToRecord(record, f) {
+    const current = $id("expEditCurrent").value === "1";
+    record.title = f.title;
+    record.company = f.company;
+    record.location = $id("expEditLocation").value.trim();
+    record.type = f.type;
+    record.startDate = f.startDate;
+    record.endDate = current ? "" : $id("expEditEndDate").value;
+    record.current = current;
+    record.desc = $id("expEditDesc").value.trim();
+    record.sortOrder = parseSortInput($id("expEditSort").value, record.sortOrder);
+  }
+}
+export {
+  EXP_TYPE_META,
+  ExperienceModule,
+  SEED_EXPERIENCE
+};
+//# sourceMappingURL=ExperienceModule.js.map

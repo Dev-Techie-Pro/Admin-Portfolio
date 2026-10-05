@@ -1,4 +1,95 @@
-import{AuthModule as u}from"./AuthModule.js";import{$id as a}from"../../utils/dom.js";import{authService as l}from"../../core/AuthService.js";const h=["email","password","passwd","pass"];function f(){if(typeof window>"u")return;const c=new URLSearchParams(window.location.search);let t=!1;for(const s of h)c.has(s)&&(c.delete(s),t=!0);if(!t)return;const e=c.toString(),o=`${window.location.pathname}${e?`?${e}`:""}${window.location.hash}`;window.history.replaceState(null,"",o)}class L extends u{constructor(){super({name:"Login",storageKey:null}),this._mfaState={active:!1,factorId:null,useBackupCode:!1}}redirectInviteHashToCallback(){if(typeof window>"u"||!window.location.hash)return!1;const t=new URLSearchParams(window.location.hash.replace(/^#/,""));return t.get("access_token")&&t.get("refresh_token")?(window.location.replace(`/auth/callback${window.location.hash}`),!0):!1}showAuthCallbackErrors(){if(typeof window>"u"||!window.location.hash)return;const t=new URLSearchParams(window.location.hash.replace(/^#/,"")),e=t.get("error_code"),o=t.get("error_description")||"";e==="otp_expired"||/expired/i.test(o)?this.showError("This invitation link has expired or was already used. Ask an admin to send a new invite."):t.get("error")&&this.showError(o||"Authentication link is invalid. Please try again.");const s=window.location.pathname+window.location.search;window.history.replaceState(null,"",s)}async load(){if(f(),this.redirectInviteHashToCallback())return;this.showAuthCallbackErrors();const t=new URLSearchParams(window.location.search);if(t.get("error")==="auth_callback_failed"){const e=t.get("error_description")||"";/expired|otp_expired/i.test(e)?this.showError("This invitation or sign-in link has expired or was already used. Ask an admin to send a new invite."):this.showError(e||"Authentication link expired or is invalid. Please try again.")}t.get("error")==="no_dashboard_access"&&this.showError("This account does not have access to the dashboard. Contact an administrator."),t.get("session")==="expired"&&this.showError("Your session has ended after 24 hours. Please sign in again."),t.get("mfa")==="1"&&this.showMfaStep()}render(){this.ensureMfaUi()}ensureMfaUi(){const t=a("paLoginForm");if(!t||a("paMfaStep"))return;const e=document.createElement("div");e.id="paMfaStep",e.hidden=!0,e.innerHTML=`
+import { AuthModule } from "./AuthModule.js";
+import { $id } from "../../utils/dom.js";
+import { authService } from "../../core/AuthService.js";
+const SENSITIVE_QUERY_KEYS = ["email", "password", "passwd", "pass"];
+function stripCredentialQueryFromLocation() {
+  if (typeof window === "undefined") return;
+  const params = new URLSearchParams(window.location.search);
+  let dirty = false;
+  for (const key of SENSITIVE_QUERY_KEYS) {
+    if (params.has(key)) {
+      params.delete(key);
+      dirty = true;
+    }
+  }
+  if (!dirty) return;
+  const qs = params.toString();
+  const clean = `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`;
+  window.history.replaceState(null, "", clean);
+}
+class LoginModule extends AuthModule {
+  constructor() {
+    super({
+      name: "Login",
+      storageKey: null
+    });
+    this._mfaState = {
+      active: false,
+      factorId: null,
+      useBackupCode: false
+    };
+  }
+  redirectInviteHashToCallback() {
+    if (typeof window === "undefined" || !window.location.hash) return false;
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    if (hash.get("access_token") && hash.get("refresh_token")) {
+      window.location.replace(`/auth/callback${window.location.hash}`);
+      return true;
+    }
+    return false;
+  }
+  showAuthCallbackErrors() {
+    if (typeof window === "undefined" || !window.location.hash) return;
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const code = hash.get("error_code");
+    const description = hash.get("error_description") || "";
+    if (code === "otp_expired" || /expired/i.test(description)) {
+      this.showError(
+        "This invitation link has expired or was already used. Ask an admin to send a new invite."
+      );
+    } else if (hash.get("error")) {
+      this.showError(description || "Authentication link is invalid. Please try again.");
+    }
+    const clean = window.location.pathname + window.location.search;
+    window.history.replaceState(null, "", clean);
+  }
+  async load() {
+    stripCredentialQueryFromLocation();
+    if (this.redirectInviteHashToCallback()) return;
+    this.showAuthCallbackErrors();
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error") === "auth_callback_failed") {
+      const detail = params.get("error_description") || "";
+      if (/expired|otp_expired/i.test(detail)) {
+        this.showError(
+          "This invitation or sign-in link has expired or was already used. Ask an admin to send a new invite."
+        );
+      } else {
+        this.showError(
+          detail || "Authentication link expired or is invalid. Please try again."
+        );
+      }
+    }
+    if (params.get("error") === "no_dashboard_access") {
+      this.showError("This account does not have access to the dashboard. Contact an administrator.");
+    }
+    if (params.get("session") === "expired") {
+      this.showError("Your session has ended after 24 hours. Please sign in again.");
+    }
+    if (params.get("mfa") === "1") {
+      this.showMfaStep();
+    }
+  }
+  render() {
+    this.ensureMfaUi();
+  }
+  ensureMfaUi() {
+    const form = $id("paLoginForm");
+    if (!form || $id("paMfaStep")) return;
+    const wrap = document.createElement("div");
+    wrap.id = "paMfaStep";
+    wrap.hidden = true;
+    wrap.innerHTML = `
       <div class="pa-form-group">
         <label class="pa-form-label" for="paMfaCode">Authenticator code</label>
         <div class="pa-auth-input-wrap">
@@ -18,4 +109,157 @@ import{AuthModule as u}from"./AuthModule.js";import{$id as a}from"../../utils/do
           <span class="pa-btn-label">Verify & Continue <i class="ri-arrow-right-line" aria-hidden="true"></i></span>
         </button>
       </div>
-      <button type="button" class="pa-btn pa-btn-cancel mt-8" id="paMfaBack">Back to sign in</button>`,t.appendChild(e)}showMfaStep(t=null){this.ensureMfaUi(),this._mfaState.active=!0,this._mfaState.factorId=t;const e=a("paMfaStep"),o=a("paLoginEmail")?.closest(".pa-form-group"),s=a("paLoginPassword")?.closest(".pa-form-group"),r=document.querySelector("#paLoginForm .pa-auth-row"),n=document.querySelector("#paLoginForm > .pa-auth-submit-wrap");e&&(e.hidden=!1),o?.setAttribute("hidden",""),s?.setAttribute("hidden",""),r?.setAttribute("hidden",""),n?.setAttribute("hidden",""),a("paMfaCode")?.focus()}hideMfaStep(){this._mfaState.active=!1;const t=a("paMfaStep"),e=a("paLoginEmail")?.closest(".pa-form-group"),o=a("paLoginPassword")?.closest(".pa-form-group"),s=document.querySelector("#paLoginForm .pa-auth-row"),r=document.querySelector("#paLoginForm > .pa-auth-submit-wrap");t&&(t.hidden=!0),e?.removeAttribute("hidden"),o?.removeAttribute("hidden"),s?.removeAttribute("hidden"),r?.removeAttribute("hidden")}bindEvents(){if(this._boundEvents)return;this._boundEvents=!0;const t=a("paLoginForm"),e=a("paLoginEmail"),o=a("paLoginPassword"),s=a("paLoginSubmit"),r=a("paForgotPasswordLink"),n=a("paCreateAccountLink");this.setupPasswordToggle("paLoginPassword","paPassToggle"),this.on(e,"input",()=>{this.clearFieldError("paLoginEmail","paLoginEmailError")}),this.on(o,"input",()=>{this.clearFieldError("paLoginPassword","paLoginPasswordError")}),this.handleEnterSubmit("paLoginPassword","paLoginForm"),this.on(r,"click",i=>{i.preventDefault(),window.location.href="/forget-password"}),this.on(n,"click",i=>{i.preventDefault(),this.showToast("Account creation is not available in this demo.","info")}),this.on(t,"submit",i=>{i.preventDefault(),this._mfaState.active?this.handleMfaVerify():this.handleLogin()}),this.on(a("paMfaSubmit"),"click",()=>{this.handleMfaVerify()}),this.on(a("paMfaBack"),"click",()=>{this.hideMfaStep(),l.logout().catch(()=>{})}),this.on(a("paMfaUseBackup"),"change",i=>{this._mfaState.useBackupCode=!!i.target.checked;const d=a("paMfaCode");d&&(d.placeholder=this._mfaState.useBackupCode?"XXXX-XXXX-XXXX":"Enter 6-digit code")})}async handleLogin(){const t=a("paLoginEmail"),e=a("paLoginPassword"),o=a("paLoginSubmit");let s=!0;const r=t.value.trim();!r||!this.isValidEmail(r)?(this.setFieldError("paLoginEmail","paLoginEmailError",!0),s=!1):this.clearFieldError("paLoginEmail","paLoginEmailError");const n=e.value;if(!n||n.length<6?(this.setFieldError("paLoginPassword","paLoginPasswordError",!0),s=!1):this.clearFieldError("paLoginPassword","paLoginPasswordError"),!s){const i=document.querySelector("#paLoginForm .pa-form-input.error");i&&i.focus();return}this.setButtonLoading("paLoginSubmit",!0);try{const i=await l.login(r,n);if(i?.needsMfa){this.setButtonLoading("paLoginSubmit",!1),this.showMfaStep(i.factorId),this.showSuccessToast(i.message||"Enter your authenticator code to continue.");return}this.showSuccessToast("Login successful! Redirecting...");const p=new URLSearchParams(window.location.search).get("redirect")||"/";setTimeout(()=>{window.location.href=p},600)}catch(i){this.showError(i.message||"Login failed. Please check your credentials."),this.setButtonLoading("paLoginSubmit",!1)}}async handleMfaVerify(){const t=a("paMfaCode")?.value?.trim();if(!t){this.showError("Enter your verification code.");return}this.setButtonLoading("paMfaSubmit",!0);try{await l.verifyMfaLogin({code:t,factorId:this._mfaState.factorId,useBackupCode:this._mfaState.useBackupCode}),this.showSuccessToast("Verification successful! Redirecting...");const o=new URLSearchParams(window.location.search).get("redirect")||"/";setTimeout(()=>{window.location.href=o},600)}catch(e){this.showError(e.message||"Invalid verification code."),this.setButtonLoading("paMfaSubmit",!1)}}}export{L as LoginModule};
+      <button type="button" class="pa-btn pa-btn-cancel mt-8" id="paMfaBack">Back to sign in</button>`;
+    form.appendChild(wrap);
+  }
+  showMfaStep(factorId = null) {
+    this.ensureMfaUi();
+    this._mfaState.active = true;
+    this._mfaState.factorId = factorId;
+    const step = $id("paMfaStep");
+    const emailGroup = $id("paLoginEmail")?.closest(".pa-form-group");
+    const passwordGroup = $id("paLoginPassword")?.closest(".pa-form-group");
+    const row = document.querySelector("#paLoginForm .pa-auth-row");
+    const submitWrap = document.querySelector("#paLoginForm > .pa-auth-submit-wrap");
+    if (step) step.hidden = false;
+    emailGroup?.setAttribute("hidden", "");
+    passwordGroup?.setAttribute("hidden", "");
+    row?.setAttribute("hidden", "");
+    submitWrap?.setAttribute("hidden", "");
+    $id("paMfaCode")?.focus();
+  }
+  hideMfaStep() {
+    this._mfaState.active = false;
+    const step = $id("paMfaStep");
+    const emailGroup = $id("paLoginEmail")?.closest(".pa-form-group");
+    const passwordGroup = $id("paLoginPassword")?.closest(".pa-form-group");
+    const row = document.querySelector("#paLoginForm .pa-auth-row");
+    const submitWrap = document.querySelector("#paLoginForm > .pa-auth-submit-wrap");
+    if (step) step.hidden = true;
+    emailGroup?.removeAttribute("hidden");
+    passwordGroup?.removeAttribute("hidden");
+    row?.removeAttribute("hidden");
+    submitWrap?.removeAttribute("hidden");
+  }
+  bindEvents() {
+    if (this._boundEvents) return;
+    this._boundEvents = true;
+    const form = $id("paLoginForm");
+    const emailInput = $id("paLoginEmail");
+    const passwordInput = $id("paLoginPassword");
+    const submitBtn = $id("paLoginSubmit");
+    const forgotLink = $id("paForgotPasswordLink");
+    const createAccountLink = $id("paCreateAccountLink");
+    this.setupPasswordToggle("paLoginPassword", "paPassToggle");
+    this.on(emailInput, "input", () => {
+      this.clearFieldError("paLoginEmail", "paLoginEmailError");
+    });
+    this.on(passwordInput, "input", () => {
+      this.clearFieldError("paLoginPassword", "paLoginPasswordError");
+    });
+    this.handleEnterSubmit("paLoginPassword", "paLoginForm");
+    this.on(forgotLink, "click", (e) => {
+      e.preventDefault();
+      window.location.href = "/forget-password";
+    });
+    this.on(createAccountLink, "click", (e) => {
+      e.preventDefault();
+      this.showToast("Account creation is not available in this demo.", "info");
+    });
+    this.on(form, "submit", (e) => {
+      e.preventDefault();
+      if (this._mfaState.active) {
+        void this.handleMfaVerify();
+      } else {
+        void this.handleLogin();
+      }
+    });
+    this.on($id("paMfaSubmit"), "click", () => {
+      void this.handleMfaVerify();
+    });
+    this.on($id("paMfaBack"), "click", () => {
+      this.hideMfaStep();
+      void authService.logout().catch(() => {
+      });
+    });
+    this.on($id("paMfaUseBackup"), "change", (e) => {
+      this._mfaState.useBackupCode = !!e.target.checked;
+      const input = $id("paMfaCode");
+      if (input) {
+        input.placeholder = this._mfaState.useBackupCode ? "XXXX-XXXX-XXXX" : "Enter 6-digit code";
+      }
+    });
+  }
+  async handleLogin() {
+    const emailInput = $id("paLoginEmail");
+    const passwordInput = $id("paLoginPassword");
+    const submitBtn = $id("paLoginSubmit");
+    let valid = true;
+    const emailValue = emailInput.value.trim();
+    if (!emailValue || !this.isValidEmail(emailValue)) {
+      this.setFieldError("paLoginEmail", "paLoginEmailError", true);
+      valid = false;
+    } else {
+      this.clearFieldError("paLoginEmail", "paLoginEmailError");
+    }
+    const passwordValue = passwordInput.value;
+    if (!passwordValue || passwordValue.length < 6) {
+      this.setFieldError("paLoginPassword", "paLoginPasswordError", true);
+      valid = false;
+    } else {
+      this.clearFieldError("paLoginPassword", "paLoginPasswordError");
+    }
+    if (!valid) {
+      const firstInvalid = document.querySelector("#paLoginForm .pa-form-input.error");
+      if (firstInvalid) firstInvalid.focus();
+      return;
+    }
+    this.setButtonLoading("paLoginSubmit", true);
+    try {
+      const result = await authService.login(emailValue, passwordValue);
+      if (result?.needsMfa) {
+        this.setButtonLoading("paLoginSubmit", false);
+        this.showMfaStep(result.factorId);
+        this.showSuccessToast(result.message || "Enter your authenticator code to continue.");
+        return;
+      }
+      this.showSuccessToast("Login successful! Redirecting...");
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect") || "/";
+      setTimeout(() => {
+        window.location.href = redirect;
+      }, 600);
+    } catch (err) {
+      this.showError(err.message || "Login failed. Please check your credentials.");
+      this.setButtonLoading("paLoginSubmit", false);
+    }
+  }
+  async handleMfaVerify() {
+    const code = $id("paMfaCode")?.value?.trim();
+    if (!code) {
+      this.showError("Enter your verification code.");
+      return;
+    }
+    this.setButtonLoading("paMfaSubmit", true);
+    try {
+      await authService.verifyMfaLogin({
+        code,
+        factorId: this._mfaState.factorId,
+        useBackupCode: this._mfaState.useBackupCode
+      });
+      this.showSuccessToast("Verification successful! Redirecting...");
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect") || "/";
+      setTimeout(() => {
+        window.location.href = redirect;
+      }, 600);
+    } catch (err) {
+      this.showError(err.message || "Invalid verification code.");
+      this.setButtonLoading("paMfaSubmit", false);
+    }
+  }
+}
+export {
+  LoginModule
+};
+//# sourceMappingURL=LoginModule.js.map

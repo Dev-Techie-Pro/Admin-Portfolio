@@ -1,2 +1,144 @@
-import{$id as d}from"./dom.js";import{showToast as n}from"../modules/shell/toast.js";import{closePanels as y,openPanel as b,registerPanel as x}from"../modules/shell/panels.js";import{formatStaffRoleLabel as p}from"./staffRoles.js";let i=null,C=!1;function c(e,t){return e?e.id===t?!0:typeof e.closest=="function"&&!!e.closest(`#${t}`):!1}function L(){C||(C=!0,x("paUserCredentialsPanel"),document.addEventListener("click",e=>{if(c(e.target,"paUserCredentialsPanelClose")){e.preventDefault(),y(),w();return}if(c(e.target,"paCopyCredentialsBtn")){e.preventDefault(),U();return}c(e.target,"paShareCredentialsBtn")&&(e.preventDefault(),P())}))}function R(){return i}function w(){i=null}function h(e=i){return e?["Portfolio Dashboard Login",`Email: ${e.email}`,`Password: ${e.password}`,`Role: ${p(e.role)}`].join(`
-`):""}function T(e,{closePanelIds:t=[],emailSent:r,emailError:a}={}){if(!e)return;i=e;const l=(o,m)=>{const f=d(o);f&&(f.value=m)};l("credEmail",e.email||""),l("credPassword",e.password||""),l("credRole",p(e.role));const u=d("paUserCredentialsPanelTitle");u&&(u.textContent=e.reset?"Reset Credentials":"User Credentials");const s=d("paUserCredentialsPanel")?.querySelector(".pa-panel-body .pa-text-mute");if(s){const o=e.reset?"A new temporary password was generated. Share these credentials securely with the user.":"Share these credentials securely with the new user. They should change their password after first login.";r===!0?s.textContent=`${o} Login credentials were emailed to ${e.email||"the user"}.`:r===!1&&a?s.textContent=`${o} Email could not be sent automatically (${a}). Use copy or share below.`:s.textContent=o}b("paUserCredentialsPanel",t)}function E({emailSent:e,emailError:t,action:r="created"}={}){if(e){n(r==="reset"?"Credentials reset and emailed to the user.":"User created and login credentials emailed.","success");return}e===!1&&t&&n(r==="reset"?`Credentials reset, but email could not be sent: ${t}`:`User created, but email could not be sent: ${t}`,"info")}async function U(){const e=h();if(e)try{await navigator.clipboard.writeText(e),n("Credentials copied to clipboard.","success")}catch{const t=document.createElement("textarea");t.value=e,t.setAttribute("readonly",""),t.style.position="fixed",t.style.left="-9999px",document.body.appendChild(t),t.select();try{document.execCommand("copy"),n("Credentials copied to clipboard.","success")}catch{n("Could not copy credentials.","danger")}finally{document.body.removeChild(t)}}}async function P(){const e=h();if(!e)return;const t={title:"Portfolio Dashboard Login",text:e};if(navigator.share)try{await navigator.share(t),n("Credentials shared.","success");return}catch(a){if(a?.name==="AbortError")return}const r=`mailto:?subject=${encodeURIComponent("Portfolio Dashboard Login")}&body=${encodeURIComponent(e)}`;window.location.href=r}export{w as clearUserCredentials,U as copyUserCredentials,h as formatUserCredentialsText,R as getLastUserCredentials,L as initUserCredentialsPanel,E as notifyCredentialsEmailStatus,P as shareUserCredentials,T as showUserCredentialsPanel};
+import { $id } from "./dom.js";
+import { showToast } from "../modules/shell/toast.js";
+import { closePanels, openPanel, registerPanel } from "../modules/shell/panels.js";
+import { formatStaffRoleLabel } from "./staffRoles.js";
+let lastCredentials = null;
+let panelBound = false;
+function hitControl(target, id) {
+  if (!target) return false;
+  if (target.id === id) return true;
+  return typeof target.closest === "function" && !!target.closest(`#${id}`);
+}
+function initUserCredentialsPanel() {
+  if (panelBound) return;
+  panelBound = true;
+  registerPanel("paUserCredentialsPanel");
+  document.addEventListener("click", (e) => {
+    if (hitControl(e.target, "paUserCredentialsPanelClose")) {
+      e.preventDefault();
+      closePanels();
+      clearUserCredentials();
+      return;
+    }
+    if (hitControl(e.target, "paCopyCredentialsBtn")) {
+      e.preventDefault();
+      void copyUserCredentials();
+      return;
+    }
+    if (hitControl(e.target, "paShareCredentialsBtn")) {
+      e.preventDefault();
+      void shareUserCredentials();
+    }
+  });
+}
+function getLastUserCredentials() {
+  return lastCredentials;
+}
+function clearUserCredentials() {
+  lastCredentials = null;
+}
+function formatUserCredentialsText(credentials = lastCredentials) {
+  if (!credentials) return "";
+  return [
+    "Portfolio Dashboard Login",
+    `Email: ${credentials.email}`,
+    `Password: ${credentials.password}`,
+    `Role: ${formatStaffRoleLabel(credentials.role)}`
+  ].join("\n");
+}
+function showUserCredentialsPanel(credentials, { closePanelIds = [], emailSent, emailError } = {}) {
+  if (!credentials) return;
+  lastCredentials = credentials;
+  const set = (id, value) => {
+    const el = $id(id);
+    if (el) el.value = value;
+  };
+  set("credEmail", credentials.email || "");
+  set("credPassword", credentials.password || "");
+  set("credRole", formatStaffRoleLabel(credentials.role));
+  const title = $id("paUserCredentialsPanelTitle");
+  if (title) {
+    title.textContent = credentials.reset ? "Reset Credentials" : "User Credentials";
+  }
+  const hint = $id("paUserCredentialsPanel")?.querySelector(".pa-panel-body .pa-text-mute");
+  if (hint) {
+    const baseHint = credentials.reset ? "A new temporary password was generated. Share these credentials securely with the user." : "Share these credentials securely with the new user. They should change their password after first login.";
+    if (emailSent === true) {
+      hint.textContent = `${baseHint} Login credentials were emailed to ${credentials.email || "the user"}.`;
+    } else if (emailSent === false && emailError) {
+      hint.textContent = `${baseHint} Email could not be sent automatically (${emailError}). Use copy or share below.`;
+    } else {
+      hint.textContent = baseHint;
+    }
+  }
+  openPanel("paUserCredentialsPanel", closePanelIds);
+}
+function notifyCredentialsEmailStatus({ emailSent, emailError, action = "created" } = {}) {
+  if (emailSent) {
+    showToast(
+      action === "reset" ? "Credentials reset and emailed to the user." : "User created and login credentials emailed.",
+      "success"
+    );
+    return;
+  }
+  if (emailSent === false && emailError) {
+    showToast(
+      action === "reset" ? `Credentials reset, but email could not be sent: ${emailError}` : `User created, but email could not be sent: ${emailError}`,
+      "info"
+    );
+  }
+}
+async function copyUserCredentials() {
+  const text = formatUserCredentialsText();
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast("Credentials copied to clipboard.", "success");
+  } catch {
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.left = "-9999px";
+    document.body.appendChild(area);
+    area.select();
+    try {
+      document.execCommand("copy");
+      showToast("Credentials copied to clipboard.", "success");
+    } catch {
+      showToast("Could not copy credentials.", "danger");
+    } finally {
+      document.body.removeChild(area);
+    }
+  }
+}
+async function shareUserCredentials() {
+  const text = formatUserCredentialsText();
+  if (!text) return;
+  const shareData = {
+    title: "Portfolio Dashboard Login",
+    text
+  };
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      showToast("Credentials shared.", "success");
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+    }
+  }
+  const mailto = `mailto:?subject=${encodeURIComponent("Portfolio Dashboard Login")}&body=${encodeURIComponent(text)}`;
+  window.location.href = mailto;
+}
+export {
+  clearUserCredentials,
+  copyUserCredentials,
+  formatUserCredentialsText,
+  getLastUserCredentials,
+  initUserCredentialsPanel,
+  notifyCredentialsEmailStatus,
+  shareUserCredentials,
+  showUserCredentialsPanel
+};
+//# sourceMappingURL=userCredentialsPanel.js.map

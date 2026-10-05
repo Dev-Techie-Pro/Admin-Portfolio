@@ -8,28 +8,28 @@ import { createClient } from '@supabase/supabase-js';
 const root = process.cwd();
 const migrationPath = path.join(
   root,
-  'supabase/migrations/20261005120000_public_api_hardening.sql',
+  'supabase/migrations/20261011120000_portfolio_admin_baseline.sql',
 );
 
 if (!fs.existsSync(migrationPath)) {
-  console.error('Missing migration: 20261005120000_public_api_hardening.sql');
+  console.error('Missing baseline migration: 20261011120000_portfolio_admin_baseline.sql');
   process.exit(1);
 }
 
 const migrationSql = fs.readFileSync(migrationPath, 'utf8');
 if (!/drop policy if exists "Anyone can submit contact messages"/i.test(migrationSql)) {
-  console.error('Migration must drop anon contact_messages insert policy.');
+  console.error('Baseline must include public API hardening (drop anon contact_messages insert policy).');
   process.exit(1);
 }
 if (!/pa_rate_limit_allow/.test(migrationSql)) {
-  console.error('Migration must define pa_rate_limit_allow RPC.');
+  console.error('Baseline must define pa_rate_limit_allow RPC.');
   process.exit(1);
 }
 
 const migrationsDir = path.join(root, 'supabase/migrations');
 const migrationCount = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).length;
-if (migrationCount < 53) {
-  console.error(`Expected at least 53 migrations, found ${migrationCount}.`);
+if (migrationCount < 1) {
+  console.error(`Expected at least 1 baseline migration, found ${migrationCount}.`);
   process.exit(1);
 }
 

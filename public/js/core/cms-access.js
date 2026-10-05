@@ -1,1 +1,136 @@
-import{CMS_WRITE_CONTROL_IDS as p,CMS_WRITE_DOM_SELECTORS as u,CMS_WRITE_MENU_ACTIONS as f,CMS_VIEWER_STRIP_PANEL_IDS as m,isCmsEmptyAddButton as l}from"../../lib/auth/cms-write-controls.js";import{getAccessCapabilities as c}from"./access.js";import{showPermissionDeniedDialog as E}from"../modules/shell/confirm.js";function o(){return c().canManageContent}function M(){return c().canManageSiteSettings}const a="data-pa-cms-write-hidden";function i(t){!t||t.hasAttribute(a)||(t.setAttribute(a,"true"),t.setAttribute("hidden",""),t instanceof HTMLElement&&(t.style.display="none"))}function d(t,e){return t instanceof Document?t.getElementById(e):t.querySelector(`#${CSS.escape(e)}`)}function R(t=document){t.querySelectorAll(`[${a}]`).forEach(e=>{e.removeAttribute(a),e.removeAttribute("hidden"),e instanceof HTMLElement&&e.style.removeProperty("display")})}function B(t=document){if(!o()){for(const e of p)i(d(t,e));for(const e of m)i(d(t,e));for(const e of u)t.querySelectorAll(e).forEach(n=>i(n));t.querySelectorAll('.pa-panel[role="dialog"]').forEach(e=>{const n=e.id;n&&n!=="paCustomPanel"&&i(e)})}}let s=!1;const S=['.pa-tab-panel[data-content="profile"]','.pa-tab-panel[data-content="security"]','.pa-tab-panel[data-content="notifications"]'].join(", ");function b(t){return!!t.closest(S)}const C=['[data-action="edit"]','[data-action="delete"]','[data-action="duplicate"]','[data-action="mark-read"]','[data-action="mark-unread"]','[data-action="toggle-spam"]','[data-action="reply"]','[data-action="reply-edit"]','[data-action="reply-delete"]','[data-action="reset-credentials"]',".pa-btn-add",".pa-action-edit",".pa-action-delete",".pa-action-duplicate",".pa-proj-card__details-btn","#paAddNewBtn","#paSelectModeBtn","#paBlogEngSelectModeBtn","#paBulkDeleteBtn","#paBulkSelectAllBtn","#paBulkClearBtn","#paMsgExportBtn","#paMsgDetailDelete","#paMsgDetailStar","#paMsgReplyBtn",".pa-msg-reply-again-btn","[data-reply-edit]","[data-reply-delete]","[data-cms-write]",".pa-select-checkbox",".pa-msg-bulk-checkbox",'.pa-panel [id$="AddSubmit"]','.pa-panel [id$="EditSubmit"]','.pa-panel [id$="EditDelete"]'].join(", ");function _(t){if(b(t))return null;const e=t.closest(".pa-card-menu-item[data-action]");if(e){const r=e.getAttribute("data-action");if(r&&f.has(r))return e}const n=t.closest(".pa-empty-state-btn");return l(t)||n&&l(n)?n||t:t.closest(C)}function I(){s||o()||(s=!0,document.addEventListener("click",t=>{if(o())return;const e=t.target instanceof Element?t.target:null;!e||!_(e)||(t.preventDefault(),t.stopPropagation(),E())},!0))}export{o as canManageContent,M as canManageSiteSettings,I as installViewerWriteGuard,R as restoreCmsWriteControls,B as stripCmsWriteControls};
+import {
+  CMS_WRITE_CONTROL_IDS,
+  CMS_WRITE_DOM_SELECTORS,
+  CMS_WRITE_MENU_ACTIONS,
+  CMS_VIEWER_STRIP_PANEL_IDS,
+  isCmsEmptyAddButton
+} from "../../lib/auth/cms-write-controls.js";
+import { getAccessCapabilities } from "./access.js";
+import { showPermissionDeniedDialog } from "../modules/shell/confirm.js";
+function canManageContent() {
+  return getAccessCapabilities().canManageContent;
+}
+function canManageSiteSettings() {
+  return getAccessCapabilities().canManageSiteSettings;
+}
+const CMS_WRITE_HIDDEN_ATTR = "data-pa-cms-write-hidden";
+function hideForViewer(el) {
+  if (!el || el.hasAttribute(CMS_WRITE_HIDDEN_ATTR)) return;
+  el.setAttribute(CMS_WRITE_HIDDEN_ATTR, "true");
+  el.setAttribute("hidden", "");
+  if (el instanceof HTMLElement) {
+    el.style.display = "none";
+  }
+}
+function elementByIdWithinRoot(root, id) {
+  return root instanceof Document ? root.getElementById(id) : root.querySelector(`#${CSS.escape(id)}`);
+}
+function restoreCmsWriteControls(root = document) {
+  root.querySelectorAll(`[${CMS_WRITE_HIDDEN_ATTR}]`).forEach((el) => {
+    el.removeAttribute(CMS_WRITE_HIDDEN_ATTR);
+    el.removeAttribute("hidden");
+    if (el instanceof HTMLElement) {
+      el.style.removeProperty("display");
+    }
+  });
+}
+function stripCmsWriteControls(root = document) {
+  if (canManageContent()) return;
+  for (const id of CMS_WRITE_CONTROL_IDS) {
+    hideForViewer(elementByIdWithinRoot(root, id));
+  }
+  for (const id of CMS_VIEWER_STRIP_PANEL_IDS) {
+    hideForViewer(elementByIdWithinRoot(root, id));
+  }
+  for (const selector of CMS_WRITE_DOM_SELECTORS) {
+    root.querySelectorAll(selector).forEach((el) => hideForViewer(el));
+  }
+  root.querySelectorAll('.pa-panel[role="dialog"]').forEach((panel) => {
+    const id = panel.id;
+    if (id && id !== "paCustomPanel") hideForViewer(panel);
+  });
+}
+let writeGuardInstalled = false;
+const VIEWER_SELF_SERVICE_ROOT_SELECTOR = [
+  '.pa-tab-panel[data-content="profile"]',
+  '.pa-tab-panel[data-content="security"]',
+  '.pa-tab-panel[data-content="notifications"]'
+].join(", ");
+function isViewerSelfServiceClick(target) {
+  return !!target.closest(VIEWER_SELF_SERVICE_ROOT_SELECTOR);
+}
+const WRITE_GUARD_SELECTOR = [
+  '[data-action="edit"]',
+  '[data-action="delete"]',
+  '[data-action="duplicate"]',
+  '[data-action="mark-read"]',
+  '[data-action="mark-unread"]',
+  '[data-action="toggle-spam"]',
+  '[data-action="reply"]',
+  '[data-action="reply-edit"]',
+  '[data-action="reply-delete"]',
+  '[data-action="reset-credentials"]',
+  ".pa-btn-add",
+  ".pa-action-edit",
+  ".pa-action-delete",
+  ".pa-action-duplicate",
+  ".pa-proj-card__details-btn",
+  "#paAddNewBtn",
+  "#paSelectModeBtn",
+  "#paBlogEngSelectModeBtn",
+  "#paBulkDeleteBtn",
+  "#paBulkSelectAllBtn",
+  "#paBulkClearBtn",
+  "#paMsgExportBtn",
+  "#paMsgDetailDelete",
+  "#paMsgDetailStar",
+  "#paMsgReplyBtn",
+  ".pa-msg-reply-again-btn",
+  "[data-reply-edit]",
+  "[data-reply-delete]",
+  "[data-cms-write]",
+  ".pa-select-checkbox",
+  ".pa-msg-bulk-checkbox",
+  '.pa-panel [id$="AddSubmit"]',
+  '.pa-panel [id$="EditSubmit"]',
+  '.pa-panel [id$="EditDelete"]'
+].join(", ");
+function findBlockedWriteControl(target) {
+  if (isViewerSelfServiceClick(target)) return null;
+  const menuItem = target.closest(".pa-card-menu-item[data-action]");
+  if (menuItem) {
+    const action = menuItem.getAttribute("data-action");
+    if (action && CMS_WRITE_MENU_ACTIONS.has(action)) return menuItem;
+  }
+  const emptyAddBtn = target.closest(".pa-empty-state-btn");
+  if (isCmsEmptyAddButton(target) || emptyAddBtn && isCmsEmptyAddButton(emptyAddBtn)) {
+    return emptyAddBtn || target;
+  }
+  return target.closest(WRITE_GUARD_SELECTOR);
+}
+function installViewerWriteGuard() {
+  if (writeGuardInstalled || canManageContent()) return;
+  writeGuardInstalled = true;
+  document.addEventListener(
+    "click",
+    (e) => {
+      if (canManageContent()) return;
+      const target = e.target instanceof Element ? e.target : null;
+      if (!target) return;
+      const blocked = findBlockedWriteControl(target);
+      if (!blocked) return;
+      e.preventDefault();
+      e.stopPropagation();
+      showPermissionDeniedDialog();
+    },
+    true
+  );
+}
+export {
+  canManageContent,
+  canManageSiteSettings,
+  installViewerWriteGuard,
+  restoreCmsWriteControls,
+  stripCmsWriteControls
+};
+//# sourceMappingURL=cms-access.js.map

@@ -1,1 +1,273 @@
-import{$id as l}from"./dom.js";import{loadRegistry as q,filterRegistryIcons as R,getRegistryCategories as D}from"./remix-icon-registry.js";import{resolveIconKey as A,renderIconPreviewHtml as G}from"./icon-utils.js";const _="paIconPickerOverlay",K=120,N=480;let $=!1,i=null,n=null,f=null,s=null,p=null,M=null,E=null,m=null,L=null,I="",T="ri-tools-line",d="all",h=0,g=[],u=[],c=0,w=!1,k=null;function H(e){M?.classList.toggle("visible",e)}function x(e){if(!E)return;const t=l("paIconPickerErrorText");t&&(t.textContent=e),E.hidden=!e,e&&(n.innerHTML="",m.hidden=!0)}function B(){if(!s)return;const e=D(g),t=d;s.innerHTML=`<option value="all">All categories (${g.length.toLocaleString()})</option>`,e.forEach(({name:o,count:r})=>{const a=document.createElement("option");a.value=o,a.textContent=`${o} (${r.toLocaleString()})`,s.appendChild(a)}),s.value=e.some(o=>o.name===t)?t:"all",d=s.value}function O(){if(!$){if(i=l(_),!i)throw new Error("Icon picker modal markup is missing from the page.");n=l("paIconPickerGrid"),f=l("paIconPickerSearch"),s=l("paIconPickerCategory"),p=l("paIconPickerCount"),M=l("paIconPickerLoading"),E=l("paIconPickerError"),m=l("paIconPickerEmpty"),l("paIconPickerClose")?.addEventListener("click",v),l("paIconPickerCancel")?.addEventListener("click",v),i.addEventListener("click",e=>{e.target===i&&v()}),l("paIconPickerModal")?.addEventListener("click",e=>e.stopPropagation()),f?.addEventListener("input",()=>{y()}),s?.addEventListener("change",()=>{d=s.value||"all",y()}),document.addEventListener("keydown",V),!w&&n&&(n.addEventListener("scroll",J),w=!0),$=!0}}function V(e){i?.classList.contains("visible")&&e.key==="Escape"&&(e.preventDefault(),v())}function j(){const e=k;if(k=null,e&&typeof e.focus=="function"&&document.contains(e)){e.focus();return}const t=document.activeElement;t&&i?.contains(t)&&typeof t.blur=="function"&&t.blur()}function U(){i&&(i.removeAttribute("inert"),i.removeAttribute("aria-hidden"),i.classList.add("visible"))}function X(){i&&(i.classList.remove("visible"),j(),requestAnimationFrame(()=>{i.classList.contains("visible")||i.setAttribute("inert","")}))}function F(){if(!p)return;const e=f?.value?.trim()||"",t=d==="all"?"all categories":d;if(!g.length){p.textContent="";return}const o=u.length,r=Math.min(c,o),a=[`Showing ${r.toLocaleString()} of ${o.toLocaleString()} icon${o===1?"":"s"}`];e&&a.push(`matching "${e}"`),d!=="all"&&a.push(`in ${t}`),r<o&&a.push("\u2014 scroll for more"),p.textContent=a.join(" ")}function Y(e){const t=document.createElement("button");return t.type="button",t.className="pa-icon-picker-item",t.dataset.icon=e.slug,t.title=e.title,t.setAttribute("role","option"),t.setAttribute("aria-label",e.title),t.innerHTML=`<i class="${e.slug}" aria-hidden="true"></i>`,t.addEventListener("click",()=>W(e.slug)),t}function Z(){if(!n)return;n.querySelectorAll(".pa-icon-picker-item").forEach(t=>{const o=t.dataset.icon===I;t.classList.toggle("active",o),t.setAttribute("aria-selected",String(o))});const e=n.querySelector(`.pa-icon-picker-item[data-icon="${CSS.escape(I)}"]`);e&&e.scrollIntoView({block:"nearest",inline:"nearest"})}function C(e){if(e!==h||!n)return!1;const t=document.createDocumentFragment(),o=c,r=Math.min(c+K,u.length);for(;c<r;c+=1)t.appendChild(Y(u[c]));return o===c?!1:(n.appendChild(t),m.hidden=u.length>0,F(),Z(),c<u.length)}function z(){return!n||c>=u.length||c>=N?!1:n.scrollHeight<=n.clientHeight+16}function b(e){e!==h||!n||z()&&(C(e),requestAnimationFrame(()=>b(e)))}function J(){n&&(c>=u.length||n.scrollTop+n.clientHeight<n.scrollHeight-80||C(h))}function y(){const e=++h;if(n){if(n.innerHTML="",c=0,u=R(g,{query:f?.value||"",category:d}),!u.length){m.hidden=!1,F();return}m.hidden=!0,n.scrollTop=0,C(e),requestAnimationFrame(()=>b(e))}}async function Q(){H(!0),x("");try{g=await q(),B(),y()}catch{x("Could not load Remix Icon library. Check your connection and try again."),p&&(p.textContent="")}finally{H(!1)}}function W(e){I=e,L?.(e),v()}function v(){i&&(X(),L=null)}function oe({current:e,defaultIcon:t,onSelect:o,returnFocus:r}={}){O(),T=t||"ri-tools-line",I=A(e,T),L=o,d="all",k=r||document.activeElement,f&&(f.value=""),s&&(s.value="all"),U(),setTimeout(()=>{f?.focus(),b(h)},120),g.length?(B(),y()):Q()}function ie(e,t,o="ri-tools-line"){const r=A(t,o),a=document.getElementById(`${e}Icon`);a&&(a.value=r);const P=document.getElementById(`${e}IconPreview`);P&&(P.innerHTML=G(r,o));const S=document.getElementById(`${e}IconLabel`);S&&(S.textContent=r)}export{v as close,oe as open,ie as updateIconTrigger};
+import { $id } from "./dom.js";
+import {
+  loadRegistry,
+  filterRegistryIcons,
+  getRegistryCategories
+} from "./remix-icon-registry.js";
+import { resolveIconKey, renderIconPreviewHtml } from "./icon-utils.js";
+const OVERLAY_ID = "paIconPickerOverlay";
+const BATCH_SIZE = 120;
+const MAX_PREFILL = 480;
+let modalReady = false;
+let overlay = null;
+let grid = null;
+let searchInput = null;
+let categorySelect = null;
+let countEl = null;
+let loadingEl = null;
+let errorEl = null;
+let emptyEl = null;
+let onSelectCb = null;
+let currentIcon = "";
+let defaultIcon = "ri-tools-line";
+let currentCategory = "all";
+let renderToken = 0;
+let allIcons = [];
+let filteredIcons = [];
+let renderedCount = 0;
+let scrollBound = false;
+let returnFocusEl = null;
+function setLoading(loading) {
+  loadingEl?.classList.toggle("visible", loading);
+}
+function setError(message) {
+  if (!errorEl) return;
+  const text = $id("paIconPickerErrorText");
+  if (text) text.textContent = message;
+  errorEl.hidden = !message;
+  if (message) {
+    grid.innerHTML = "";
+    emptyEl.hidden = true;
+  }
+}
+function populateCategoryFilter() {
+  if (!categorySelect) return;
+  const categories = getRegistryCategories(allIcons);
+  const previous = currentCategory;
+  categorySelect.innerHTML = `<option value="all">All categories (${allIcons.length.toLocaleString()})</option>`;
+  categories.forEach(({ name, count }) => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = `${name} (${count.toLocaleString()})`;
+    categorySelect.appendChild(option);
+  });
+  categorySelect.value = categories.some((cat) => cat.name === previous) ? previous : "all";
+  currentCategory = categorySelect.value;
+}
+function ensureModal() {
+  if (modalReady) return;
+  overlay = $id(OVERLAY_ID);
+  if (!overlay) {
+    throw new Error("Icon picker modal markup is missing from the page.");
+  }
+  grid = $id("paIconPickerGrid");
+  searchInput = $id("paIconPickerSearch");
+  categorySelect = $id("paIconPickerCategory");
+  countEl = $id("paIconPickerCount");
+  loadingEl = $id("paIconPickerLoading");
+  errorEl = $id("paIconPickerError");
+  emptyEl = $id("paIconPickerEmpty");
+  $id("paIconPickerClose")?.addEventListener("click", close);
+  $id("paIconPickerCancel")?.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+  $id("paIconPickerModal")?.addEventListener("click", (e) => e.stopPropagation());
+  searchInput?.addEventListener("input", () => {
+    resetGrid();
+  });
+  categorySelect?.addEventListener("change", () => {
+    currentCategory = categorySelect.value || "all";
+    resetGrid();
+  });
+  document.addEventListener("keydown", onDocumentKeydown);
+  if (!scrollBound && grid) {
+    grid.addEventListener("scroll", onGridScroll);
+    scrollBound = true;
+  }
+  modalReady = true;
+}
+function onDocumentKeydown(e) {
+  if (!overlay?.classList.contains("visible")) return;
+  if (e.key === "Escape") {
+    e.preventDefault();
+    close();
+  }
+}
+function restoreFocus() {
+  const target = returnFocusEl;
+  returnFocusEl = null;
+  if (target && typeof target.focus === "function" && document.contains(target)) {
+    target.focus();
+    return;
+  }
+  const active = document.activeElement;
+  if (active && overlay?.contains(active) && typeof active.blur === "function") {
+    active.blur();
+  }
+}
+function openModal() {
+  if (!overlay) return;
+  overlay.removeAttribute("inert");
+  overlay.removeAttribute("aria-hidden");
+  overlay.classList.add("visible");
+}
+function closeModal() {
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  restoreFocus();
+  requestAnimationFrame(() => {
+    if (!overlay.classList.contains("visible")) {
+      overlay.setAttribute("inert", "");
+    }
+  });
+}
+function updateCount() {
+  if (!countEl) return;
+  const query = searchInput?.value?.trim() || "";
+  const categoryLabel = currentCategory === "all" ? "all categories" : currentCategory;
+  if (!allIcons.length) {
+    countEl.textContent = "";
+    return;
+  }
+  const total = filteredIcons.length;
+  const shown = Math.min(renderedCount, total);
+  const parts = [`Showing ${shown.toLocaleString()} of ${total.toLocaleString()} icon${total === 1 ? "" : "s"}`];
+  if (query) parts.push(`matching "${query}"`);
+  if (currentCategory !== "all") parts.push(`in ${categoryLabel}`);
+  if (shown < total) parts.push("\u2014 scroll for more");
+  countEl.textContent = parts.join(" ");
+}
+function createIconButton(icon) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "pa-icon-picker-item";
+  btn.dataset.icon = icon.slug;
+  btn.title = icon.title;
+  btn.setAttribute("role", "option");
+  btn.setAttribute("aria-label", icon.title);
+  btn.innerHTML = `<i class="${icon.slug}" aria-hidden="true"></i>`;
+  btn.addEventListener("click", () => selectIcon(icon.slug));
+  return btn;
+}
+function highlightCurrent() {
+  if (!grid) return;
+  grid.querySelectorAll(".pa-icon-picker-item").forEach((btn) => {
+    const active = btn.dataset.icon === currentIcon;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-selected", String(active));
+  });
+  const activeBtn = grid.querySelector(`.pa-icon-picker-item[data-icon="${CSS.escape(currentIcon)}"]`);
+  if (activeBtn) activeBtn.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+function appendBatch(token) {
+  if (token !== renderToken || !grid) return false;
+  const frag = document.createDocumentFragment();
+  const start = renderedCount;
+  const end = Math.min(renderedCount + BATCH_SIZE, filteredIcons.length);
+  for (; renderedCount < end; renderedCount += 1) {
+    frag.appendChild(createIconButton(filteredIcons[renderedCount]));
+  }
+  if (start === renderedCount) return false;
+  grid.appendChild(frag);
+  emptyEl.hidden = filteredIcons.length > 0;
+  updateCount();
+  highlightCurrent();
+  return renderedCount < filteredIcons.length;
+}
+function gridNeedsMoreIcons() {
+  if (!grid || renderedCount >= filteredIcons.length) return false;
+  if (renderedCount >= MAX_PREFILL) return false;
+  return grid.scrollHeight <= grid.clientHeight + 16;
+}
+function fillGridUntilScrollable(token) {
+  if (token !== renderToken || !grid) return;
+  if (!gridNeedsMoreIcons()) return;
+  appendBatch(token);
+  requestAnimationFrame(() => fillGridUntilScrollable(token));
+}
+function onGridScroll() {
+  if (!grid) return;
+  if (renderedCount >= filteredIcons.length) return;
+  if (grid.scrollTop + grid.clientHeight < grid.scrollHeight - 80) return;
+  appendBatch(renderToken);
+}
+function resetGrid() {
+  const token = ++renderToken;
+  if (!grid) return;
+  grid.innerHTML = "";
+  renderedCount = 0;
+  filteredIcons = filterRegistryIcons(allIcons, {
+    query: searchInput?.value || "",
+    category: currentCategory
+  });
+  if (!filteredIcons.length) {
+    emptyEl.hidden = false;
+    updateCount();
+    return;
+  }
+  emptyEl.hidden = true;
+  grid.scrollTop = 0;
+  appendBatch(token);
+  requestAnimationFrame(() => fillGridUntilScrollable(token));
+}
+async function loadIcons() {
+  setLoading(true);
+  setError("");
+  try {
+    allIcons = await loadRegistry();
+    populateCategoryFilter();
+    resetGrid();
+  } catch {
+    setError("Could not load Remix Icon library. Check your connection and try again.");
+    if (countEl) countEl.textContent = "";
+  } finally {
+    setLoading(false);
+  }
+}
+function selectIcon(slug) {
+  currentIcon = slug;
+  onSelectCb?.(slug);
+  close();
+}
+function close() {
+  if (!overlay) return;
+  closeModal();
+  onSelectCb = null;
+}
+function open({ current, defaultIcon: fallback, onSelect, returnFocus } = {}) {
+  ensureModal();
+  defaultIcon = fallback || "ri-tools-line";
+  currentIcon = resolveIconKey(current, defaultIcon);
+  onSelectCb = onSelect;
+  currentCategory = "all";
+  returnFocusEl = returnFocus || document.activeElement;
+  if (searchInput) searchInput.value = "";
+  if (categorySelect) categorySelect.value = "all";
+  openModal();
+  setTimeout(() => {
+    searchInput?.focus();
+    fillGridUntilScrollable(renderToken);
+  }, 120);
+  if (!allIcons.length) {
+    void loadIcons();
+  } else {
+    populateCategoryFilter();
+    resetGrid();
+  }
+}
+function updateIconTrigger(prefix, iconKey, fallback = "ri-tools-line") {
+  const key = resolveIconKey(iconKey, fallback);
+  const hidden = document.getElementById(`${prefix}Icon`);
+  if (hidden) hidden.value = key;
+  const preview = document.getElementById(`${prefix}IconPreview`);
+  if (preview) preview.innerHTML = renderIconPreviewHtml(key, fallback);
+  const label = document.getElementById(`${prefix}IconLabel`);
+  if (label) label.textContent = key;
+}
+export {
+  close,
+  open,
+  updateIconTrigger
+};
+//# sourceMappingURL=SvgIconPicker.js.map

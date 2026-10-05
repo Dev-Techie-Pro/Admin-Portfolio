@@ -1,85 +1,1164 @@
-import{$id as i,escapeHtml as o}from"../../utils/dom.js";import{showToast as v,showStatusToast as w}from"../shell/toast.js";import{requestConfirm as H}from"../shell/confirm.js";import{closeAllCardMenus as q,toggleCardMenu as O}from"../shell/cardMenu.js";import{setupAllPasswordToggles as J}from"../../utils/password-toggle.js";import{activateTab as j}from"../shell/panels.js";import{staggerReveal as V}from"../../utils/motion.js";const W="__UNCHANGED__";function G(){const u=i("systemEnvForm");if(!u)return[];const e=new Set;return u.querySelectorAll("[name]").forEach(t=>{const s=t.getAttribute("name")?.trim();s&&e.add(s)}),[...e]}function U(u){return u instanceof HTMLInputElement&&u.type==="password"?!0:u.getAttribute("data-env-secret")==="1"}const Y={sites:{desc:"Site configuration records",category:"system",icon:"ri-global-line",tone:"tone-blue"},profiles:{desc:"User profile data",category:"auth",icon:"ri-user-line",tone:"tone-green"},site_settings:{desc:"Dashboard and site preferences",category:"system",icon:"ri-settings-3-line",tone:"tone-orange"},site_runtime_config:{desc:"SMTP, retention, and runtime toggles",category:"system",icon:"ri-toggle-line",tone:"tone-blue"},notification_preferences:{desc:"Per-user notification settings",category:"system",icon:"ri-notification-3-line",tone:"tone-purple"},security_settings:{desc:"Account security configuration",category:"auth",icon:"ri-shield-keyhole-line",tone:"tone-green"},two_factor_backup_codes:{desc:"MFA backup codes",category:"auth",icon:"ri-key-2-line",tone:"tone-green"},user_sessions:{desc:"Active user sessions",category:"auth",icon:"ri-login-circle-line",tone:"tone-green"},categories:{desc:"Project category definitions",category:"content",icon:"ri-folder-line",tone:"tone-orange"},media_assets:{desc:"Media files and assets",category:"content",icon:"ri-image-line",tone:"tone-purple"},projects:{desc:"Portfolio project entries",category:"content",icon:"ri-apps-line",tone:"tone-orange"},project_tag_labels:{desc:"Project tag catalog",category:"content",icon:"ri-price-tag-3-line",tone:"tone-teal"},project_tag_links:{desc:"Project tag links",category:"content",icon:"ri-price-tag-3-line",tone:"tone-teal"},project_technology_links:{desc:"Project technology links",category:"content",icon:"ri-code-s-slash-line",tone:"tone-teal"},project_tool_links:{desc:"Project tool links",category:"content",icon:"ri-tools-line",tone:"tone-orange"},blog_tags:{desc:"Blog tag catalog",category:"content",icon:"ri-hashtag",tone:"tone-teal"},project_gallery_images:{desc:"Project gallery images",category:"content",icon:"ri-gallery-line",tone:"tone-purple"},technologies:{desc:"Technology stack items",category:"content",icon:"ri-code-s-slash-line",tone:"tone-blue"},experience_entries:{desc:"Work experience records",category:"content",icon:"ri-briefcase-line",tone:"tone-teal"},testimonials:{desc:"Client testimonials",category:"content",icon:"ri-chat-quote-line",tone:"tone-green"},blog_posts:{desc:"Blog post content",category:"content",icon:"ri-article-line",tone:"tone-orange"},blog_post_tags:{desc:"Blog post tag links",category:"content",icon:"ri-hashtag",tone:"tone-teal"},blog_categories:{desc:"Blog post categories",category:"content",icon:"ri-bookmark-line",tone:"tone-purple"},contact_messages:{desc:"Inbound contact form messages",category:"communication",icon:"ri-mail-line",tone:"tone-blue"},contact_message_replies:{desc:"Replies to contact messages",category:"communication",icon:"ri-reply-line",tone:"tone-blue"},recent_activities:{desc:"Dashboard activity feed",category:"system",icon:"ri-history-line",tone:"tone-orange"},login_activity:{desc:"User login audit log",category:"auth",icon:"ri-fingerprint-line",tone:"tone-green"},tool_categories:{desc:"Tool category definitions",category:"content",icon:"ri-folder-settings-line",tone:"tone-teal"},tool_items:{desc:"Tools and utilities",category:"content",icon:"ri-tools-line",tone:"tone-orange"},user_notifications:{desc:"In-app user notifications",category:"system",icon:"ri-bell-line",tone:"tone-purple"},backup_snapshots:{desc:"Stores backup snapshot information",category:"system",icon:"ri-database-2-line",tone:"tone-blue"}},Q={all:"All Categories",content:"Content",auth:"Auth & Security",system:"System",communication:"Communication"};function T(u){const e=Number(u);if(!Number.isFinite(e)||e<=0)return"\u2014";const t=["B","KB","MB","GB","TB"],s=Math.min(Math.floor(Math.log(e)/Math.log(1024)),t.length-1);return`${(e/1024**s).toFixed(s===0?0:1)} ${t[s]}`}function K(u){if(!u)return{date:"\u2014",time:"",relative:""};try{const e=new Date(u),s=Date.now()-e.getTime(),a=Math.floor(s/(1e3*60*60));let n="";if(a<1)n="Just now";else if(a<24)n=`${a} hour${a===1?"":"s"} ago`;else{const r=Math.floor(a/24);n=`${r} day${r===1?"":"s"} ago`}return{date:e.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),time:e.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:!0}),relative:n}}catch{return{date:"\u2014",time:"",relative:""}}}function X(u,e){return u&&/filename="([^"]+)"/i.exec(u)?.[1]||e}function Z(u,e){const t=URL.createObjectURL(u),s=document.createElement("a");s.href=t,s.download=e,document.body.appendChild(s),s.click(),s.remove(),URL.revokeObjectURL(t)}function B(u){const e=Y[u];if(e)return e;const t=u.replace(/_/g," ");return{desc:`${t.charAt(0).toUpperCase()}${t.slice(1)} data`,category:"system",icon:"ri-table-line",tone:"tone-blue"}}function ee(u){const e=Number(u)||0;return e<=0||e<100*1024?"small":e<1024*1024?"medium":"large"}class le{constructor({on:e,getProfile:t}){this.on=e,this.getProfile=t,this.state={tables:[],history:[],selectedTables:new Set,focusedTable:null,tableFilter:"",categoryFilter:"all",sizeFilter:"all",viewMode:"grid",page:1,pageSize:10,exportRunning:!1,env:null},this._bound=!1}bindEvents(){if(this._bound)return;this._bound=!0,document.querySelectorAll('.pa-view-btn[data-panel="system-section"]').forEach(c=>{this.on(c,"click",()=>{const d=c.dataset.tab;d&&(j("system-section",d),d==="env"&&this.initEnvTabMotion())})});const e=i("systemBackupRefreshBtn");e&&this.on(e,"click",()=>{this.loadTables()});const t=i("systemOpsRefreshBtn");t&&this.on(t,"click",()=>{this.loadOpsReadiness()});const s=i("systemTableSearch");s&&this.on(s,"input",c=>{const d=c.target;this.state.tableFilter=d.value.trim().toLowerCase(),this.state.page=1,this.renderTables()});const a=i("systemTableCategoryFilter");a&&this.on(a,"change",c=>{const d=c.target;this.state.categoryFilter=d.value,this.state.page=1,this.renderTables()});const n=i("systemTableSizeFilter");n&&this.on(n,"change",c=>{const d=c.target;this.state.sizeFilter=d.value,this.state.page=1,this.renderTables()});const r=i("systemTableSelectAll");r&&this.on(r,"click",()=>this.selectAllVisibleTables());const l=i("systemTableClearAll");l&&this.on(l,"click",()=>this.clearSelectedTables());const p=i("systemTableMasterCheck");p&&this.on(p,"change",c=>{c.target.checked?this.selectAllVisibleTables():this.clearSelectedTables()});const b=i("systemTableGridViewBtn");b&&this.on(b,"click",()=>this.setViewMode("grid"));const f=i("systemTableListViewBtn");f&&this.on(f,"click",()=>this.setViewMode("list"));const g=i("systemTablePageSize");g&&this.on(g,"change",c=>{const d=c.target;this.state.pageSize=parseInt(d.value,10)||10,this.state.page=1,this.renderTables()});const k=i("systemExportSqlBtn");k&&this.on(k,"click",()=>{this.exportSqlBackup()});const h=i("systemExportSchemaBtn");h&&this.on(h,"click",()=>{this.downloadSchemaGuide()});const M=i("systemBulkExportSqlBtn");M&&this.on(M,"click",()=>{this.exportSqlBackup()});const _=i("systemBulkExportSchemaBtn");_&&this.on(_,"click",()=>{this.downloadSchemaGuide()});const L=i("systemTableGridBody");L&&(this.on(L,"change",c=>{const m=c.target.closest("[data-table-select]");!m||m.tagName!=="INPUT"||(c.stopPropagation(),this.toggleTableSelection(m.dataset.tableName,m.checked),this.focusTable(m.dataset.tableName))}),this.on(L,"click",c=>{const d=c.target,m=d.closest("[data-table-action]");if(m){c.preventDefault(),c.stopPropagation(),q(),this.handleTableAction(m.dataset.tableName,m.dataset.tableAction);return}const y=d.closest("[data-table-menu-btn]");if(y){c.preventDefault(),c.stopPropagation();const E=y.parentElement?.querySelector(".pa-card-menu");E&&O(E,y);return}const S=d.closest("[data-table-select]");if(S){c.stopPropagation();const E=S.dataset.tableName;this.toggleTableSelection(E,!this.state.selectedTables.has(E)),this.focusTable(E);return}if(d.closest(".pa-msg-actions, .pa-bkp-table-card-actions, .pa-card-menu"))return;const x=d.closest("[data-table-card]");x&&this.checkTable(x.dataset.tableName)}),this.on(L,"keydown",c=>{const d=c,y=d.target.closest("[data-table-select]");if(!y||y.tagName==="INPUT"||d.key!=="Enter"&&d.key!==" ")return;d.preventDefault();const S=y.dataset.tableName;this.toggleTableSelection(S,!this.state.selectedTables.has(S)),this.focusTable(S)}));const $=i("systemTableListBody");$&&(this.on($,"change",c=>{const m=c.target.closest("[data-table-select]");!m||m.tagName!=="INPUT"||(c.stopPropagation(),this.toggleTableSelection(m.dataset.tableName,m.checked),this.focusTable(m.dataset.tableName))}),this.on($,"click",c=>{const d=c.target,m=d.closest(".pa-card-menu-item[data-table-action]");if(m){c.preventDefault(),c.stopPropagation(),q(),this.handleTableAction(m.dataset.tableName,m.dataset.tableAction);return}const y=d.closest("[data-table-menu-btn]");if(y){c.preventDefault(),c.stopPropagation();const x=y.parentElement?.querySelector(".pa-card-menu");x&&O(x,y);return}if(d.closest(".pa-msg-actions, .pa-bkp-table-card-actions, .pa-card-menu"))return;const S=d.closest("[data-table-row]");S&&(d.closest("[data-table-select]")||this.checkTable(S.dataset.tableName))}));const A=i("systemExportHistoryBody");A&&this.on(A,"click",c=>{const m=c.target.closest('[data-export-action="delete"]');m&&(c.preventDefault(),this.confirmDeleteExport(m.dataset.exportId))});const F=i("systemDbViewStructureBtn");F&&this.on(F,"click",()=>this.viewTableStructure());const P=i("systemDbExportTableBtn");P&&this.on(P,"click",()=>{this.state.focusedTable&&this.exportSingleTable(this.state.focusedTable)});const R=i("systemDbSqlEditorBtn");R&&this.on(R,"click",()=>{this.state.focusedTable&&this.copySqlQuery(this.state.focusedTable)});const I=i("systemEnvReloadBtn");I&&this.on(I,"click",()=>{this.loadEnvironment()});const N=i("systemEnvImportBtn");N&&this.on(N,"click",()=>{this.openEnvImportFilePicker()});const C=i("systemEnvImportFile");C&&this.on(C,"change",()=>{this.handleEnvImportFileSelected(C)});const z=i("systemEnvForm");z&&this.on(z,"submit",c=>{c.preventDefault(),this.saveEnvironment()});const D=i("systemEnvForm");D&&J(D)}setViewMode(e){this.state.viewMode=e,this.syncViewMode(),this.renderTables()}syncViewMode(){const e=this.state.viewMode,t=i("systemTableGridViewBtn"),s=i("systemTableListViewBtn"),a=i("systemTableGridWrap"),n=i("systemTableListWrap");t&&t.classList.toggle("active",e==="grid"),s&&s.classList.toggle("active",e==="list"),a&&(a.hidden=e!=="grid",a.classList.toggle("is-active-view",e==="grid")),n&&(n.hidden=e!=="list",n.classList.toggle("is-active-view",e==="list"))}async ensureAdminAccess(){const e=await this.getProfile?.();return e?["super_admin","admin"].includes(e.role)?!0:(v("Only administrators can access system settings.","danger"),!1):!1}async fetchJson(e,t){const s=await fetch(e,{credentials:"same-origin",headers:{Accept:"application/json",...t?.body?{"Content-Type":"application/json"}:{},...t?.headers||{}},...t});if(s.status===401)throw window.location.href="/login",new Error("Unauthorized");const a=await s.json().catch(()=>({}));if(!s.ok)throw new Error(a.error||s.statusText||"Request failed");return a}async load(){if(!await this.ensureAdminAccess()){this.renderAccessDenied();return}this.bindEvents(),j("system-section","database"),this.syncViewMode(),this.populateCategoryFilter(),await Promise.all([this.loadTables(),this.loadEnvironment(),this.loadOpsReadiness()])}async loadOpsReadiness(){const e=i("systemOpsReadiness");if(e){e.innerHTML='<div class="pa-bkp-loading"><span class="pa-spinner"></span> Loading deployment status\u2026</div>';try{const s=(await this.fetchJson("/api/health/supabase?detailed=1")).ops;if(!s){e.innerHTML='<div class="pa-info-box">No deployment data returned.</div>';return}const n=[{ok:s.migrationPublicApiHardening,label:"Public API hardening migration (rate limits + contact API)"},{ok:s.cronSecretConfigured,label:"CRON_SECRET configured (host env)"},{ok:s.portfolioOriginsConfigured,label:"PORTFOLIO_PUBLIC_ORIGINS or portfolio URL (host env)"},{ok:s.previewTokenSecretConfigured,label:"PREVIEW_TOKEN_SECRET or CRON_SECRET (host env)"},{ok:s.turnstileConfigured,label:"Turnstile keys (System \u2192 Environment)"}].map(b=>`<li class="pa-system-ops-check"><i class="${b.ok?"ri-checkbox-circle-fill pa-system-ops-ok":"ri-error-warning-fill pa-system-ops-warn"}" aria-hidden="true"></i><span>${o(b.label)}</span></li>`).join(""),r=Array.isArray(s.warnings)?s.warnings:[],l=r.length?`<ul class="pa-system-ops-warnings">${r.map(b=>`<li>${o(b)}</li>`).join("")}</ul>`:'<p class="pa-text-mute fs-sm mb-0">No additional warnings.</p>';e.innerHTML=`
+import { $id, escapeHtml } from "../../utils/dom.js";
+import { showToast, showStatusToast } from "../shell/toast.js";
+import { requestConfirm } from "../shell/confirm.js";
+import { closeAllCardMenus, toggleCardMenu } from "../shell/cardMenu.js";
+import { setupAllPasswordToggles } from "../../utils/password-toggle.js";
+import { activateTab } from "../shell/panels.js";
+import { staggerReveal } from "../../utils/motion.js";
+const UNCHANGED_SECRET = "__UNCHANGED__";
+function listEnvFormKeys() {
+  const form = $id("systemEnvForm");
+  if (!form) return [];
+  const names = /* @__PURE__ */ new Set();
+  form.querySelectorAll("[name]").forEach((el) => {
+    const name = el.getAttribute("name")?.trim();
+    if (name) names.add(name);
+  });
+  return [...names];
+}
+function isSecretEnvField(el) {
+  if (el instanceof HTMLInputElement && el.type === "password") return true;
+  return el.getAttribute("data-env-secret") === "1";
+}
+const TABLE_META = {
+  sites: { desc: "Site configuration records", category: "system", icon: "ri-global-line", tone: "tone-blue" },
+  profiles: { desc: "User profile data", category: "auth", icon: "ri-user-line", tone: "tone-green" },
+  site_settings: { desc: "Dashboard and site preferences", category: "system", icon: "ri-settings-3-line", tone: "tone-orange" },
+  site_runtime_config: { desc: "SMTP, retention, and runtime toggles", category: "system", icon: "ri-toggle-line", tone: "tone-blue" },
+  notification_preferences: { desc: "Per-user notification settings", category: "system", icon: "ri-notification-3-line", tone: "tone-purple" },
+  security_settings: { desc: "Account security configuration", category: "auth", icon: "ri-shield-keyhole-line", tone: "tone-green" },
+  two_factor_backup_codes: { desc: "MFA backup codes", category: "auth", icon: "ri-key-2-line", tone: "tone-green" },
+  user_sessions: { desc: "Active user sessions", category: "auth", icon: "ri-login-circle-line", tone: "tone-green" },
+  categories: { desc: "Project category definitions", category: "content", icon: "ri-folder-line", tone: "tone-orange" },
+  media_assets: { desc: "Media files and assets", category: "content", icon: "ri-image-line", tone: "tone-purple" },
+  projects: { desc: "Portfolio project entries", category: "content", icon: "ri-apps-line", tone: "tone-orange" },
+  project_tag_labels: { desc: "Project tag catalog", category: "content", icon: "ri-price-tag-3-line", tone: "tone-teal" },
+  project_tag_links: { desc: "Project tag links", category: "content", icon: "ri-price-tag-3-line", tone: "tone-teal" },
+  project_technology_links: { desc: "Project technology links", category: "content", icon: "ri-code-s-slash-line", tone: "tone-teal" },
+  project_tool_links: { desc: "Project tool links", category: "content", icon: "ri-tools-line", tone: "tone-orange" },
+  blog_tags: { desc: "Blog tag catalog", category: "content", icon: "ri-hashtag", tone: "tone-teal" },
+  project_gallery_images: { desc: "Project gallery images", category: "content", icon: "ri-gallery-line", tone: "tone-purple" },
+  technologies: { desc: "Technology stack items", category: "content", icon: "ri-code-s-slash-line", tone: "tone-blue" },
+  experience_entries: { desc: "Work experience records", category: "content", icon: "ri-briefcase-line", tone: "tone-teal" },
+  testimonials: { desc: "Client testimonials", category: "content", icon: "ri-chat-quote-line", tone: "tone-green" },
+  blog_posts: { desc: "Blog post content", category: "content", icon: "ri-article-line", tone: "tone-orange" },
+  blog_post_tags: { desc: "Blog post tag links", category: "content", icon: "ri-hashtag", tone: "tone-teal" },
+  blog_categories: { desc: "Blog post categories", category: "content", icon: "ri-bookmark-line", tone: "tone-purple" },
+  contact_messages: { desc: "Inbound contact form messages", category: "communication", icon: "ri-mail-line", tone: "tone-blue" },
+  contact_message_replies: { desc: "Replies to contact messages", category: "communication", icon: "ri-reply-line", tone: "tone-blue" },
+  recent_activities: { desc: "Dashboard activity feed", category: "system", icon: "ri-history-line", tone: "tone-orange" },
+  login_activity: { desc: "User login audit log", category: "auth", icon: "ri-fingerprint-line", tone: "tone-green" },
+  tool_categories: { desc: "Tool category definitions", category: "content", icon: "ri-folder-settings-line", tone: "tone-teal" },
+  tool_items: { desc: "Tools and utilities", category: "content", icon: "ri-tools-line", tone: "tone-orange" },
+  user_notifications: { desc: "In-app user notifications", category: "system", icon: "ri-bell-line", tone: "tone-purple" },
+  backup_snapshots: { desc: "Stores backup snapshot information", category: "system", icon: "ri-database-2-line", tone: "tone-blue" }
+};
+const CATEGORY_LABELS = {
+  all: "All Categories",
+  content: "Content",
+  auth: "Auth & Security",
+  system: "System",
+  communication: "Communication"
+};
+function formatBytes(bytes) {
+  const value = Number(bytes);
+  if (!Number.isFinite(value) || value <= 0) return "\u2014";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
+  const scaled = value / 1024 ** index;
+  return `${scaled.toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
+}
+function formatDateTime(value) {
+  if (!value) return { date: "\u2014", time: "", relative: "" };
+  try {
+    const d = new Date(value);
+    const now = Date.now();
+    const diffMs = now - d.getTime();
+    const diffHours = Math.floor(diffMs / (1e3 * 60 * 60));
+    let relative = "";
+    if (diffHours < 1) relative = "Just now";
+    else if (diffHours < 24) relative = `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+    else {
+      const days = Math.floor(diffHours / 24);
+      relative = `${days} day${days === 1 ? "" : "s"} ago`;
+    }
+    return {
+      date: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+      relative
+    };
+  } catch {
+    return { date: "\u2014", time: "", relative: "" };
+  }
+}
+function parseDownloadFilename(contentDisposition, fallback) {
+  if (!contentDisposition) return fallback;
+  const match = /filename="([^"]+)"/i.exec(contentDisposition);
+  return match?.[1] || fallback;
+}
+function triggerBlobDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+function getTableMeta(name) {
+  const known = TABLE_META[name];
+  if (known) return known;
+  const label = name.replace(/_/g, " ");
+  return {
+    desc: `${label.charAt(0).toUpperCase()}${label.slice(1)} data`,
+    category: "system",
+    icon: "ri-table-line",
+    tone: "tone-blue"
+  };
+}
+function sizeBucket(bytes) {
+  const value = Number(bytes) || 0;
+  if (value <= 0) return "small";
+  if (value < 100 * 1024) return "small";
+  if (value < 1024 * 1024) return "medium";
+  return "large";
+}
+class SystemManager {
+  constructor({ on, getProfile }) {
+    this.on = on;
+    this.getProfile = getProfile;
+    this.state = {
+      tables: [],
+      history: [],
+      selectedTables: /* @__PURE__ */ new Set(),
+      focusedTable: null,
+      tableFilter: "",
+      categoryFilter: "all",
+      sizeFilter: "all",
+      viewMode: "grid",
+      page: 1,
+      pageSize: 10,
+      exportRunning: false,
+      env: null
+    };
+    this._bound = false;
+  }
+  bindEvents() {
+    if (this._bound) return;
+    this._bound = true;
+    document.querySelectorAll('.pa-view-btn[data-panel="system-section"]').forEach((btn) => {
+      this.on(btn, "click", () => {
+        const tab = btn.dataset.tab;
+        if (tab) {
+          activateTab("system-section", tab);
+          if (tab === "env") this.initEnvTabMotion();
+        }
+      });
+    });
+    const refreshBtn = $id("systemBackupRefreshBtn");
+    if (refreshBtn) this.on(refreshBtn, "click", () => {
+      void this.loadTables();
+    });
+    const opsRefreshBtn = $id("systemOpsRefreshBtn");
+    if (opsRefreshBtn) this.on(opsRefreshBtn, "click", () => {
+      void this.loadOpsReadiness();
+    });
+    const searchInput = $id("systemTableSearch");
+    if (searchInput) {
+      this.on(searchInput, "input", (e) => {
+        const target = e.target;
+        this.state.tableFilter = target.value.trim().toLowerCase();
+        this.state.page = 1;
+        this.renderTables();
+      });
+    }
+    const categoryFilter = $id("systemTableCategoryFilter");
+    if (categoryFilter) {
+      this.on(categoryFilter, "change", (e) => {
+        const target = e.target;
+        this.state.categoryFilter = target.value;
+        this.state.page = 1;
+        this.renderTables();
+      });
+    }
+    const sizeFilter = $id("systemTableSizeFilter");
+    if (sizeFilter) {
+      this.on(sizeFilter, "change", (e) => {
+        const target = e.target;
+        this.state.sizeFilter = target.value;
+        this.state.page = 1;
+        this.renderTables();
+      });
+    }
+    const selectAllBtn = $id("systemTableSelectAll");
+    if (selectAllBtn) this.on(selectAllBtn, "click", () => this.selectAllVisibleTables());
+    const clearAllBtn = $id("systemTableClearAll");
+    if (clearAllBtn) this.on(clearAllBtn, "click", () => this.clearSelectedTables());
+    const masterCheck = $id("systemTableMasterCheck");
+    if (masterCheck) {
+      this.on(masterCheck, "change", (e) => {
+        const target = e.target;
+        if (target.checked) this.selectAllVisibleTables();
+        else this.clearSelectedTables();
+      });
+    }
+    const gridViewBtn = $id("systemTableGridViewBtn");
+    if (gridViewBtn) this.on(gridViewBtn, "click", () => this.setViewMode("grid"));
+    const listViewBtn = $id("systemTableListViewBtn");
+    if (listViewBtn) this.on(listViewBtn, "click", () => this.setViewMode("list"));
+    const pageSizeSelect = $id("systemTablePageSize");
+    if (pageSizeSelect) {
+      this.on(pageSizeSelect, "change", (e) => {
+        const target = e.target;
+        this.state.pageSize = parseInt(target.value, 10) || 10;
+        this.state.page = 1;
+        this.renderTables();
+      });
+    }
+    const exportSqlBtn = $id("systemExportSqlBtn");
+    if (exportSqlBtn) this.on(exportSqlBtn, "click", () => {
+      void this.exportSqlBackup();
+    });
+    const exportSchemaBtn = $id("systemExportSchemaBtn");
+    if (exportSchemaBtn) this.on(exportSchemaBtn, "click", () => {
+      void this.downloadSchemaGuide();
+    });
+    const bulkExportSqlBtn = $id("systemBulkExportSqlBtn");
+    if (bulkExportSqlBtn) this.on(bulkExportSqlBtn, "click", () => {
+      void this.exportSqlBackup();
+    });
+    const bulkExportSchemaBtn = $id("systemBulkExportSchemaBtn");
+    if (bulkExportSchemaBtn) this.on(bulkExportSchemaBtn, "click", () => {
+      void this.downloadSchemaGuide();
+    });
+    const gridBody = $id("systemTableGridBody");
+    if (gridBody) {
+      this.on(gridBody, "change", (e) => {
+        const target = e.target;
+        const checkbox = target.closest("[data-table-select]");
+        if (!checkbox || checkbox.tagName !== "INPUT") return;
+        e.stopPropagation();
+        this.toggleTableSelection(checkbox.dataset.tableName, checkbox.checked);
+        this.focusTable(checkbox.dataset.tableName);
+      });
+      this.on(gridBody, "click", (e) => {
+        const target = e.target;
+        const menuItem = target.closest("[data-table-action]");
+        if (menuItem) {
+          e.preventDefault();
+          e.stopPropagation();
+          closeAllCardMenus();
+          this.handleTableAction(menuItem.dataset.tableName, menuItem.dataset.tableAction);
+          return;
+        }
+        const menuBtn = target.closest("[data-table-menu-btn]");
+        if (menuBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const menu = menuBtn.parentElement?.querySelector(".pa-card-menu");
+          if (menu) toggleCardMenu(menu, menuBtn);
+          return;
+        }
+        const selectBox = target.closest("[data-table-select]");
+        if (selectBox) {
+          e.stopPropagation();
+          const name = selectBox.dataset.tableName;
+          this.toggleTableSelection(name, !this.state.selectedTables.has(name));
+          this.focusTable(name);
+          return;
+        }
+        if (target.closest(".pa-msg-actions, .pa-bkp-table-card-actions, .pa-card-menu")) return;
+        const card = target.closest("[data-table-card]");
+        if (!card) return;
+        this.checkTable(card.dataset.tableName);
+      });
+      this.on(gridBody, "keydown", (e) => {
+        const event = e;
+        const target = event.target;
+        const selectBox = target.closest("[data-table-select]");
+        if (!selectBox || selectBox.tagName === "INPUT") return;
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        const name = selectBox.dataset.tableName;
+        this.toggleTableSelection(name, !this.state.selectedTables.has(name));
+        this.focusTable(name);
+      });
+    }
+    const tableList = $id("systemTableListBody");
+    if (tableList) {
+      this.on(tableList, "change", (e) => {
+        const target = e.target;
+        const checkbox = target.closest("[data-table-select]");
+        if (!checkbox || checkbox.tagName !== "INPUT") return;
+        e.stopPropagation();
+        this.toggleTableSelection(checkbox.dataset.tableName, checkbox.checked);
+        this.focusTable(checkbox.dataset.tableName);
+      });
+      this.on(tableList, "click", (e) => {
+        const target = e.target;
+        const menuItem = target.closest(".pa-card-menu-item[data-table-action]");
+        if (menuItem) {
+          e.preventDefault();
+          e.stopPropagation();
+          closeAllCardMenus();
+          this.handleTableAction(menuItem.dataset.tableName, menuItem.dataset.tableAction);
+          return;
+        }
+        const menuBtn = target.closest("[data-table-menu-btn]");
+        if (menuBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const menu = menuBtn.parentElement?.querySelector(".pa-card-menu");
+          if (menu) toggleCardMenu(menu, menuBtn);
+          return;
+        }
+        if (target.closest(".pa-msg-actions, .pa-bkp-table-card-actions, .pa-card-menu")) return;
+        const row = target.closest("[data-table-row]");
+        if (!row) return;
+        if (target.closest("[data-table-select]")) return;
+        this.checkTable(row.dataset.tableName);
+      });
+    }
+    const historyBody = $id("systemExportHistoryBody");
+    if (historyBody) {
+      this.on(historyBody, "click", (e) => {
+        const target = e.target;
+        const deleteBtn = target.closest('[data-export-action="delete"]');
+        if (!deleteBtn) return;
+        e.preventDefault();
+        this.confirmDeleteExport(deleteBtn.dataset.exportId);
+      });
+    }
+    const viewStructureBtn = $id("systemDbViewStructureBtn");
+    if (viewStructureBtn) this.on(viewStructureBtn, "click", () => this.viewTableStructure());
+    const exportTableBtn = $id("systemDbExportTableBtn");
+    if (exportTableBtn) {
+      this.on(exportTableBtn, "click", () => {
+        if (this.state.focusedTable) void this.exportSingleTable(this.state.focusedTable);
+      });
+    }
+    const sqlEditorBtn = $id("systemDbSqlEditorBtn");
+    if (sqlEditorBtn) {
+      this.on(sqlEditorBtn, "click", () => {
+        if (this.state.focusedTable) this.copySqlQuery(this.state.focusedTable);
+      });
+    }
+    const reloadBtn = $id("systemEnvReloadBtn");
+    if (reloadBtn) this.on(reloadBtn, "click", () => {
+      void this.loadEnvironment();
+    });
+    const importBtn = $id("systemEnvImportBtn");
+    if (importBtn) this.on(importBtn, "click", () => {
+      void this.openEnvImportFilePicker();
+    });
+    const importFile = $id("systemEnvImportFile");
+    if (importFile) {
+      this.on(importFile, "change", () => {
+        void this.handleEnvImportFileSelected(importFile);
+      });
+    }
+    const form = $id("systemEnvForm");
+    if (form) {
+      this.on(form, "submit", (e) => {
+        e.preventDefault();
+        void this.saveEnvironment();
+      });
+    }
+    const envForm = $id("systemEnvForm");
+    if (envForm) setupAllPasswordToggles(envForm);
+  }
+  setViewMode(mode) {
+    this.state.viewMode = mode;
+    this.syncViewMode();
+    this.renderTables();
+  }
+  syncViewMode() {
+    const mode = this.state.viewMode;
+    const gridBtn = $id("systemTableGridViewBtn");
+    const listBtn = $id("systemTableListViewBtn");
+    const gridWrap = $id("systemTableGridWrap");
+    const listWrap = $id("systemTableListWrap");
+    if (gridBtn) gridBtn.classList.toggle("active", mode === "grid");
+    if (listBtn) listBtn.classList.toggle("active", mode === "list");
+    if (gridWrap) {
+      gridWrap.hidden = mode !== "grid";
+      gridWrap.classList.toggle("is-active-view", mode === "grid");
+    }
+    if (listWrap) {
+      listWrap.hidden = mode !== "list";
+      listWrap.classList.toggle("is-active-view", mode === "list");
+    }
+  }
+  async ensureAdminAccess() {
+    const profile = await this.getProfile?.();
+    if (!profile) return false;
+    if (!["super_admin", "admin"].includes(profile.role)) {
+      showToast("Only administrators can access system settings.", "danger");
+      return false;
+    }
+    return true;
+  }
+  async fetchJson(url, options) {
+    const res = await fetch(url, {
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+        ...options?.body ? { "Content-Type": "application/json" } : {},
+        ...options?.headers || {}
+      },
+      ...options
+    });
+    if (res.status === 401) {
+      window.location.href = "/login";
+      throw new Error("Unauthorized");
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || res.statusText || "Request failed");
+    return data;
+  }
+  async load() {
+    if (!await this.ensureAdminAccess()) {
+      this.renderAccessDenied();
+      return;
+    }
+    this.bindEvents();
+    activateTab("system-section", "database");
+    this.syncViewMode();
+    this.populateCategoryFilter();
+    await Promise.all([
+      this.loadTables(),
+      this.loadEnvironment(),
+      this.loadOpsReadiness()
+    ]);
+  }
+  async loadOpsReadiness() {
+    const el = $id("systemOpsReadiness");
+    if (!el) return;
+    el.innerHTML = '<div class="pa-bkp-loading"><span class="pa-spinner"></span> Loading deployment status\u2026</div>';
+    try {
+      const data = await this.fetchJson("/api/health/supabase?detailed=1");
+      const ops = data.ops;
+      if (!ops) {
+        el.innerHTML = '<div class="pa-info-box">No deployment data returned.</div>';
+        return;
+      }
+      const checks = [
+        { ok: ops.migrationPublicApiHardening, label: "Public API hardening migration (rate limits + contact API)" },
+        { ok: ops.cronSecretConfigured, label: "CRON_SECRET configured (host env)" },
+        { ok: ops.portfolioOriginsConfigured, label: "PORTFOLIO_PUBLIC_ORIGINS or portfolio URL (host env)" },
+        { ok: ops.previewTokenSecretConfigured, label: "PREVIEW_TOKEN_SECRET or CRON_SECRET (host env)" },
+        { ok: ops.turnstileConfigured, label: "Turnstile keys (System \u2192 Environment)" }
+      ];
+      const checkHtml = checks.map((row) => {
+        const icon = row.ok ? "ri-checkbox-circle-fill pa-system-ops-ok" : "ri-error-warning-fill pa-system-ops-warn";
+        return `<li class="pa-system-ops-check"><i class="${icon}" aria-hidden="true"></i><span>${escapeHtml(row.label)}</span></li>`;
+      }).join("");
+      const warnings = Array.isArray(ops.warnings) ? ops.warnings : [];
+      const warnHtml = warnings.length ? `<ul class="pa-system-ops-warnings">${warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join("")}</ul>` : '<p class="pa-text-mute fs-sm mb-0">No additional warnings.</p>';
+      el.innerHTML = `
         <div class="pa-motion-stagger pa-system-ops-motion">
-          <ul class="pa-system-ops-checks">${n}</ul>
+          <ul class="pa-system-ops-checks">${checkHtml}</ul>
           <div class="pa-info-box mt-16">
             <p class="mb-8"><strong>Manual steps</strong> (Supabase Dashboard): disable public email sign-ups; promote staff via invite or SQL.</p>
-            ${l}
+            ${warnHtml}
           </div>
-        </div>`;const p=e.querySelector(".pa-system-ops-motion");V(p,":scope > *")}catch(t){e.innerHTML=`<div class="pa-info-box pa-system-ops-error">${o(t.message||"Could not load deployment status.")}</div>`}}}populateCategoryFilter(){const e=i("systemTableCategoryFilter");if(!e)return;const t=Object.entries(Q).map(([s,a])=>`<option value="${o(s)}">${o(a)}</option>`);e.innerHTML=t.join("")}renderAccessDenied(){const e=document.querySelector('.pa-tab-panel[data-content="system"]');e&&(e.innerHTML='<div class="pa-session-empty">You do not have permission to view system settings.</div>')}getVisibleTables(){const e=this.state.tableFilter,t=this.state.categoryFilter,s=this.state.sizeFilter;return this.state.tables.filter(a=>{const n=B(a.name);return!(e&&!a.name.toLowerCase().includes(e)&&!n.desc.toLowerCase().includes(e)||t!=="all"&&n.category!==t||s!=="all"&&ee(a.sizeBytes)!==s)})}getPageTables(){const e=this.getVisibleTables(),t=(this.state.page-1)*this.state.pageSize;return{visible:e,pageItems:e.slice(t,t+this.state.pageSize),totalPages:Math.max(1,Math.ceil(e.length/this.state.pageSize))}}getTotalSizeBytes(){return this.state.tables.reduce((e,t)=>e+(Number(t.sizeBytes)||0),0)}getSelectedSizeBytes(){return this.state.tables.filter(e=>this.state.selectedTables.has(e.name)).reduce((e,t)=>e+(Number(t.sizeBytes)||0),0)}selectAllVisibleTables(){for(const e of this.getVisibleTables())this.state.selectedTables.add(e.name);this.renderTables()}clearSelectedTables(){this.state.selectedTables.clear(),this.renderTables()}toggleTableSelection(e,t){e&&(t?this.state.selectedTables.add(e):this.state.selectedTables.delete(e),this.renderTables())}focusTable(e){e&&(this.state.focusedTable=e,this.renderTables(),this.renderSidebar())}checkTable(e){e&&(this.state.selectedTables.add(e),this.focusTable(e))}renderTableCheckbox(e,t,s="grid"){const a=o(e);return s==="list"?`<input type="checkbox" class="pa-msg-bulk-checkbox" data-table-select data-table-name="${a}" ${t?"checked":""} aria-label="Include ${a}" />`:`<div class="pa-select-checkbox${t?" selected":""}" data-table-select data-table-name="${a}" role="checkbox" aria-checked="${t}" aria-label="Include ${a}" tabindex="0"><i class="${t?"ri-checkbox-fill":"ri-checkbox-blank-line"}"></i></div>`}handleTableAction(e,t){!e||!t||(t==="focus"?this.focusTable(e):t==="export"?this.exportSingleTable(e):t==="sql"&&this.copySqlQuery(e))}renderTableCardMenu(e){const t=o(e);return`<div class="pa-msg-actions pa-card-actions pa-bkp-table-card-actions">
-      <button type="button" class="pa-action-btn pa-action-more" data-table-menu-btn data-table-name="${t}" title="More options" aria-label="More options for ${t}"><i class="ri-more-2-fill"></i></button>
-      <div class="pa-card-menu" data-table-name="${t}">
-        <div class="pa-card-menu-item" data-table-action="focus" data-table-name="${t}"><i class="ri-eye-line"></i> View Details</div>
-        <div class="pa-card-menu-item" data-table-action="sql" data-table-name="${t}"><i class="ri-code-line"></i> Copy SQL Query</div>
-        <div class="pa-card-menu-item" data-table-action="export" data-table-name="${t}"><i class="ri-download-2-line"></i> Export Data</div>
+        </div>`;
+      const motionRoot = el.querySelector(".pa-system-ops-motion");
+      staggerReveal(motionRoot, ":scope > *");
+    } catch (err) {
+      el.innerHTML = `<div class="pa-info-box pa-system-ops-error">${escapeHtml(err.message || "Could not load deployment status.")}</div>`;
+    }
+  }
+  populateCategoryFilter() {
+    const select = $id("systemTableCategoryFilter");
+    if (!select) return;
+    const options = Object.entries(CATEGORY_LABELS).map(
+      ([value, label]) => `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`
+    );
+    select.innerHTML = options.join("");
+  }
+  renderAccessDenied() {
+    const panel = document.querySelector('.pa-tab-panel[data-content="system"]');
+    if (!panel) return;
+    panel.innerHTML = '<div class="pa-session-empty">You do not have permission to view system settings.</div>';
+  }
+  getVisibleTables() {
+    const filter = this.state.tableFilter;
+    const category = this.state.categoryFilter;
+    const size = this.state.sizeFilter;
+    return this.state.tables.filter((table) => {
+      const meta = getTableMeta(table.name);
+      if (filter && !table.name.toLowerCase().includes(filter) && !meta.desc.toLowerCase().includes(filter)) {
+        return false;
+      }
+      if (category !== "all" && meta.category !== category) return false;
+      if (size !== "all" && sizeBucket(table.sizeBytes) !== size) return false;
+      return true;
+    });
+  }
+  getPageTables() {
+    const visible = this.getVisibleTables();
+    const start = (this.state.page - 1) * this.state.pageSize;
+    return { visible, pageItems: visible.slice(start, start + this.state.pageSize), totalPages: Math.max(1, Math.ceil(visible.length / this.state.pageSize)) };
+  }
+  getTotalSizeBytes() {
+    return this.state.tables.reduce((sum, table) => sum + (Number(table.sizeBytes) || 0), 0);
+  }
+  getSelectedSizeBytes() {
+    return this.state.tables.filter((table) => this.state.selectedTables.has(table.name)).reduce((sum, table) => sum + (Number(table.sizeBytes) || 0), 0);
+  }
+  selectAllVisibleTables() {
+    for (const table of this.getVisibleTables()) {
+      this.state.selectedTables.add(table.name);
+    }
+    this.renderTables();
+  }
+  clearSelectedTables() {
+    this.state.selectedTables.clear();
+    this.renderTables();
+  }
+  toggleTableSelection(name, selected) {
+    if (!name) return;
+    if (selected) this.state.selectedTables.add(name);
+    else this.state.selectedTables.delete(name);
+    this.renderTables();
+  }
+  focusTable(name) {
+    if (!name) return;
+    this.state.focusedTable = name;
+    this.renderTables();
+    this.renderSidebar();
+  }
+  checkTable(name) {
+    if (!name) return;
+    this.state.selectedTables.add(name);
+    this.focusTable(name);
+  }
+  renderTableCheckbox(tableName, selected, mode = "grid") {
+    const safeName = escapeHtml(tableName);
+    if (mode === "list") {
+      return `<input type="checkbox" class="pa-msg-bulk-checkbox" data-table-select data-table-name="${safeName}" ${selected ? "checked" : ""} aria-label="Include ${safeName}" />`;
+    }
+    return `<div class="pa-select-checkbox${selected ? " selected" : ""}" data-table-select data-table-name="${safeName}" role="checkbox" aria-checked="${selected}" aria-label="Include ${safeName}" tabindex="0"><i class="${selected ? "ri-checkbox-fill" : "ri-checkbox-blank-line"}"></i></div>`;
+  }
+  handleTableAction(name, action) {
+    if (!name || !action) return;
+    if (action === "focus") this.focusTable(name);
+    else if (action === "export") void this.exportSingleTable(name);
+    else if (action === "sql") this.copySqlQuery(name);
+  }
+  renderTableCardMenu(tableName) {
+    const safeName = escapeHtml(tableName);
+    return `<div class="pa-msg-actions pa-card-actions pa-bkp-table-card-actions">
+      <button type="button" class="pa-action-btn pa-action-more" data-table-menu-btn data-table-name="${safeName}" title="More options" aria-label="More options for ${safeName}"><i class="ri-more-2-fill"></i></button>
+      <div class="pa-card-menu" data-table-name="${safeName}">
+        <div class="pa-card-menu-item" data-table-action="focus" data-table-name="${safeName}"><i class="ri-eye-line"></i> View Details</div>
+        <div class="pa-card-menu-item" data-table-action="sql" data-table-name="${safeName}"><i class="ri-code-line"></i> Copy SQL Query</div>
+        <div class="pa-card-menu-item" data-table-action="export" data-table-name="${safeName}"><i class="ri-download-2-line"></i> Export Data</div>
       </div>
-    </div>`}updateSelectionMeta(){const e=i("systemTableSelectedCount"),t=i("systemExportSqlBtn"),s=i("systemTableBulkBar"),a=i("systemTableBulkCount"),n=i("systemTableBulkSize"),r=i("systemBulkExportSqlBtn"),l=this.state.tables.length,p=this.state.selectedTables.size;e&&(e.textContent=`${p} of ${l} table${l===1?"":"s"} selected`),t&&(t.disabled=this.state.exportRunning||p===0),r&&(r.disabled=this.state.exportRunning||p===0),s&&(s.hidden=p===0),a&&(a.textContent=`${p} table${p===1?"":"s"} selected`),n&&(n.textContent=`Total size: ${T(this.getSelectedSizeBytes())} (approx.)`)}renderStats(){const e=this.state.tables,t=this.getTotalSizeBytes(),s=(a,n)=>{const r=i(a);r&&(r.textContent=n)};s("systemTableCount",String(e.length)),s("systemDbOverviewTables",String(e.length)),s("systemDbOverviewSize",T(t)),s("systemDbOverviewAvg",e.length&&t>0?T(t/e.length):"\u2014")}async loadTables(){const e=i("systemTableGridBody"),t=i("systemTableListBody"),s=i("systemExportHistoryBody"),a=i("systemDbRecentActivity"),n='<div class="pa-bkp-loading"><span class="pa-spinner"></span> Loading tables\u2026</div>';e&&(e.innerHTML=n),t&&(t.innerHTML=`<tr><td colspan="7">${n}</td></tr>`),s&&(s.innerHTML='<div class="pa-bkp-loading"><span class="pa-spinner"></span> Loading export history\u2026</div>'),a&&(a.innerHTML='<div class="pa-bkp-loading"><span class="pa-spinner"></span> Loading\u2026</div>');try{const r=await this.fetchJson("/api/admin/database-backup");this.state.tables=r.tables||[],this.state.history=r.history||[],this.state.focusedTable&&!this.state.tables.find(l=>l.name===this.state.focusedTable)&&(this.state.focusedTable=null);for(const l of[...this.state.selectedTables])this.state.tables.find(p=>p.name===l)||this.state.selectedTables.delete(l);this.renderStats(),this.renderTables(),this.renderExportHistory(),this.renderSidebarActivity(),this.renderSidebar(),this.setBackupStatus("")}catch(r){const l=`<div class="pa-bkp-empty"><i class="ri-error-warning-line"></i><div class="pa-bkp-empty-title">Could not load tables</div><div class="pa-bkp-empty-text">${o(r.message||"Please try again.")}</div></div>`;e&&(e.innerHTML=l),t&&(t.innerHTML=`<tr><td colspan="7">${l}</td></tr>`)}}renderTables(){this.syncViewMode(),this.state.viewMode==="grid"?this.renderGridView():this.renderListView(),this.updateSelectionMeta(),this.updateMasterCheckbox(),this.renderSidebar()}renderGridView(){const e=i("systemTableGridBody");if(!e)return;const{visible:t}=this.getPageTables();if(!t.length){e.innerHTML=`<div class="pa-bkp-empty"><div class="pa-bkp-empty-title">${this.state.tables.length?"No tables match your filters":"No tables found"}</div></div>`;return}e.innerHTML=t.map(s=>{const a=B(s.name),n=this.state.selectedTables.has(s.name),r=this.state.focusedTable===s.name;return`<div class="pa-bkp-table-card${n?" is-selected pa-selected":""}${r?" is-focused":""}" data-table-card data-table-name="${o(s.name)}" role="button" tabindex="0">
-        ${this.renderTableCheckbox(s.name,n,"grid")}
-        <div class="pa-bkp-table-card-icon ${a.tone}"><i class="${a.icon}"></i></div>
-        <div class="pa-bkp-table-card-name">${o(s.name)}</div>
-        <div class="pa-bkp-table-card-desc">${o(a.desc)}</div>
+    </div>`;
+  }
+  updateSelectionMeta() {
+    const countEl = $id("systemTableSelectedCount");
+    const exportBtn = $id("systemExportSqlBtn");
+    const bulkBar = $id("systemTableBulkBar");
+    const bulkCount = $id("systemTableBulkCount");
+    const bulkSize = $id("systemTableBulkSize");
+    const bulkExportSql = $id("systemBulkExportSqlBtn");
+    const total = this.state.tables.length;
+    const selected = this.state.selectedTables.size;
+    if (countEl) {
+      countEl.textContent = `${selected} of ${total} table${total === 1 ? "" : "s"} selected`;
+    }
+    if (exportBtn) {
+      exportBtn.disabled = this.state.exportRunning || selected === 0;
+    }
+    if (bulkExportSql) {
+      bulkExportSql.disabled = this.state.exportRunning || selected === 0;
+    }
+    if (bulkBar) {
+      bulkBar.hidden = selected === 0;
+    }
+    if (bulkCount) {
+      bulkCount.textContent = `${selected} table${selected === 1 ? "" : "s"} selected`;
+    }
+    if (bulkSize) {
+      bulkSize.textContent = `Total size: ${formatBytes(this.getSelectedSizeBytes())} (approx.)`;
+    }
+  }
+  renderStats() {
+    const tables = this.state.tables;
+    const totalSize = this.getTotalSizeBytes();
+    const setText = (id, text) => {
+      const el = $id(id);
+      if (el) el.textContent = text;
+    };
+    setText("systemTableCount", String(tables.length));
+    setText("systemDbOverviewTables", String(tables.length));
+    setText("systemDbOverviewSize", formatBytes(totalSize));
+    setText("systemDbOverviewAvg", tables.length && totalSize > 0 ? formatBytes(totalSize / tables.length) : "\u2014");
+  }
+  async loadTables() {
+    const gridBody = $id("systemTableGridBody");
+    const listBody = $id("systemTableListBody");
+    const historyBody = $id("systemExportHistoryBody");
+    const activityBody = $id("systemDbRecentActivity");
+    const loadingGrid = '<div class="pa-bkp-loading"><span class="pa-spinner"></span> Loading tables\u2026</div>';
+    if (gridBody) gridBody.innerHTML = loadingGrid;
+    if (listBody) {
+      listBody.innerHTML = `<tr><td colspan="7">${loadingGrid}</td></tr>`;
+    }
+    if (historyBody) {
+      historyBody.innerHTML = '<div class="pa-bkp-loading"><span class="pa-spinner"></span> Loading export history\u2026</div>';
+    }
+    if (activityBody) {
+      activityBody.innerHTML = '<div class="pa-bkp-loading"><span class="pa-spinner"></span> Loading\u2026</div>';
+    }
+    try {
+      const payload = await this.fetchJson("/api/admin/database-backup");
+      this.state.tables = payload.tables || [];
+      this.state.history = payload.history || [];
+      if (this.state.focusedTable && !this.state.tables.find((t) => t.name === this.state.focusedTable)) {
+        this.state.focusedTable = null;
+      }
+      for (const name of [...this.state.selectedTables]) {
+        if (!this.state.tables.find((t) => t.name === name)) {
+          this.state.selectedTables.delete(name);
+        }
+      }
+      this.renderStats();
+      this.renderTables();
+      this.renderExportHistory();
+      this.renderSidebarActivity();
+      this.renderSidebar();
+      this.setBackupStatus("");
+    } catch (err) {
+      const errorHtml = `<div class="pa-bkp-empty"><i class="ri-error-warning-line"></i><div class="pa-bkp-empty-title">Could not load tables</div><div class="pa-bkp-empty-text">${escapeHtml(err.message || "Please try again.")}</div></div>`;
+      if (gridBody) gridBody.innerHTML = errorHtml;
+      if (listBody) listBody.innerHTML = `<tr><td colspan="7">${errorHtml}</td></tr>`;
+    }
+  }
+  renderTables() {
+    this.syncViewMode();
+    if (this.state.viewMode === "grid") {
+      this.renderGridView();
+    } else {
+      this.renderListView();
+    }
+    this.updateSelectionMeta();
+    this.updateMasterCheckbox();
+    this.renderSidebar();
+  }
+  renderGridView() {
+    const body = $id("systemTableGridBody");
+    if (!body) return;
+    const { visible } = this.getPageTables();
+    if (!visible.length) {
+      body.innerHTML = `<div class="pa-bkp-empty"><div class="pa-bkp-empty-title">${this.state.tables.length ? "No tables match your filters" : "No tables found"}</div></div>`;
+      return;
+    }
+    body.innerHTML = visible.map((table) => {
+      const meta = getTableMeta(table.name);
+      const selected = this.state.selectedTables.has(table.name);
+      const focused = this.state.focusedTable === table.name;
+      return `<div class="pa-bkp-table-card${selected ? " is-selected pa-selected" : ""}${focused ? " is-focused" : ""}" data-table-card data-table-name="${escapeHtml(table.name)}" role="button" tabindex="0">
+        ${this.renderTableCheckbox(table.name, selected, "grid")}
+        <div class="pa-bkp-table-card-icon ${meta.tone}"><i class="${meta.icon}"></i></div>
+        <div class="pa-bkp-table-card-name">${escapeHtml(table.name)}</div>
+        <div class="pa-bkp-table-card-desc">${escapeHtml(meta.desc)}</div>
         <div class="pa-bkp-table-card-foot">
           <div class="pa-bkp-table-card-foot-meta">
-            <span><i class="ri-list-check-2"></i> ${Number(s.rowCount||0).toLocaleString()} rows</span>
-            <span><i class="ri-hard-drive-2-line"></i> ${o(T(s.sizeBytes))}</span>
+            <span><i class="ri-list-check-2"></i> ${Number(table.rowCount || 0).toLocaleString()} rows</span>
+            <span><i class="ri-hard-drive-2-line"></i> ${escapeHtml(formatBytes(table.sizeBytes))}</span>
           </div>
-          ${this.renderTableCardMenu(s.name)}
+          ${this.renderTableCardMenu(table.name)}
         </div>
-      </div>`}).join("")}renderListView(){const e=i("systemTableListBody");if(!e)return;const{visible:t,pageItems:s,totalPages:a}=this.getPageTables();if(this.state.page>a&&(this.state.page=a),!t.length){e.innerHTML=`<tr><td colspan="7"><div class="pa-bkp-empty"><div class="pa-bkp-empty-title">${this.state.tables.length?"No tables match your filters":"No tables found"}</div></div></td></tr>`,this.renderPagination(0,1);return}e.innerHTML=s.map(n=>{const r=B(n.name),l=this.state.selectedTables.has(n.name),p=this.state.focusedTable===n.name;return`<tr class="pa-act-row pa-bkp-data-row${l?" selected":""}${p?" is-focused":""}" data-table-row data-table-name="${o(n.name)}">
+      </div>`;
+    }).join("");
+  }
+  renderListView() {
+    const body = $id("systemTableListBody");
+    if (!body) return;
+    const { visible, pageItems, totalPages } = this.getPageTables();
+    if (this.state.page > totalPages) {
+      this.state.page = totalPages;
+    }
+    if (!visible.length) {
+      body.innerHTML = `<tr><td colspan="7"><div class="pa-bkp-empty"><div class="pa-bkp-empty-title">${this.state.tables.length ? "No tables match your filters" : "No tables found"}</div></div></td></tr>`;
+      this.renderPagination(0, 1);
+      return;
+    }
+    body.innerHTML = pageItems.map((table) => {
+      const meta = getTableMeta(table.name);
+      const selected = this.state.selectedTables.has(table.name);
+      const focused = this.state.focusedTable === table.name;
+      return `<tr class="pa-act-row pa-bkp-data-row${selected ? " selected" : ""}${focused ? " is-focused" : ""}" data-table-row data-table-name="${escapeHtml(table.name)}">
         <td class="pa-bkp-col-check">
-          ${this.renderTableCheckbox(n.name,l,"list")}
+          ${this.renderTableCheckbox(table.name, selected, "list")}
         </td>
         <td>
           <div class="pa-bkp-data-name">
-            <span class="pa-bkp-table-card-icon ${r.tone}"><i class="${r.icon}"></i></span>
-            <span class="pa-bkp-table-name">${o(n.name)}</span>
+            <span class="pa-bkp-table-card-icon ${meta.tone}"><i class="${meta.icon}"></i></span>
+            <span class="pa-bkp-table-name">${escapeHtml(table.name)}</span>
           </div>
         </td>
-        <td class="pa-bkp-data-desc">${o(r.desc)}</td>
-        <td class="pa-bkp-col-num">${Number(n.rowCount||0).toLocaleString()}</td>
-        <td class="pa-bkp-col-num">${o(T(n.sizeBytes))}</td>
+        <td class="pa-bkp-data-desc">${escapeHtml(meta.desc)}</td>
+        <td class="pa-bkp-col-num">${Number(table.rowCount || 0).toLocaleString()}</td>
+        <td class="pa-bkp-col-num">${escapeHtml(formatBytes(table.sizeBytes))}</td>
         <td><span class="pa-act-type-badge"><i class="ri-database-2-line"></i> PostgreSQL</span></td>
         <td class="pa-bkp-col-actions">
-          ${this.renderTableCardMenu(n.name)}
+          ${this.renderTableCardMenu(table.name)}
         </td>
-      </tr>`}).join(""),this.renderPagination(t.length,a)}renderPagination(e,t){const s=i("systemTablePaginationBtns"),a=i("systemTablePaginationInfo"),n=this.state.page,r=this.state.pageSize;if(!s||!a)return;if(e===0){s.innerHTML="",a.textContent="Showing 0 of 0";return}let l=`<div class="pa-page-nav ${n===1?"disabled":""}" id="systemTablePagePrev" role="button" aria-label="Previous page"><i class="ri-arrow-left-s-line"></i></div>`,p=0;for(let h=1;h<=t;h++)(h===1||h===t||Math.abs(h-n)<=1)&&(h-p>1&&(l+='<span class="pa-bkp-page-ellipsis">\u2026</span>'),l+=`<button type="button" class="pa-page-btn ${h===n?"active":""}" data-page="${h}">${h}</button>`,p=h);l+=`<div class="pa-page-nav ${n===t?"disabled":""}" id="systemTablePageNext" role="button" aria-label="Next page"><i class="ri-arrow-right-s-line"></i></div>`,s.innerHTML=l;const b=(n-1)*r+1,f=Math.min(n*r,e);a.textContent=`Showing ${b} to ${f} of ${e}`,s.querySelectorAll(".pa-page-btn").forEach(h=>{h.addEventListener("click",()=>{this.state.page=parseInt(h.dataset.page,10),this.renderTables()})});const g=i("systemTablePagePrev"),k=i("systemTablePageNext");g&&n>1&&g.addEventListener("click",()=>{this.state.page-=1,this.renderTables()}),k&&n<t&&k.addEventListener("click",()=>{this.state.page+=1,this.renderTables()})}updateMasterCheckbox(){const e=i("systemTableMasterCheck");if(!e)return;const t=this.getVisibleTables();if(!t.length){e.checked=!1,e.indeterminate=!1;return}const s=t.filter(a=>this.state.selectedTables.has(a.name)).length;e.checked=s===t.length,e.indeterminate=s>0&&s<t.length}renderSidebar(){const e=i("systemDbDetailPanel"),t=i("systemDbSizeChart"),s=i("systemDbViewStructureBtn"),a=i("systemDbExportTableBtn"),n=i("systemDbSqlEditorBtn"),r=this.state.focusedTable,l=r?this.state.tables.find(h=>h.name===r):null,p=!!l;if(s&&(s.disabled=!p),a&&(a.disabled=!p||this.state.exportRunning),n&&(n.disabled=!p),!e)return;if(!l){e.innerHTML='<div class="pa-bkp-detail-empty"><i class="ri-cursor-line"></i><div>Select a table to view details</div></div>',t&&(t.innerHTML='<div class="pa-bkp-detail-empty"><i class="ri-pie-chart-line"></i><div>Select a table to see size share</div></div>');return}const b=B(l.name),f=this.getTotalSizeBytes(),g=f>0&&l.sizeBytes?Math.min(100,Number(l.sizeBytes)/f*100):0,k=this.state.selectedTables.has(l.name);e.innerHTML=`<div class="pa-bkp-detail-hero">
-      <div class="pa-bkp-detail-icon ${b.tone}"><i class="${b.icon}"></i></div>
+      </tr>`;
+    }).join("");
+    this.renderPagination(visible.length, totalPages);
+  }
+  renderPagination(totalItems, totalPages) {
+    const btnsWrap = $id("systemTablePaginationBtns");
+    const info = $id("systemTablePaginationInfo");
+    const page = this.state.page;
+    const pageSize = this.state.pageSize;
+    if (!btnsWrap || !info) return;
+    if (totalItems === 0) {
+      btnsWrap.innerHTML = "";
+      info.textContent = "Showing 0 of 0";
+      return;
+    }
+    let html = `<div class="pa-page-nav ${page === 1 ? "disabled" : ""}" id="systemTablePagePrev" role="button" aria-label="Previous page"><i class="ri-arrow-left-s-line"></i></div>`;
+    let lastShown = 0;
+    for (let p = 1; p <= totalPages; p++) {
+      const show = p === 1 || p === totalPages || Math.abs(p - page) <= 1;
+      if (!show) continue;
+      if (p - lastShown > 1) html += '<span class="pa-bkp-page-ellipsis">\u2026</span>';
+      html += `<button type="button" class="pa-page-btn ${p === page ? "active" : ""}" data-page="${p}">${p}</button>`;
+      lastShown = p;
+    }
+    html += `<div class="pa-page-nav ${page === totalPages ? "disabled" : ""}" id="systemTablePageNext" role="button" aria-label="Next page"><i class="ri-arrow-right-s-line"></i></div>`;
+    btnsWrap.innerHTML = html;
+    const startN = (page - 1) * pageSize + 1;
+    const endN = Math.min(page * pageSize, totalItems);
+    info.textContent = `Showing ${startN} to ${endN} of ${totalItems}`;
+    btnsWrap.querySelectorAll(".pa-page-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this.state.page = parseInt(btn.dataset.page, 10);
+        this.renderTables();
+      });
+    });
+    const prev = $id("systemTablePagePrev");
+    const next = $id("systemTablePageNext");
+    if (prev && page > 1) {
+      prev.addEventListener("click", () => {
+        this.state.page -= 1;
+        this.renderTables();
+      });
+    }
+    if (next && page < totalPages) {
+      next.addEventListener("click", () => {
+        this.state.page += 1;
+        this.renderTables();
+      });
+    }
+  }
+  updateMasterCheckbox() {
+    const master = $id("systemTableMasterCheck");
+    if (!master) return;
+    const visible = this.getVisibleTables();
+    if (!visible.length) {
+      master.checked = false;
+      master.indeterminate = false;
+      return;
+    }
+    const selectedVisible = visible.filter((table) => this.state.selectedTables.has(table.name)).length;
+    master.checked = selectedVisible === visible.length;
+    master.indeterminate = selectedVisible > 0 && selectedVisible < visible.length;
+  }
+  renderSidebar() {
+    const panel = $id("systemDbDetailPanel");
+    const chart = $id("systemDbSizeChart");
+    const viewBtn = $id("systemDbViewStructureBtn");
+    const exportBtn = $id("systemDbExportTableBtn");
+    const sqlBtn = $id("systemDbSqlEditorBtn");
+    const name = this.state.focusedTable;
+    const table = name ? this.state.tables.find((t) => t.name === name) : null;
+    const hasTable = !!table;
+    if (viewBtn) viewBtn.disabled = !hasTable;
+    if (exportBtn) exportBtn.disabled = !hasTable || this.state.exportRunning;
+    if (sqlBtn) sqlBtn.disabled = !hasTable;
+    if (!panel) return;
+    if (!table) {
+      panel.innerHTML = `<div class="pa-bkp-detail-empty"><i class="ri-cursor-line"></i><div>Select a table to view details</div></div>`;
+      if (chart) {
+        chart.innerHTML = `<div class="pa-bkp-detail-empty"><i class="ri-pie-chart-line"></i><div>Select a table to see size share</div></div>`;
+      }
+      return;
+    }
+    const meta = getTableMeta(table.name);
+    const totalSize = this.getTotalSizeBytes();
+    const pct = totalSize > 0 && table.sizeBytes ? Math.min(100, Number(table.sizeBytes) / totalSize * 100) : 0;
+    const selected = this.state.selectedTables.has(table.name);
+    panel.innerHTML = `<div class="pa-bkp-detail-hero">
+      <div class="pa-bkp-detail-icon ${meta.tone}"><i class="${meta.icon}"></i></div>
       <div>
-        <div class="pa-bkp-detail-name">${o(l.name)}</div>
-        ${k?'<span class="pa-bkp-status success">Selected</span>':""}
-        <div class="pa-bkp-detail-desc">${o(b.desc)}</div>
+        <div class="pa-bkp-detail-name">${escapeHtml(table.name)}</div>
+        ${selected ? '<span class="pa-bkp-status success">Selected</span>' : ""}
+        <div class="pa-bkp-detail-desc">${escapeHtml(meta.desc)}</div>
       </div>
     </div>
     <div class="pa-bkp-detail-meta">
-      <div class="pa-bkp-detail-meta-item"><div class="pa-bkp-detail-meta-label">Rows</div><div class="pa-bkp-detail-meta-value">${Number(l.rowCount||0).toLocaleString()}</div></div>
-      <div class="pa-bkp-detail-meta-item"><div class="pa-bkp-detail-meta-label">Size</div><div class="pa-bkp-detail-meta-value">${o(T(l.sizeBytes))}</div></div>
+      <div class="pa-bkp-detail-meta-item"><div class="pa-bkp-detail-meta-label">Rows</div><div class="pa-bkp-detail-meta-value">${Number(table.rowCount || 0).toLocaleString()}</div></div>
+      <div class="pa-bkp-detail-meta-item"><div class="pa-bkp-detail-meta-label">Size</div><div class="pa-bkp-detail-meta-value">${escapeHtml(formatBytes(table.sizeBytes))}</div></div>
       <div class="pa-bkp-detail-meta-item"><div class="pa-bkp-detail-meta-label">Type</div><div class="pa-bkp-detail-meta-value">PostgreSQL</div></div>
-      <div class="pa-bkp-detail-meta-item"><div class="pa-bkp-detail-meta-label">Category</div><div class="pa-bkp-detail-meta-value">${o(Q[b.category]||b.category)}</div></div>
-    </div>`,t&&(t.innerHTML=`<div class="pa-bkp-donut" style="--pct: ${g.toFixed(1)}">
-        <div class="pa-bkp-donut-inner">${g.toFixed(1)}%</div>
+      <div class="pa-bkp-detail-meta-item"><div class="pa-bkp-detail-meta-label">Category</div><div class="pa-bkp-detail-meta-value">${escapeHtml(CATEGORY_LABELS[meta.category] || meta.category)}</div></div>
+    </div>`;
+    if (chart) {
+      chart.innerHTML = `<div class="pa-bkp-donut" style="--pct: ${pct.toFixed(1)}">
+        <div class="pa-bkp-donut-inner">${pct.toFixed(1)}%</div>
       </div>
       <div class="pa-bkp-size-chart-meta">
-        <strong>${o(l.name)}</strong> is ${g.toFixed(1)}% of total database size (${o(T(l.sizeBytes))} of ${o(T(f))}).
-      </div>`)}renderSidebarActivity(){const e=i("systemDbRecentActivity");if(!e)return;const t=this.state.history.slice(0,5);if(!t.length){e.innerHTML='<div class="pa-bkp-empty"><div class="pa-bkp-empty-title">No activity yet</div><div class="pa-bkp-empty-text">Exports and backups will appear here.</div></div>';return}e.innerHTML=t.map(s=>{const{relative:a}=K(s.created_at),n=s.record_counts?._meta||{},r=n.exportKind==="schema"?"Schema guide exported":"Backup completed",l=n.exportKind==="schema"?"ri-file-code-line":"ri-check-line",p=n.exportKind==="schema"?"warning":"success";return`<div class="pa-bkp-history-item pa-bkp-activity-item">
+        <strong>${escapeHtml(table.name)}</strong> is ${pct.toFixed(1)}% of total database size (${escapeHtml(formatBytes(table.sizeBytes))} of ${escapeHtml(formatBytes(totalSize))}).
+      </div>`;
+    }
+  }
+  renderSidebarActivity() {
+    const body = $id("systemDbRecentActivity");
+    if (!body) return;
+    const history = this.state.history.slice(0, 5);
+    if (!history.length) {
+      body.innerHTML = `<div class="pa-bkp-empty"><div class="pa-bkp-empty-title">No activity yet</div><div class="pa-bkp-empty-text">Exports and backups will appear here.</div></div>`;
+      return;
+    }
+    body.innerHTML = history.map((item) => {
+      const { relative } = formatDateTime(item.created_at);
+      const meta = item.record_counts?._meta || {};
+      const exportKind = meta.exportKind === "schema" ? "Schema guide exported" : "Backup completed";
+      const icon = meta.exportKind === "schema" ? "ri-file-code-line" : "ri-check-line";
+      const tone = meta.exportKind === "schema" ? "warning" : "success";
+      return `<div class="pa-bkp-history-item pa-bkp-activity-item">
         <div class="pa-bkp-history-main">
-          <div class="pa-bkp-history-name"><i class="${l} pa-bkp-status ${p}"></i> ${o(r)}</div>
-          <div class="pa-bkp-history-meta"><span>${o(s.filename)}</span><span>${o(a)}</span></div>
+          <div class="pa-bkp-history-name"><i class="${icon} pa-bkp-status ${tone}"></i> ${escapeHtml(exportKind)}</div>
+          <div class="pa-bkp-history-meta"><span>${escapeHtml(item.filename)}</span><span>${escapeHtml(relative)}</span></div>
         </div>
-      </div>`}).join("")}viewTableStructure(){const e=this.state.tables.find(s=>s.name===this.state.focusedTable);if(!e)return;const t=B(e.name);H({title:`Structure: ${e.name}`,message:`<div class="pa-bkp-structure-preview">
-        <p><strong>Table:</strong> ${o(e.name)}</p>
-        <p><strong>Description:</strong> ${o(t.desc)}</p>
-        <p><strong>Rows:</strong> ${Number(e.rowCount||0).toLocaleString()}</p>
-        <p><strong>Size:</strong> ${o(T(e.sizeBytes))}</p>
+      </div>`;
+    }).join("");
+  }
+  viewTableStructure() {
+    const table = this.state.tables.find((t) => t.name === this.state.focusedTable);
+    if (!table) return;
+    const meta = getTableMeta(table.name);
+    requestConfirm({
+      title: `Structure: ${table.name}`,
+      message: `<div class="pa-bkp-structure-preview">
+        <p><strong>Table:</strong> ${escapeHtml(table.name)}</p>
+        <p><strong>Description:</strong> ${escapeHtml(meta.desc)}</p>
+        <p><strong>Rows:</strong> ${Number(table.rowCount || 0).toLocaleString()}</p>
+        <p><strong>Size:</strong> ${escapeHtml(formatBytes(table.sizeBytes))}</p>
         <p><strong>Type:</strong> PostgreSQL (public schema)</p>
         <p class="pa-text-mute fs-sm mt-10">Download the full schema &amp; setup guide for complete DDL, indexes, and RLS policies.</p>
-      </div>`,confirmLabel:"Download Schema Guide",iconClass:"ri-database-2-line",onConfirm:()=>{this.downloadSchemaGuide()}})}copySqlQuery(e){if(!e)return;const t=`SELECT * FROM public.${e} LIMIT 100;`;navigator.clipboard.writeText(t).then(()=>{w("SQL query copied to clipboard.","success")}).catch(()=>{v("Could not copy to clipboard.","danger")})}async exportSingleTable(e){!e||this.state.exportRunning||await this.ensureAdminAccess()&&await this.exportSqlBackup([e])}renderExportHistory(){const e=i("systemExportHistoryBody"),t=i("systemExportHistoryCount"),s=this.state.history;if(t&&(t.textContent=`${s.length} item${s.length===1?"":"s"}`),!!e){if(!s.length){e.innerHTML='<div class="pa-bkp-empty"><div class="pa-bkp-empty-title">No exports yet</div><div class="pa-bkp-empty-text">SQL downloads will appear here as metadata-only audit entries.</div></div>';return}e.innerHTML=s.map(a=>{const{date:n,time:r}=K(a.created_at),p=(a.record_counts?._meta||{}).exportKind==="schema"?"Schema guide":"SQL data",b=a.record_counts&&typeof a.record_counts=="object"?Object.entries(a.record_counts).filter(([g])=>g!=="_meta"):[],f=p==="SQL data"&&b.length?`${b.length} tables \xB7 ${b.reduce((g,[,k])=>g+Number(k||0),0).toLocaleString()} rows`:p;return`<div class="pa-bkp-history-item">
+      </div>`,
+      confirmLabel: "Download Schema Guide",
+      iconClass: "ri-database-2-line",
+      onConfirm: () => {
+        void this.downloadSchemaGuide();
+      }
+    });
+  }
+  copySqlQuery(name) {
+    if (!name) return;
+    const sql = `SELECT * FROM public.${name} LIMIT 100;`;
+    navigator.clipboard.writeText(sql).then(() => {
+      showStatusToast("SQL query copied to clipboard.", "success");
+    }).catch(() => {
+      showToast("Could not copy to clipboard.", "danger");
+    });
+  }
+  async exportSingleTable(name) {
+    if (!name || this.state.exportRunning) return;
+    if (!await this.ensureAdminAccess()) return;
+    await this.exportSqlBackup([name]);
+  }
+  renderExportHistory() {
+    const body = $id("systemExportHistoryBody");
+    const countEl = $id("systemExportHistoryCount");
+    const history = this.state.history;
+    if (countEl) {
+      countEl.textContent = `${history.length} item${history.length === 1 ? "" : "s"}`;
+    }
+    if (!body) return;
+    if (!history.length) {
+      body.innerHTML = `<div class="pa-bkp-empty"><div class="pa-bkp-empty-title">No exports yet</div><div class="pa-bkp-empty-text">SQL downloads will appear here as metadata-only audit entries.</div></div>`;
+      return;
+    }
+    body.innerHTML = history.map((item) => {
+      const { date, time } = formatDateTime(item.created_at);
+      const meta = item.record_counts?._meta || {};
+      const exportKind = meta.exportKind === "schema" ? "Schema guide" : "SQL data";
+      const tableEntries = item.record_counts && typeof item.record_counts === "object" ? Object.entries(item.record_counts).filter(([key]) => key !== "_meta") : [];
+      const tableSummary = exportKind === "SQL data" && tableEntries.length ? `${tableEntries.length} tables \xB7 ${tableEntries.reduce((sum, [, count]) => sum + Number(count || 0), 0).toLocaleString()} rows` : exportKind;
+      return `<div class="pa-bkp-history-item">
         <div class="pa-bkp-history-main">
-          <div class="pa-bkp-history-name">${o(a.filename)}</div>
+          <div class="pa-bkp-history-name">${escapeHtml(item.filename)}</div>
           <div class="pa-bkp-history-meta">
-            <span><i class="ri-file-code-line"></i> ${o(p)}</span>
-            <span><i class="ri-hard-drive-2-line"></i> ${o(T(a.size_bytes))}</span>
-            <span><i class="ri-calendar-line"></i> ${o(n)} \xB7 ${o(r)}</span>
+            <span><i class="ri-file-code-line"></i> ${escapeHtml(exportKind)}</span>
+            <span><i class="ri-hard-drive-2-line"></i> ${escapeHtml(formatBytes(item.size_bytes))}</span>
+            <span><i class="ri-calendar-line"></i> ${escapeHtml(date)} \xB7 ${escapeHtml(time)}</span>
           </div>
-          <div class="pa-bkp-history-sub">${o(f)}</div>
+          <div class="pa-bkp-history-sub">${escapeHtml(tableSummary)}</div>
         </div>
-        <button type="button" class="pa-bkp-card-action pa-bkp-card-action--danger" data-export-action="delete" data-export-id="${o(a.id)}" title="Remove export log" aria-label="Remove ${o(a.filename)}"><i class="ri-delete-bin-line"></i></button>
-      </div>`}).join(""),this.renderSidebarActivity()}}confirmDeleteExport(e){const t=this.state.history.find(s=>s.id===e);t&&H({title:"Remove export log?",message:`This removes the audit entry for <strong>${o(t.filename)}</strong>. Downloaded SQL files on your computer are not affected.`,confirmLabel:"Remove Entry",iconClass:"ri-delete-bin-line",danger:!0,onConfirm:()=>this.deleteExportRecord(e)})}async deleteExportRecord(e){if(await this.ensureAdminAccess())try{await this.fetchJson(`/api/admin/database-backup?id=${encodeURIComponent(e)}`,{method:"DELETE"}),w("Export log removed.","success"),await this.loadTables()}catch(t){v(t.message||"Could not remove export log.","danger")}}setBackupStatus(e,t="info"){const s=i("systemBackupStatus");if(!s)return;const a="pa-info-box mb-16 pa-bkp-layout-status";if(!e){s.hidden=!0,s.textContent="",s.className=a;return}s.hidden=!1,s.className=`${a}${t==="danger"?" pa-info-box-danger":""}`,s.innerHTML=`<i class="ri-information-line"></i> ${o(e)}`}setExportRunning(e){this.state.exportRunning=e;const t=i("systemExportSqlBtn"),s=i("systemExportSchemaBtn"),a=i("systemBulkExportSqlBtn"),n=i("systemDbExportTableBtn"),r=this.state.selectedTables.size;t&&(t.disabled=e||r===0),s&&(s.disabled=e),a&&(a.disabled=e||r===0),n&&(n.disabled=e||!this.state.focusedTable)}async downloadFileResponse(e,t){if(e.status===401)throw window.location.href="/login",new Error("Unauthorized");if(!e.ok){const n=await e.json().catch(()=>({}));throw new Error(n.error||e.statusText||"Download failed")}const s=await e.blob(),a=X(e.headers.get("Content-Disposition"),t);return Z(s,a),a}async exportSqlBackup(e){if(this.state.exportRunning||!await this.ensureAdminAccess())return;const t=e?[...e]:[...this.state.selectedTables];if(!t.length){v("Select at least one table to export.","danger");return}this.setExportRunning(!0),this.setBackupStatus(`Exporting ${t.length} table${t.length===1?"":"s"} to SQL\u2026`);try{const s=await fetch("/api/admin/database-backup",{method:"POST",credentials:"same-origin",headers:{Accept:"application/sql","Content-Type":"application/json"},body:JSON.stringify({tables:t,format:"sql"})}),a=await this.downloadFileResponse(s,"backup-data.sql");this.setBackupStatus(`SQL backup downloaded: ${a}`),w("SQL backup downloaded successfully.","success"),await this.loadTables()}catch(s){this.setBackupStatus(s.message||"Export failed.","danger"),v(s.message||"Export failed.","danger")}finally{this.setExportRunning(!1)}}async downloadSchemaGuide(){if(!this.state.exportRunning&&await this.ensureAdminAccess()){this.setExportRunning(!0),this.setBackupStatus("Preparing schema and setup guide\u2026");try{const e=await fetch("/api/admin/database-backup?schema=1",{credentials:"same-origin",headers:{Accept:"application/sql"}}),t=await this.downloadFileResponse(e,"schema-setup.sql");this.setBackupStatus(`Schema guide downloaded: ${t}`),w("Schema & setup guide downloaded.","success"),await this.loadTables()}catch(e){this.setBackupStatus(e.message||"Schema export failed.","danger"),v(e.message||"Schema export failed.","danger")}finally{this.setExportRunning(!1)}}}getEnvFormField(e){const t=i("systemEnvForm");return t?t.querySelector(`[name="${e}"]`):null}hydrateEnvironmentForm(e={}){for(const t of G()){const s=this.getEnvFormField(t);if(!s)continue;const a=e[t]??"";U(s)?(s.value="",s.placeholder=a?"Configured \u2014 leave blank to keep current value":"Leave blank to keep current value"):s.value=a}}collectEnvironmentUpdates(){const e={};for(const t of G()){const s=this.getEnvFormField(t);if(!s)continue;const a=s.value.trim();U(s)?e[t]=a||W:e[t]=a}return e}renderEnvironmentMeta(e){const t=i("systemEnvMeta");if(!t||!e)return;const s=e.source==="database"?"Stored in database (site_runtime_config)":"Runtime settings loaded";t.innerHTML=`<i class="ri-information-line"></i> ${o(s)}`}initEnvTabMotion(){const e=i("systemEnvForm");!e||!document.querySelector('.pa-tab-panel[data-panel="system-section"][data-content="env"]')?.classList.contains("active")||requestAnimationFrame(()=>{e.querySelectorAll(".pa-motion-stagger").forEach(s=>{V(s,".pa-env-card")})})}async loadEnvironment(){try{const e=await this.fetchJson("/api/admin/environment");this.state.env=e,this.hydrateEnvironmentForm(e.values||{}),this.renderEnvironmentMeta(e)}catch(e){v(e.message||"Could not load environment configuration.","danger")}}async openEnvImportFilePicker(){if(!await this.ensureAdminAccess())return;const e=i("systemEnvImportFile");if(!e){v("File upload is not available on this page.","danger");return}e.value="",e.click()}async handleEnvImportFileSelected(e){const t=e.files?.[0];if(!t||!await this.ensureAdminAccess())return;const s=t.name||"uploaded file";H({title:"Import from env file?",message:`Import runtime settings from <strong>${o(s)}</strong> into <code>site_runtime_config</code>? Values in the file overwrite matching fields here; other saved settings are kept. Only runtime keys (SMTP, retention, branding, etc.) are used \u2014 not Supabase or deployment secrets.`,confirmLabel:"Import",iconClass:"ri-upload-2-line",onConfirm:()=>{this.uploadEnvImportFile(t)}})}async uploadEnvImportFile(e){if(!await this.ensureAdminAccess())return;const t=i("systemEnvImportBtn");t&&(t.disabled=!0);try{const s=await e.text(),a=await this.fetchJson("/api/admin/environment/import-env",{method:"POST",body:JSON.stringify({content:s,fileName:e.name||"uploaded file",onlyIfEmpty:!1})});this.state.env=a,this.hydrateEnvironmentForm(a.values||{}),this.renderEnvironmentMeta(a);const n=a.imported?"success":"info";w(a.message||"Import finished.",n)}catch(s){v(s.message||"Could not import from env file.","danger")}finally{t&&(t.disabled=!1);const s=i("systemEnvImportFile");s&&(s.value="")}}async saveEnvironment(){if(!await this.ensureAdminAccess())return;const e=this.collectEnvironmentUpdates(),t=i("systemEnvSaveBtn");t&&(t.disabled=!0);try{const s=await this.fetchJson("/api/admin/environment",{method:"PUT",body:JSON.stringify({values:e})});this.state.env=s,this.hydrateEnvironmentForm(s.values||{}),this.renderEnvironmentMeta(s),w(s.message||"Settings saved.","success")}catch(s){v(s.message||"Could not save environment configuration.","danger")}finally{t&&(t.disabled=!1)}}}export{le as SystemManager};
+        <button type="button" class="pa-bkp-card-action pa-bkp-card-action--danger" data-export-action="delete" data-export-id="${escapeHtml(item.id)}" title="Remove export log" aria-label="Remove ${escapeHtml(item.filename)}"><i class="ri-delete-bin-line"></i></button>
+      </div>`;
+    }).join("");
+    this.renderSidebarActivity();
+  }
+  confirmDeleteExport(id) {
+    const item = this.state.history.find((entry) => entry.id === id);
+    if (!item) return;
+    requestConfirm({
+      title: "Remove export log?",
+      message: `This removes the audit entry for <strong>${escapeHtml(item.filename)}</strong>. Downloaded SQL files on your computer are not affected.`,
+      confirmLabel: "Remove Entry",
+      iconClass: "ri-delete-bin-line",
+      danger: true,
+      onConfirm: () => this.deleteExportRecord(id)
+    });
+  }
+  async deleteExportRecord(id) {
+    if (!await this.ensureAdminAccess()) return;
+    try {
+      await this.fetchJson(`/api/admin/database-backup?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      showStatusToast("Export log removed.", "success");
+      await this.loadTables();
+    } catch (err) {
+      showToast(err.message || "Could not remove export log.", "danger");
+    }
+  }
+  setBackupStatus(message, tone = "info") {
+    const box = $id("systemBackupStatus");
+    if (!box) return;
+    const baseClass = "pa-info-box mb-16 pa-bkp-layout-status";
+    if (!message) {
+      box.hidden = true;
+      box.textContent = "";
+      box.className = baseClass;
+      return;
+    }
+    box.hidden = false;
+    box.className = `${baseClass}${tone === "danger" ? " pa-info-box-danger" : ""}`;
+    box.innerHTML = `<i class="ri-information-line"></i> ${escapeHtml(message)}`;
+  }
+  setExportRunning(running) {
+    this.state.exportRunning = running;
+    const sqlBtn = $id("systemExportSqlBtn");
+    const schemaBtn = $id("systemExportSchemaBtn");
+    const bulkSql = $id("systemBulkExportSqlBtn");
+    const exportTableBtn = $id("systemDbExportTableBtn");
+    const selected = this.state.selectedTables.size;
+    if (sqlBtn) sqlBtn.disabled = running || selected === 0;
+    if (schemaBtn) schemaBtn.disabled = running;
+    if (bulkSql) bulkSql.disabled = running || selected === 0;
+    if (exportTableBtn) exportTableBtn.disabled = running || !this.state.focusedTable;
+  }
+  async downloadFileResponse(res, fallbackName) {
+    if (res.status === 401) {
+      window.location.href = "/login";
+      throw new Error("Unauthorized");
+    }
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || res.statusText || "Download failed");
+    }
+    const blob = await res.blob();
+    const filename = parseDownloadFilename(res.headers.get("Content-Disposition"), fallbackName);
+    triggerBlobDownload(blob, filename);
+    return filename;
+  }
+  async exportSqlBackup(overrideTables) {
+    if (this.state.exportRunning) return;
+    if (!await this.ensureAdminAccess()) return;
+    const tables = overrideTables ? [...overrideTables] : [...this.state.selectedTables];
+    if (!tables.length) {
+      showToast("Select at least one table to export.", "danger");
+      return;
+    }
+    this.setExportRunning(true);
+    this.setBackupStatus(`Exporting ${tables.length} table${tables.length === 1 ? "" : "s"} to SQL\u2026`);
+    try {
+      const res = await fetch("/api/admin/database-backup", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/sql",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ tables, format: "sql" })
+      });
+      const filename = await this.downloadFileResponse(res, "backup-data.sql");
+      this.setBackupStatus(`SQL backup downloaded: ${filename}`);
+      showStatusToast("SQL backup downloaded successfully.", "success");
+      await this.loadTables();
+    } catch (err) {
+      this.setBackupStatus(err.message || "Export failed.", "danger");
+      showToast(err.message || "Export failed.", "danger");
+    } finally {
+      this.setExportRunning(false);
+    }
+  }
+  async downloadSchemaGuide() {
+    if (this.state.exportRunning) return;
+    if (!await this.ensureAdminAccess()) return;
+    this.setExportRunning(true);
+    this.setBackupStatus("Preparing schema and setup guide\u2026");
+    try {
+      const res = await fetch("/api/admin/database-backup?schema=1", {
+        credentials: "same-origin",
+        headers: { Accept: "application/sql" }
+      });
+      const filename = await this.downloadFileResponse(res, "schema-setup.sql");
+      this.setBackupStatus(`Schema guide downloaded: ${filename}`);
+      showStatusToast("Schema & setup guide downloaded.", "success");
+      await this.loadTables();
+    } catch (err) {
+      this.setBackupStatus(err.message || "Schema export failed.", "danger");
+      showToast(err.message || "Schema export failed.", "danger");
+    } finally {
+      this.setExportRunning(false);
+    }
+  }
+  getEnvFormField(key) {
+    const form = $id("systemEnvForm");
+    if (!form) return null;
+    return form.querySelector(`[name="${key}"]`);
+  }
+  hydrateEnvironmentForm(values = {}) {
+    for (const key of listEnvFormKeys()) {
+      const el = this.getEnvFormField(key);
+      if (!el) continue;
+      const value = values[key] ?? "";
+      if (isSecretEnvField(el)) {
+        el.value = "";
+        el.placeholder = value ? "Configured \u2014 leave blank to keep current value" : "Leave blank to keep current value";
+      } else {
+        el.value = value;
+      }
+    }
+  }
+  collectEnvironmentUpdates() {
+    const updates = {};
+    for (const key of listEnvFormKeys()) {
+      const el = this.getEnvFormField(key);
+      if (!el) continue;
+      const value = el.value.trim();
+      if (isSecretEnvField(el)) {
+        updates[key] = value ? value : UNCHANGED_SECRET;
+      } else {
+        updates[key] = value;
+      }
+    }
+    return updates;
+  }
+  renderEnvironmentMeta(config) {
+    const meta = $id("systemEnvMeta");
+    if (!meta || !config) return;
+    const source = config.source === "database" ? "Stored in database (site_runtime_config)" : "Runtime settings loaded";
+    meta.innerHTML = `<i class="ri-information-line"></i> ${escapeHtml(source)}`;
+  }
+  initEnvTabMotion() {
+    const form = $id("systemEnvForm");
+    if (!form) return;
+    const panel = document.querySelector(
+      '.pa-tab-panel[data-panel="system-section"][data-content="env"]'
+    );
+    if (!panel?.classList.contains("active")) return;
+    requestAnimationFrame(() => {
+      form.querySelectorAll(".pa-motion-stagger").forEach((col) => {
+        staggerReveal(col, ".pa-env-card");
+      });
+    });
+  }
+  async loadEnvironment() {
+    try {
+      const config = await this.fetchJson("/api/admin/environment");
+      this.state.env = config;
+      this.hydrateEnvironmentForm(config.values || {});
+      this.renderEnvironmentMeta(config);
+    } catch (err) {
+      showToast(err.message || "Could not load environment configuration.", "danger");
+    }
+  }
+  async openEnvImportFilePicker() {
+    if (!await this.ensureAdminAccess()) return;
+    const input = $id("systemEnvImportFile");
+    if (!input) {
+      showToast("File upload is not available on this page.", "danger");
+      return;
+    }
+    input.value = "";
+    input.click();
+  }
+  async handleEnvImportFileSelected(input) {
+    const file = input.files?.[0];
+    if (!file) return;
+    if (!await this.ensureAdminAccess()) return;
+    const safeName = file.name || "uploaded file";
+    requestConfirm({
+      title: "Import from env file?",
+      message: `Import runtime settings from <strong>${escapeHtml(safeName)}</strong> into <code>site_runtime_config</code>? Values in the file overwrite matching fields here; other saved settings are kept. Only runtime keys (SMTP, retention, branding, etc.) are used \u2014 not Supabase or deployment secrets.`,
+      confirmLabel: "Import",
+      iconClass: "ri-upload-2-line",
+      onConfirm: () => {
+        void this.uploadEnvImportFile(file);
+      }
+    });
+  }
+  async uploadEnvImportFile(file) {
+    if (!await this.ensureAdminAccess()) return;
+    const importBtn = $id("systemEnvImportBtn");
+    if (importBtn) importBtn.disabled = true;
+    try {
+      const content = await file.text();
+      const payload = await this.fetchJson("/api/admin/environment/import-env", {
+        method: "POST",
+        body: JSON.stringify({
+          content,
+          fileName: file.name || "uploaded file",
+          onlyIfEmpty: false
+        })
+      });
+      this.state.env = payload;
+      this.hydrateEnvironmentForm(payload.values || {});
+      this.renderEnvironmentMeta(payload);
+      const tone = payload.imported ? "success" : "info";
+      showStatusToast(payload.message || "Import finished.", tone);
+    } catch (err) {
+      showToast(err.message || "Could not import from env file.", "danger");
+    } finally {
+      if (importBtn) importBtn.disabled = false;
+      const input = $id("systemEnvImportFile");
+      if (input) input.value = "";
+    }
+  }
+  async saveEnvironment() {
+    if (!await this.ensureAdminAccess()) return;
+    const values = this.collectEnvironmentUpdates();
+    const saveBtn = $id("systemEnvSaveBtn");
+    if (saveBtn) saveBtn.disabled = true;
+    try {
+      const payload = await this.fetchJson("/api/admin/environment", {
+        method: "PUT",
+        body: JSON.stringify({ values })
+      });
+      this.state.env = payload;
+      this.hydrateEnvironmentForm(payload.values || {});
+      this.renderEnvironmentMeta(payload);
+      showStatusToast(payload.message || "Settings saved.", "success");
+    } catch (err) {
+      showToast(err.message || "Could not save environment configuration.", "danger");
+    } finally {
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  }
+}
+export {
+  SystemManager
+};
+//# sourceMappingURL=SystemManager.js.map

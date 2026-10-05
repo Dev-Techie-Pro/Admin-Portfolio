@@ -1,4 +1,154 @@
-import{a as We,b as Ge,c as Ve,d as Ke,e as Ye,f as Xe,g as at}from"./chunks/chunk-6KSBBW24.js";import{a as st}from"./chunks/chunk-2JMJRPSR.js";import{a as fe,b as Ze,c as et,d as V,e as K,f as tt,g as q,i as L,j as M,k as ge,n as it,o as nt}from"./chunks/chunk-UV5HCCUR.js";import{c as rt}from"./chunks/chunk-VFLQOGMU.js";import{a as h}from"./chunks/chunk-EVT5EJLV.js";import{a as Je,c as Qe}from"./chunks/chunk-B4AOYN4L.js";import{c as ot}from"./chunks/chunk-LHI24NEO.js";import{a as Pe,d as Fe}from"./chunks/chunk-H5MLLHHY.js";import{b as Ee,e as Ce,f as Te,g as re}from"./chunks/chunk-W2UECGHH.js";import{a as he}from"./chunks/chunk-ZLWPPNPJ.js";import{D as qe,E as He,F as D,G as Oe,I as b,J as me,K as B,L as $e,M as ze,N as je,P as G,a as ke,b as R,c as ce,d as Ue,e as de,f as Re,g as xe,h as ue,i as Ie,j,k as Ne,l as x,m as T,n as y,o as De,s as E,t as I,u as W,v as pe,w as A,x as Be,y as N}from"./chunks/chunk-6NEALK3J.js";import{b as Me,c as i,k as z,l as v,m as g,n as le}from"./chunks/chunk-74367365.js";var ye=class{constructor(){this._count=0,this._host=null,this._el=null,this._labelEl=null,this._defaultMessage="Loading your data\u2026",this._hideTimer=null,this._showFrame=null,this._EXIT_MS=220}_resolveHost(){return document.body}_findLoader(){return document.getElementById("paBodyLoader")}_ensureOnBody(e){e&&e.parentElement!==document.body&&document.body.appendChild(e)}_cancelShowFrame(){this._showFrame&&(cancelAnimationFrame(this._showFrame),this._showFrame=null)}mount(){if(typeof window.__paEnsureBodyLoader=="function"){this._el=window.__paEnsureBodyLoader(!1),this._host=this._resolveHost(),this._el&&(this._labelEl=this._el.querySelector(".pa-body-loader__label"));return}if(this._host=this._resolveHost(),!this._host)return;let e=this._findLoader();if(e){this._ensureOnBody(e),this._el=e,this._labelEl=e.querySelector(".pa-body-loader__label");return}let s=document.createElement("div");s.className="pa-body-loader",s.id="paBodyLoader",s.setAttribute("role","status"),s.setAttribute("aria-live","polite"),s.setAttribute("aria-busy","true"),s.innerHTML=`
+import {
+  clearUserCredentials,
+  formatStaffRoleLabel,
+  initStaffInviteLinkModal,
+  initUserCredentialsPanel,
+  notifyCredentialsEmailStatus,
+  populateStaffRoleSelect,
+  showUserCredentialsPanel
+} from "./chunks/chunk-IOHV5HRP.js";
+import {
+  debounce
+} from "./chunks/chunk-FGASNEFQ.js";
+import {
+  animate,
+  applyRoleBasedAccess,
+  applyUserDisplay,
+  hideNavFlyout,
+  initSettingsNav,
+  initSidebarCollapse,
+  initSidebarGroupNav,
+  isSidebarCollapsedDesktop,
+  prefersReducedMotion,
+  previewUserAvatar,
+  showNavFlyout,
+  syncSidebarGroupNav
+} from "./chunks/chunk-HXPVD4PK.js";
+import {
+  initPasswordToggles
+} from "./chunks/chunk-HUO73BB4.js";
+import {
+  authService
+} from "./chunks/chunk-J5UOWJVY.js";
+import {
+  getThemeBackground,
+  updateFavicon
+} from "./chunks/chunk-4YPRLVFB.js";
+import {
+  initAllPaSelects
+} from "./chunks/chunk-6WJHVOTG.js";
+import {
+  handleFileValidation,
+  uploadCmsFileWithPreview
+} from "./chunks/chunk-K3UG6U6W.js";
+import {
+  PAGE,
+  getCurrentPage,
+  getLoginPath,
+  getSettingsTabFromPath
+} from "./chunks/chunk-FNXGUDEM.js";
+import {
+  closeAllCardMenus
+} from "./chunks/chunk-ILGO5IJP.js";
+import {
+  APPEARANCE_DEFAULTS,
+  ICON_PREVIEW_SIZES,
+  MAX_CUSTOM_FONTS,
+  Module,
+  VALID_FONT_SIZES,
+  VALID_FONT_WEIGHTS,
+  VALID_ICON_SIZES,
+  VALID_SPACINGS,
+  activateTab,
+  addNotification,
+  anyPanelOpen,
+  applyAppearanceSettings,
+  applyCapabilityGatedElements,
+  bootstrapAppearanceFromCache,
+  buildCustomFontFromFile,
+  clearNotifications,
+  closeConfirm,
+  closePanels,
+  eventBus,
+  getAccessCapabilities,
+  getFontById,
+  getFontGroups,
+  initConfirmDialog,
+  isConfirmOpen,
+  loadNotifications,
+  markNotificationRead,
+  normalizeAppearanceSettings,
+  openPanel,
+  readAppearanceCache,
+  registerPanel,
+  renderNotifications,
+  requestLogout,
+  storage,
+  writeAppearanceCache
+} from "./chunks/chunk-W73CLJTU.js";
+import {
+  $all,
+  $id,
+  clearDomCache,
+  escapeHtml,
+  showStatusToast,
+  showToast
+} from "./chunks/chunk-B2QR3Q5R.js";
+
+// client/core/BodyLoader.ts
+var BodyLoader = class {
+  constructor() {
+    this._count = 0;
+    this._host = null;
+    this._el = null;
+    this._labelEl = null;
+    this._defaultMessage = "Loading your data\u2026";
+    this._hideTimer = null;
+    this._showFrame = null;
+    this._EXIT_MS = 220;
+  }
+  _resolveHost() {
+    return document.body;
+  }
+  _findLoader() {
+    return document.getElementById("paBodyLoader");
+  }
+  _ensureOnBody(el) {
+    if (el && el.parentElement !== document.body) {
+      document.body.appendChild(el);
+    }
+  }
+  _cancelShowFrame() {
+    if (this._showFrame) {
+      cancelAnimationFrame(this._showFrame);
+      this._showFrame = null;
+    }
+  }
+  mount() {
+    if (typeof window.__paEnsureBodyLoader === "function") {
+      this._el = window.__paEnsureBodyLoader(false);
+      this._host = this._resolveHost();
+      if (this._el) {
+        this._labelEl = this._el.querySelector(".pa-body-loader__label");
+      }
+      return;
+    }
+    this._host = this._resolveHost();
+    if (!this._host) return;
+    const existing = this._findLoader();
+    if (existing) {
+      this._ensureOnBody(existing);
+      this._el = existing;
+      this._labelEl = existing.querySelector(".pa-body-loader__label");
+      return;
+    }
+    const el = document.createElement("div");
+    el.className = "pa-body-loader";
+    el.id = "paBodyLoader";
+    el.setAttribute("role", "status");
+    el.setAttribute("aria-live", "polite");
+    el.setAttribute("aria-busy", "true");
+    el.innerHTML = `
       <div class="pa-body-loader__veil" aria-hidden="true"></div>
       <div class="pa-body-loader__panel">
         <div class="pa-body-loader__orbit" aria-hidden="true">
@@ -17,48 +167,962 @@ import{a as We,b as Ge,c as Ve,d as Ke,e as Ye,f as Xe,g as at}from"./chunks/chu
           <div class="pa-body-loader__skel-card"></div>
         </div>
       </div>
-    `,this._host.appendChild(s),this._el=s,this._labelEl=s.querySelector(".pa-body-loader__label")}begin(e){let s=e||this._defaultMessage;typeof window.__paEnsureBodyLoader=="function"?(this._el=window.__paEnsureBodyLoader(!0,s),this._host=this._resolveHost(),this._labelEl=this._el?.querySelector(".pa-body-loader__label")||null):this.mount(),!(!this._host||!this._el)&&(this._cancelShowFrame(),this._hideTimer&&(clearTimeout(this._hideTimer),this._hideTimer=null),s&&this._labelEl&&(this._labelEl.textContent=s),this._count+=1,document.body.classList.add("pa-loading-active"),this._el.classList.remove("is-hiding"),this._el.classList.add("visible"),this._el.setAttribute("aria-busy","true"))}end(){this._el&&(this._count=Math.max(0,this._count-1),this._count===0&&this._hide())}reset(){this._count=0,this._hide()}_hide(){this._cancelShowFrame(),this._host=this._resolveHost(),!(!this._host||!this._el)&&(this._el.classList.add("is-hiding"),this._el.classList.remove("visible"),this._count===0&&document.body.classList.remove("pa-loading-active"),this._labelEl&&(this._labelEl.textContent=this._defaultMessage),this._el.setAttribute("aria-busy","false"),this._hideTimer&&clearTimeout(this._hideTimer),this._hideTimer=setTimeout(()=>{this._el?.classList.remove("is-hiding"),this._hideTimer=null},this._EXIT_MS))}async wrap(e,s){this.begin(s);try{return await e}finally{this.end()}}},S=new ye;var $t=["super_admin","admin"],Y=class{constructor({on:e,closeUserMenu:s}){this.on=e,this.closeUserMenu=s,this._profileRole=null}bindEvents(){W("paAddUserPanel");let e=i("paAddUserMenuBtn");e&&this.on(e,"click",s=>{s.preventDefault(),s.stopPropagation(),this.closeUserMenu?.(),this.openAddUserPanel()}),this.on(i("paAddUserPanelClose"),"click",()=>this.closeAddUserPanel()),this.on(i("paAddUserCancelBtn"),"click",()=>this.closeAddUserPanel()),this.on(i("paAddUserSubmitBtn"),"click",()=>{this.submitAddUser()}),this.on(i("paPanelOverlay"),"click",s=>{s.target.id==="paPanelOverlay"&&(i("paUserCredentialsPanel")?.classList.contains("visible")?this.closeCredentialsPanel():i("paAddUserPanel")?.classList.contains("visible")&&this.closeAddUserPanel())})}setProfileRole(e){this._profileRole=e||null}isAdmin(){return $t.includes(this._profileRole)}async ensureAdminAccess(){if(this.isAdmin())return!0;try{let e=await h.getProfile();this._profileRole=e?.role||null}catch{this._profileRole=null}return this.isAdmin()?!0:(g("Only administrators can add users.","danger"),!1)}resetAddUserForm(){let e=(s,o)=>{let a=i(s);a&&(a.value=o)};e("addUserFullName",""),e("addUserUsername",""),e("addUserEmail",""),Ge(i("addUserRole"),{selected:"editor"})}openAddUserPanel(){this.resetAddUserForm(),Be("paAddUserPanel",["paUserCredentialsPanel"]),window.setTimeout(()=>i("addUserFullName")?.focus(),120),this.guardAddUserPanelAccess()}async guardAddUserPanelAccess(){this.isAdmin()||await this.ensureAdminAccess()||this.closeAddUserPanel()}closeAddUserPanel(){A()}closeCredentialsPanel(){A(),Ke()}collectFormPayload(){return{fullName:i("addUserFullName")?.value?.trim()||"",username:i("addUserUsername")?.value?.trim()||"",email:i("addUserEmail")?.value?.trim()||"",role:i("addUserRole")?.value||"editor"}}async fetchJson(e,s){let o=await fetch(e,{credentials:"same-origin",headers:{Accept:"application/json",...s?.body?{"Content-Type":"application/json"}:{},...s?.headers||{}},...s});if(o.status===401)throw window.location.href="/login",new Error("Unauthorized");let a=await o.json().catch(()=>({}));if(!o.ok)throw new Error(a.error||o.statusText||"Request failed");return a}async submitAddUser(){if(!await this.ensureAdminAccess())return;let e=this.collectFormPayload();if(!e.fullName){g("Full name is required.","danger"),i("addUserFullName")?.focus();return}if(!e.email){g("Email is required.","danger"),i("addUserEmail")?.focus();return}le("Creating user\u2026","info",12e4);try{let s=await this.fetchJson("/api/users",{method:"POST",body:JSON.stringify(e)});this.showCredentials(s.credentials,s),$e(`User ${s.user?.fullName||s.user?.email||e.email} was created`,"ri-user-add-line"),Xe(s)}catch(s){le(s.message||"Could not create user.","danger")}}formatRoleLabel(e){return We(e)}showCredentials(e,s={}){e&&Ye(e,{closePanelIds:["paAddUserPanel"],emailSent:s.emailSent,emailError:s.emailError})}};var lt="appearance_settings_v2",X=class extends G{constructor(){super({name:"Customization",storageKey:lt}),this.settings={...ce},this.systemMq=window.matchMedia("(prefers-color-scheme: dark)")}async init(){this.ensureFontSizeUI(),this.ensureFontUploadUI(),this.ensureIconSizeUI(),this.bindEvents();let e=x();e&&(this.settings={...e},this.render()),await this.load(),this.render()}async load(){let e=await b.get(lt,null);e&&typeof e=="object"&&(this.settings=Ne(e),T(this.settings))}async save(){T(this.settings),await this.saveRecords(this.settings,{feedback:!1})}render(){y(this.settings,{systemDark:this.systemMq.matches}),this.syncFavicon(),this.syncUI()}applyTheme(e){this.settings.theme=e,y(this.settings,{systemDark:this.systemMq.matches}),this.syncFavicon()}applyAccent(e){this.settings.accent=e,y(this.settings,{systemDark:this.systemMq.matches}),this.syncFavicon()}syncFavicon(){Qe(this.settings.accent,Je())}applyFontSize(e){this.settings.fontSize=e,y(this.settings,{systemDark:this.systemMq.matches})}applyFontFamily(e){this.settings.fontFamily=e;let s=j(e,this.settings.customFonts),o=i("customFontTriggerName"),a=i("customFontTriggerPreview");o&&(o.textContent=s.name),a&&(a.textContent=s.sample,a.style.fontFamily=s.stack),y(this.settings,{systemDark:this.systemMq.matches})}applyFontWeight(e){this.settings.fontWeight=e,y(this.settings,{systemDark:this.systemMq.matches})}applyCornerRadius(e){this.settings.cornerRadius=e,y(this.settings,{systemDark:this.systemMq.matches})}applyCardSpacing(e){this.settings.cardSpacing=e,y(this.settings,{systemDark:this.systemMq.matches})}applyIconSize(e){this.settings.iconSize=e,y(this.settings,{systemDark:this.systemMq.matches})}ensureFontSizeUI(){document.querySelectorAll('[data-panel="custom"][data-content="typography"]').forEach(e=>{let o=e.querySelector(".custom-fs-btn[data-size]")?.closest(".custom-fs-seg");!o||o.dataset.fontSizeNormalized==="true"||(o.dataset.fontSizeNormalized="true",o.innerHTML=de.map(a=>`<button type="button" class="custom-fs-btn" data-size="${a}" role="radio" aria-checked="false">${a}</button>`).join(""))})}ensureIconSizeUI(){let e=document.querySelector('[data-panel="custom"][data-content="typography"]');if(!e||i("customIconSizeSection"))return;let s=document.createElement("div");s.className="pa-form-group mt-8",s.id="customIconSizeSection",s.innerHTML=`
+    `;
+    this._host.appendChild(el);
+    this._el = el;
+    this._labelEl = el.querySelector(".pa-body-loader__label");
+  }
+  begin(message) {
+    const msg = message || this._defaultMessage;
+    if (typeof window.__paEnsureBodyLoader === "function") {
+      this._el = window.__paEnsureBodyLoader(true, msg);
+      this._host = this._resolveHost();
+      this._labelEl = this._el?.querySelector(".pa-body-loader__label") || null;
+    } else {
+      this.mount();
+    }
+    if (!this._host || !this._el) return;
+    this._cancelShowFrame();
+    if (this._hideTimer) {
+      clearTimeout(this._hideTimer);
+      this._hideTimer = null;
+    }
+    if (msg && this._labelEl) this._labelEl.textContent = msg;
+    this._count += 1;
+    document.body.classList.add("pa-loading-active");
+    this._el.classList.remove("is-hiding");
+    this._el.classList.add("visible");
+    this._el.setAttribute("aria-busy", "true");
+  }
+  end() {
+    if (!this._el) return;
+    this._count = Math.max(0, this._count - 1);
+    if (this._count === 0) this._hide();
+  }
+  reset() {
+    this._count = 0;
+    this._hide();
+  }
+  _hide() {
+    this._cancelShowFrame();
+    this._host = this._resolveHost();
+    if (!this._host || !this._el) return;
+    this._el.classList.add("is-hiding");
+    this._el.classList.remove("visible");
+    if (this._count === 0) document.body.classList.remove("pa-loading-active");
+    if (this._labelEl) this._labelEl.textContent = this._defaultMessage;
+    this._el.setAttribute("aria-busy", "false");
+    if (this._hideTimer) clearTimeout(this._hideTimer);
+    this._hideTimer = setTimeout(() => {
+      this._el?.classList.remove("is-hiding");
+      this._hideTimer = null;
+    }, this._EXIT_MS);
+  }
+  async wrap(promise, message) {
+    this.begin(message);
+    try {
+      return await promise;
+    } finally {
+      this.end();
+    }
+  }
+};
+var bodyLoader = new BodyLoader();
+
+// client/modules/shell/AddUserManager.ts
+var ADMIN_ROLES = ["super_admin", "admin"];
+var AddUserManager = class {
+  /**
+   * @param {object} opts
+   * @param {(el: Element, event: string, handler: Function) => void} opts.on
+   * @param {() => void} [opts.closeUserMenu]
+   */
+  constructor({ on, closeUserMenu }) {
+    this.on = on;
+    this.closeUserMenu = closeUserMenu;
+    this._profileRole = null;
+  }
+  bindEvents() {
+    registerPanel("paAddUserPanel");
+    const menuBtn = $id("paAddUserMenuBtn");
+    if (menuBtn) {
+      this.on(menuBtn, "click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeUserMenu?.();
+        void this.openAddUserPanel();
+      });
+    }
+    this.on($id("paAddUserPanelClose"), "click", () => this.closeAddUserPanel());
+    this.on($id("paAddUserCancelBtn"), "click", () => this.closeAddUserPanel());
+    this.on($id("paAddUserSubmitBtn"), "click", () => {
+      void this.submitAddUser();
+    });
+    this.on($id("paPanelOverlay"), "click", (e) => {
+      if (e.target.id !== "paPanelOverlay") return;
+      if ($id("paUserCredentialsPanel")?.classList.contains("visible")) {
+        this.closeCredentialsPanel();
+      } else if ($id("paAddUserPanel")?.classList.contains("visible")) {
+        this.closeAddUserPanel();
+      }
+    });
+  }
+  setProfileRole(role) {
+    this._profileRole = role || null;
+  }
+  isAdmin() {
+    return ADMIN_ROLES.includes(this._profileRole);
+  }
+  async ensureAdminAccess() {
+    if (this.isAdmin()) return true;
+    try {
+      const profile = await authService.getProfile();
+      this._profileRole = profile?.role || null;
+    } catch {
+      this._profileRole = null;
+    }
+    if (!this.isAdmin()) {
+      showToast("Only administrators can add users.", "danger");
+      return false;
+    }
+    return true;
+  }
+  resetAddUserForm() {
+    const set = (id, value) => {
+      const el = $id(id);
+      if (el) el.value = value;
+    };
+    set("addUserFullName", "");
+    set("addUserUsername", "");
+    set("addUserEmail", "");
+    populateStaffRoleSelect($id("addUserRole"), { selected: "editor" });
+  }
+  openAddUserPanel() {
+    this.resetAddUserForm();
+    openPanel("paAddUserPanel", ["paUserCredentialsPanel"]);
+    window.setTimeout(() => $id("addUserFullName")?.focus(), 120);
+    void this.guardAddUserPanelAccess();
+  }
+  async guardAddUserPanelAccess() {
+    if (this.isAdmin()) return;
+    if (!await this.ensureAdminAccess()) {
+      this.closeAddUserPanel();
+    }
+  }
+  closeAddUserPanel() {
+    closePanels();
+  }
+  closeCredentialsPanel() {
+    closePanels();
+    clearUserCredentials();
+  }
+  collectFormPayload() {
+    return {
+      fullName: $id("addUserFullName")?.value?.trim() || "",
+      username: $id("addUserUsername")?.value?.trim() || "",
+      email: $id("addUserEmail")?.value?.trim() || "",
+      role: $id("addUserRole")?.value || "editor"
+    };
+  }
+  async fetchJson(url, options) {
+    const res = await fetch(url, {
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+        ...options?.body ? { "Content-Type": "application/json" } : {},
+        ...options?.headers || {}
+      },
+      ...options
+    });
+    if (res.status === 401) {
+      window.location.href = "/login";
+      throw new Error("Unauthorized");
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || res.statusText || "Request failed");
+    return data;
+  }
+  async submitAddUser() {
+    if (!await this.ensureAdminAccess()) return;
+    const payload = this.collectFormPayload();
+    if (!payload.fullName) {
+      showToast("Full name is required.", "danger");
+      $id("addUserFullName")?.focus();
+      return;
+    }
+    if (!payload.email) {
+      showToast("Email is required.", "danger");
+      $id("addUserEmail")?.focus();
+      return;
+    }
+    showStatusToast("Creating user\u2026", "info", 12e4);
+    try {
+      const result = await this.fetchJson("/api/users", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+      this.showCredentials(result.credentials, result);
+      addNotification(`User ${result.user?.fullName || result.user?.email || payload.email} was created`, "ri-user-add-line");
+      notifyCredentialsEmailStatus(result);
+    } catch (error) {
+      showStatusToast(error.message || "Could not create user.", "danger");
+    }
+  }
+  formatRoleLabel(role) {
+    return formatStaffRoleLabel(role);
+  }
+  showCredentials(credentials, emailMeta = {}) {
+    if (!credentials) return;
+    showUserCredentialsPanel(credentials, {
+      closePanelIds: ["paAddUserPanel"],
+      emailSent: emailMeta.emailSent,
+      emailError: emailMeta.emailError
+    });
+  }
+};
+
+// client/modules/shell/CustomizationModule.ts
+var CUSTOM_STORE_KEY = "appearance_settings_v2";
+var CustomizationModule = class extends Module {
+  constructor() {
+    super({ name: "Customization", storageKey: CUSTOM_STORE_KEY });
+    this.settings = { ...APPEARANCE_DEFAULTS };
+    this.systemMq = window.matchMedia("(prefers-color-scheme: dark)");
+  }
+  async init() {
+    this.ensureFontSizeUI();
+    this.ensureFontUploadUI();
+    this.ensureIconSizeUI();
+    this.bindEvents();
+    const cached = readAppearanceCache();
+    if (cached) {
+      this.settings = { ...cached };
+      this.render();
+    }
+    await this.load();
+    this.render();
+  }
+  async load() {
+    const saved = await storage.get(CUSTOM_STORE_KEY, null);
+    if (saved && typeof saved === "object") {
+      this.settings = normalizeAppearanceSettings(saved);
+      writeAppearanceCache(this.settings);
+    }
+  }
+  async save() {
+    writeAppearanceCache(this.settings);
+    await this.saveRecords(this.settings, { feedback: false });
+  }
+  render() {
+    applyAppearanceSettings(this.settings, { systemDark: this.systemMq.matches });
+    this.syncFavicon();
+    this.syncUI();
+  }
+  applyTheme(t) {
+    this.settings.theme = t;
+    applyAppearanceSettings(this.settings, { systemDark: this.systemMq.matches });
+    this.syncFavicon();
+  }
+  applyAccent(hex) {
+    this.settings.accent = hex;
+    applyAppearanceSettings(this.settings, { systemDark: this.systemMq.matches });
+    this.syncFavicon();
+  }
+  syncFavicon() {
+    updateFavicon(this.settings.accent, getThemeBackground());
+  }
+  applyFontSize(fs) {
+    this.settings.fontSize = fs;
+    applyAppearanceSettings(this.settings, { systemDark: this.systemMq.matches });
+  }
+  applyFontFamily(id) {
+    this.settings.fontFamily = id;
+    const font = getFontById(id, this.settings.customFonts);
+    const nameEl = $id("customFontTriggerName");
+    const previewEl = $id("customFontTriggerPreview");
+    if (nameEl) nameEl.textContent = font.name;
+    if (previewEl) {
+      previewEl.textContent = font.sample;
+      previewEl.style.fontFamily = font.stack;
+    }
+    applyAppearanceSettings(this.settings, { systemDark: this.systemMq.matches });
+  }
+  applyFontWeight(weight) {
+    this.settings.fontWeight = weight;
+    applyAppearanceSettings(this.settings, { systemDark: this.systemMq.matches });
+  }
+  applyCornerRadius(val) {
+    this.settings.cornerRadius = val;
+    applyAppearanceSettings(this.settings, { systemDark: this.systemMq.matches });
+  }
+  applyCardSpacing(spacing) {
+    this.settings.cardSpacing = spacing;
+    applyAppearanceSettings(this.settings, { systemDark: this.systemMq.matches });
+  }
+  applyIconSize(size) {
+    this.settings.iconSize = size;
+    applyAppearanceSettings(this.settings, { systemDark: this.systemMq.matches });
+  }
+  /** Normalize font-size controls to 10px / 14px / 16px on every page panel. */
+  ensureFontSizeUI() {
+    document.querySelectorAll('[data-panel="custom"][data-content="typography"]').forEach((panel) => {
+      const sizeBtn = panel.querySelector(".custom-fs-btn[data-size]");
+      const seg = sizeBtn?.closest(".custom-fs-seg");
+      if (!seg || seg.dataset.fontSizeNormalized === "true") return;
+      seg.dataset.fontSizeNormalized = "true";
+      seg.innerHTML = VALID_FONT_SIZES.map((size) => `<button type="button" class="custom-fs-btn" data-size="${size}" role="radio" aria-checked="false">${size}</button>`).join("");
+    });
+  }
+  ensureIconSizeUI() {
+    const typographyPanel = document.querySelector('[data-panel="custom"][data-content="typography"]');
+    if (!typographyPanel || $id("customIconSizeSection")) return;
+    const section = document.createElement("div");
+    section.className = "pa-form-group mt-8";
+    section.id = "customIconSizeSection";
+    section.innerHTML = `
       <label class="pa-form-label">Icon Size</label>
       <div class="custom-icon-size-group" id="customIconSizeGroup" role="radiogroup" aria-label="Icon size">
-        ${ue.map(o=>{let a=o.charAt(0).toUpperCase()+o.slice(1),n=Ue[o];return`
-          <button type="button" class="custom-icon-size-card" data-icon-size="${o}" role="radio" aria-checked="false" aria-label="${a} icon size">
+        ${VALID_ICON_SIZES.map((size) => {
+      const label = size.charAt(0).toUpperCase() + size.slice(1);
+      const preview = ICON_PREVIEW_SIZES[size];
+      return `
+          <button type="button" class="custom-icon-size-card" data-icon-size="${size}" role="radio" aria-checked="false" aria-label="${label} icon size">
             <div class="custom-icon-size-preview" aria-hidden="true">
-              <i class="ri-home-4-line" style="font-size:${n}"></i>
-              <i class="ri-settings-3-line" style="font-size:${n}"></i>
-              <i class="ri-notification-3-line" style="font-size:${n}"></i>
+              <i class="ri-home-4-line" style="font-size:${preview}"></i>
+              <i class="ri-settings-3-line" style="font-size:${preview}"></i>
+              <i class="ri-notification-3-line" style="font-size:${preview}"></i>
             </div>
-            <span class="custom-icon-size-label">${a}</span>
-          </button>`}).join("")}
-      </div>`,e.appendChild(s)}ensureFontUploadUI(){let e=document.querySelector('[data-panel="custom"][data-content="typography"]');if(!e||i("customFontUploadSection"))return;let s=document.createElement("div");s.className="pa-form-group mt-8",s.id="customFontUploadSection",s.innerHTML=`
+            <span class="custom-icon-size-label">${label}</span>
+          </button>`;
+    }).join("")}
+      </div>`;
+    typographyPanel.appendChild(section);
+  }
+  ensureFontUploadUI() {
+    const typographyPanel = document.querySelector('[data-panel="custom"][data-content="typography"]');
+    if (!typographyPanel || $id("customFontUploadSection")) return;
+    const section = document.createElement("div");
+    section.className = "pa-form-group mt-8";
+    section.id = "customFontUploadSection";
+    section.innerHTML = `
       <label class="pa-form-label">Upload Custom Font</label>
       <div class="pa-font-upload" id="customFontUpload" role="button" tabindex="0" aria-label="Upload a custom font file">
         <i class="ri-font-size-2" aria-hidden="true"></i>
         <div class="pa-media-upload-text">Click or drag a font file here</div>
-        <div class="pa-media-upload-hint">WOFF, WOFF2, TTF, OTF \u2014 Max 2MB (up to ${5} fonts)</div>
+        <div class="pa-media-upload-hint">WOFF, WOFF2, TTF, OTF \u2014 Max 2MB (up to ${MAX_CUSTOM_FONTS} fonts)</div>
         <input type="file" id="customFontFileInput" accept=".woff,.woff2,.ttf,.otf,font/woff,font/woff2,font/ttf,font/otf" hidden />
       </div>
-      <div class="custom-font-upload-list" id="customFontUploadList" aria-live="polite"></div>`;let o=e.querySelector(".pa-form-group.mt-8");o?e.insertBefore(s,o):e.appendChild(s)}renderUploadedFontsList(){let e=i("customFontUploadList"),s=i("customFontUpload");if(!e)return;let o=this.settings.customFonts||[];if(!o.length){e.innerHTML="",s?.classList.remove("is-full");return}s?.classList.toggle("is-full",o.length>=5),e.innerHTML=o.map(a=>`
-      <div class="custom-font-upload-item" data-font-id="${v(a.id)}">
+      <div class="custom-font-upload-list" id="customFontUploadList" aria-live="polite"></div>`;
+    const fontSizeGroup = typographyPanel.querySelector(".pa-form-group.mt-8");
+    if (fontSizeGroup) typographyPanel.insertBefore(section, fontSizeGroup);
+    else typographyPanel.appendChild(section);
+  }
+  renderUploadedFontsList() {
+    const list = $id("customFontUploadList");
+    const dropzone = $id("customFontUpload");
+    if (!list) return;
+    const fonts = this.settings.customFonts || [];
+    if (!fonts.length) {
+      list.innerHTML = "";
+      dropzone?.classList.remove("is-full");
+      return;
+    }
+    dropzone?.classList.toggle("is-full", fonts.length >= MAX_CUSTOM_FONTS);
+    list.innerHTML = fonts.map((font) => `
+      <div class="custom-font-upload-item" data-font-id="${escapeHtml(font.id)}">
         <div class="custom-font-upload-item-main">
-          <span class="custom-font-upload-item-name" style="font-family:'${v(a.familyName)}', sans-serif">${v(a.name)}</span>
-          <span class="custom-font-upload-item-meta">${v(a.fileName||"Custom font")}</span>
+          <span class="custom-font-upload-item-name" style="font-family:'${escapeHtml(font.familyName)}', sans-serif">${escapeHtml(font.name)}</span>
+          <span class="custom-font-upload-item-meta">${escapeHtml(font.fileName || "Custom font")}</span>
         </div>
         <div class="custom-font-upload-item-actions">
-          <button type="button" class="custom-font-upload-use" data-font-id="${v(a.id)}" title="Use this font" aria-label="Use ${v(a.name)}">Use</button>
-          <button type="button" class="custom-font-upload-delete" data-font-id="${v(a.id)}" title="Remove font" aria-label="Remove ${v(a.name)}"><i class="ri-delete-bin-line"></i></button>
+          <button type="button" class="custom-font-upload-use" data-font-id="${escapeHtml(font.id)}" title="Use this font" aria-label="Use ${escapeHtml(font.name)}">Use</button>
+          <button type="button" class="custom-font-upload-delete" data-font-id="${escapeHtml(font.id)}" title="Remove font" aria-label="Remove ${escapeHtml(font.name)}"><i class="ri-delete-bin-line"></i></button>
         </div>
-      </div>`).join("")}async handleFontUpload(e){let s=Array.from(e||[])[0];if(!s)return;let o=this.settings.customFonts||[];if(o.length>=5){this.showCustomToast(`Maximum of ${5} custom fonts reached`);return}let a=i("customFontUpload");a?.classList.add("is-uploading");try{let n=await ke(s);this.settings.customFonts=[...o,n],this.settings.fontFamily=n.id,this.applyFontFamily(n.id),this.renderUploadedFontsList(),this.buildFontList(i("customFontSearch")?.value),await this.save(),this.showCustomToast(`Font uploaded \u2192 ${n.name}`)}catch(n){this.showCustomToast(n?.message||"Could not upload font","danger")}finally{a?.classList.remove("is-uploading");let n=i("customFontFileInput");n&&(n.value="")}}async removeCustomFont(e){let s=this.settings.customFonts||[],o=s.filter(a=>a.id!==e);o.length!==s.length&&(this.settings.customFonts=o,this.settings.fontFamily===e&&(this.settings.fontFamily=ce.fontFamily,this.applyFontFamily(this.settings.fontFamily)),this.renderUploadedFontsList(),this.buildFontList(i("customFontSearch")?.value),await this.save(),this.showCustomToast("Custom font removed"))}buildFontList(e){let s=i("customFontList"),o=i("customFontNoResults");if(!s)return;s.innerHTML="";let a=(e||"").toLowerCase().trim(),n=0;Ie(this.settings.customFonts).forEach(r=>{let l=r.fonts.filter(u=>!a||u.name.toLowerCase().includes(a)||u.sample.toLowerCase().includes(a));if(!l.length)return;let d=document.createElement("div");d.className="custom-font-group-label",d.textContent=r.group,s.appendChild(d),l.forEach(u=>{n++;let p=document.createElement("button");p.className="custom-font-option"+(u.id===this.settings.fontFamily?" active":""),p.setAttribute("role","option"),p.setAttribute("aria-selected",String(u.id===this.settings.fontFamily)),p.setAttribute("data-font-id",u.id),p.innerHTML=`
+      </div>`).join("");
+  }
+  async handleFontUpload(fileList) {
+    const file = Array.from(fileList || [])[0];
+    if (!file) return;
+    const current = this.settings.customFonts || [];
+    if (current.length >= MAX_CUSTOM_FONTS) {
+      this.showCustomToast(`Maximum of ${MAX_CUSTOM_FONTS} custom fonts reached`);
+      return;
+    }
+    const dropzone = $id("customFontUpload");
+    dropzone?.classList.add("is-uploading");
+    try {
+      const entry = await buildCustomFontFromFile(file);
+      this.settings.customFonts = [...current, entry];
+      this.settings.fontFamily = entry.id;
+      this.applyFontFamily(entry.id);
+      this.renderUploadedFontsList();
+      this.buildFontList($id("customFontSearch")?.value);
+      await this.save();
+      this.showCustomToast(`Font uploaded \u2192 ${entry.name}`);
+    } catch (err) {
+      this.showCustomToast(err?.message || "Could not upload font", "danger");
+    } finally {
+      dropzone?.classList.remove("is-uploading");
+      const input = $id("customFontFileInput");
+      if (input) input.value = "";
+    }
+  }
+  async removeCustomFont(id) {
+    const fonts = this.settings.customFonts || [];
+    const next = fonts.filter((f) => f.id !== id);
+    if (next.length === fonts.length) return;
+    this.settings.customFonts = next;
+    if (this.settings.fontFamily === id) {
+      this.settings.fontFamily = APPEARANCE_DEFAULTS.fontFamily;
+      this.applyFontFamily(this.settings.fontFamily);
+    }
+    this.renderUploadedFontsList();
+    this.buildFontList($id("customFontSearch")?.value);
+    await this.save();
+    this.showCustomToast("Custom font removed");
+  }
+  buildFontList(query) {
+    const list = $id("customFontList");
+    const noRes = $id("customFontNoResults");
+    if (!list) return;
+    list.innerHTML = "";
+    const q = (query || "").toLowerCase().trim();
+    let total = 0;
+    getFontGroups(this.settings.customFonts).forEach((group) => {
+      const filtered = group.fonts.filter(
+        (f) => !q || f.name.toLowerCase().includes(q) || f.sample.toLowerCase().includes(q)
+      );
+      if (!filtered.length) return;
+      const groupEl = document.createElement("div");
+      groupEl.className = "custom-font-group-label";
+      groupEl.textContent = group.group;
+      list.appendChild(groupEl);
+      filtered.forEach((font) => {
+        total++;
+        const btn = document.createElement("button");
+        btn.className = "custom-font-option" + (font.id === this.settings.fontFamily ? " active" : "");
+        btn.setAttribute("role", "option");
+        btn.setAttribute("aria-selected", String(font.id === this.settings.fontFamily));
+        btn.setAttribute("data-font-id", font.id);
+        btn.innerHTML = `
           <div class="custom-font-option-left">
-            <span class="custom-font-option-name">${v(u.name)}</span>
-            <span class="custom-font-option-sample" style="font-family:${u.stack}">${v(u.sample)}</span>
+            <span class="custom-font-option-name">${escapeHtml(font.name)}</span>
+            <span class="custom-font-option-sample" style="font-family:${font.stack}">${escapeHtml(font.sample)}</span>
           </div>
           <div class="custom-font-option-right">
-            <span class="custom-font-option-tag">${u.isCustom?"custom":v(u.id)}</span>
+            <span class="custom-font-option-tag">${font.isCustom ? "custom" : escapeHtml(font.id)}</span>
             <svg class="custom-font-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>`,this.on(p,"click",()=>{this.settings.fontFamily=u.id,this.applyFontFamily(u.id),this.buildFontList(i("customFontSearch")?.value),this.closeFontDropdown(),this.save(),this.showCustomToast(`Font \u2192 ${u.name}`)}),s.appendChild(p)})}),o&&(o.style.display=n===0?"block":"none")}openFontDropdown(){let e=i("customFontDropdownWrap"),s=i("customFontTrigger"),o=i("customFontSearch");e&&(e.classList.add("open"),s?.setAttribute("aria-expanded","true"),this.buildFontList(""),setTimeout(()=>o?.focus(),60))}closeFontDropdown(){i("customFontDropdownWrap")?.classList.remove("open"),i("customFontTrigger")?.setAttribute("aria-expanded","false")}toggleFontDropdown(){i("customFontDropdownWrap")?.classList.contains("open")?this.closeFontDropdown():this.openFontDropdown()}syncUI(){document.querySelectorAll(".custom-theme-card").forEach(a=>{let n=a.dataset.theme===this.settings.theme;a.classList.toggle("active",n),a.setAttribute("aria-checked",String(n))}),document.querySelectorAll(".custom-swatch").forEach(a=>{let n=a.dataset.color===this.settings.accent;a.classList.toggle("active",n),a.setAttribute("aria-checked",String(n))}),document.querySelectorAll(".custom-fs-btn[data-size]").forEach(a=>{let n=a.dataset.size===this.settings.fontSize;a.classList.toggle("active",n),a.setAttribute("aria-checked",String(n))}),document.querySelectorAll(".custom-fs-btn[data-weight]").forEach(a=>{let n=a.dataset.weight===this.settings.fontWeight;a.classList.toggle("active",n),a.setAttribute("aria-checked",String(n))}),document.querySelectorAll(".custom-fs-btn[data-spacing]").forEach(a=>{let n=a.dataset.spacing===this.settings.cardSpacing;a.classList.toggle("active",n),a.setAttribute("aria-checked",String(n))}),document.querySelectorAll(".custom-cr-btn").forEach(a=>{let n=a.dataset.radius===this.settings.cornerRadius;a.classList.toggle("active",n),a.setAttribute("aria-checked",String(n))}),document.querySelectorAll(".custom-icon-size-card").forEach(a=>{let n=a.dataset.iconSize===this.settings.iconSize;a.classList.toggle("active",n),a.setAttribute("aria-checked",String(n))});let e=j(this.settings.fontFamily,this.settings.customFonts),s=i("customFontTriggerName"),o=i("customFontTriggerPreview");s&&(s.textContent=e.name),o&&(o.textContent=e.sample,o.style.fontFamily=e.stack),this.renderUploadedFontsList()}showCustomToast(e,s="info"){let o=i("paCustomToastWrap");if(!o)return;let a=document.createElement("div");a.className=`pa-toast ${s}`,a.innerHTML=`<i class="pa-toast-icon ri-palette-line"></i><span>${e}</span><button class="pa-toast-close" aria-label="Dismiss"><i class="ri-close-line"></i></button>`;let n=()=>{a.classList.add("removing"),setTimeout(()=>a.remove(),200)};a.querySelector(".pa-toast-close").addEventListener("click",n),o.appendChild(a),setTimeout(()=>{a.parentElement&&n()},2500)}togglePanel(){let e=i("paCustomPanel"),s=i("paCustomToggle")||document.querySelector(".pa-custom-toggle");e&&(e.classList.contains("visible")?this.closePanel():(A(),e.classList.add("visible"),i("paPanelOverlay")?.classList.add("visible"),s?.classList.add("active"),document.body.style.overflow="hidden",this.syncUI(),N("custom","theme"),setTimeout(()=>e.querySelector("button, input, select")?.focus(),100)))}closePanel(){i("paCustomPanel")?.classList.remove("visible"),i("paPanelOverlay")?.classList.remove("visible"),(i("paCustomToggle")||document.querySelector(".pa-custom-toggle"))?.classList.remove("active"),document.body.style.overflow="",this.closeFontDropdown()}bindFontUploadEvents(){let e=i("customFontUpload"),s=i("customFontFileInput"),o=i("customFontUploadList");!e||!s||(this.on(e,"click",a=>{if(!a.target.closest(".custom-font-upload-delete, .custom-font-upload-use")){if(e.classList.contains("is-full")){this.showCustomToast(`Maximum of ${5} custom fonts reached`);return}s.click()}}),this.on(e,"keydown",a=>{(a.key==="Enter"||a.key===" ")&&(a.preventDefault(),e.click())}),this.on(s,"change",a=>this.handleFontUpload(a.target.files)),["dragenter","dragover"].forEach(a=>{this.on(e,a,n=>{n.preventDefault(),e.classList.contains("is-full")||e.classList.add("dragover")})}),["dragleave","drop"].forEach(a=>{this.on(e,a,n=>{n.preventDefault(),e.classList.remove("dragover")})}),this.on(e,"drop",a=>{if(e.classList.contains("is-full"))return;let n=a.dataTransfer?.files;n?.length&&this.handleFontUpload(n)}),o&&this.on(o,"click",a=>{let n=a.target.closest(".custom-font-upload-use"),r=a.target.closest(".custom-font-upload-delete");if(n){let l=n.dataset.fontId;this.settings.fontFamily=l,this.applyFontFamily(l),this.syncUI(),this.save(),this.showCustomToast(`Font \u2192 ${j(l,this.settings.customFonts).name}`)}else r&&this.removeCustomFont(r.dataset.fontId)}))}bindEvents(){W("paCustomPanel"),this.bindFontUploadEvents();let e=i("paCustomToggle")||document.querySelector(".pa-custom-toggle");this.on(e,"click",()=>this.togglePanel()),this.on(i("paCustomPanelClose"),"click",()=>this.closePanel()),this.on(i("paCustomCancel"),"click",()=>this.closePanel()),this.on(i("paPanelOverlay"),"click",r=>{r.target.id==="paPanelOverlay"&&i("paCustomPanel")?.classList.contains("visible")&&this.closePanel()}),this.on(document,"keydown",r=>{r.key==="Escape"&&i("paCustomPanel")?.classList.contains("visible")&&this.closePanel()}),document.querySelectorAll(".custom-theme-card").forEach(r=>{this.on(r,"click",()=>{this.settings.theme=r.dataset.theme,this.applyTheme(this.settings.theme),this.syncUI(),this.save(),this.showCustomToast(`Theme \u2192 ${this.settings.theme}`)})}),document.querySelectorAll(".custom-swatch").forEach(r=>{this.on(r,"click",()=>{this.settings.accent=r.dataset.color,this.applyAccent(this.settings.accent),this.syncUI(),this.save(),this.showCustomToast("Accent color updated")})});let s=i("paCustomPanel");this.on(s,"click",r=>{let l=r.target.closest(".custom-fs-btn");!l||!s?.contains(l)||(l.dataset.size&&de.includes(l.dataset.size)?(this.settings.fontSize=l.dataset.size,this.applyFontSize(this.settings.fontSize),this.syncUI(),this.save(),this.showCustomToast(`Font size \u2192 ${this.settings.fontSize}`)):l.dataset.weight&&Re.includes(l.dataset.weight)?(this.settings.fontWeight=l.dataset.weight,this.applyFontWeight(this.settings.fontWeight),this.syncUI(),this.save(),this.showCustomToast(`Font weight \u2192 ${this.settings.fontWeight}`)):l.dataset.spacing&&xe.includes(l.dataset.spacing)&&(this.settings.cardSpacing=l.dataset.spacing,this.applyCardSpacing(this.settings.cardSpacing),this.syncUI(),this.save(),this.showCustomToast(`Card spacing \u2192 ${this.settings.cardSpacing}`)))}),document.querySelectorAll(".custom-icon-size-card").forEach(r=>{this.on(r,"click",()=>{if(!ue.includes(r.dataset.iconSize))return;this.settings.iconSize=r.dataset.iconSize,this.applyIconSize(this.settings.iconSize),this.syncUI(),this.save();let l=r.dataset.iconSize.charAt(0).toUpperCase()+r.dataset.iconSize.slice(1);this.showCustomToast(`Icon size \u2192 ${l}`)})});let o={"0px":"None","5px":"Small","14px":"Medium","25px":"Large"};document.querySelectorAll(".custom-cr-btn").forEach(r=>{this.on(r,"click",()=>{this.settings.cornerRadius=r.dataset.radius,this.applyCornerRadius(this.settings.cornerRadius),this.syncUI(),this.save(),this.showCustomToast(`Corner radius \u2192 ${o[this.settings.cornerRadius]||this.settings.cornerRadius}`)}),this.on(r,"keydown",l=>{let d=[...document.querySelectorAll(".custom-cr-btn")],u=d.indexOf(r);l.key==="ArrowRight"||l.key==="ArrowDown"?(l.preventDefault(),d[(u+1)%d.length]?.focus()):l.key==="ArrowLeft"||l.key==="ArrowUp"?(l.preventDefault(),d[(u-1+d.length)%d.length]?.focus()):(l.key===" "||l.key==="Enter")&&(l.preventDefault(),r.click())})}),this.on(i("customFontTrigger"),"click",()=>this.toggleFontDropdown()),this.on(i("customFontSearch"),"input",r=>this.buildFontList(r.target.value)),this.on(document,"click",r=>{let l=i("customFontDropdownWrap");l&&!l.contains(r.target)&&this.closeFontDropdown()}),this.on(i("customFontDropdownWrap"),"keydown",r=>{r.key==="Escape"&&(this.closeFontDropdown(),i("customFontTrigger")?.focus())}),this.on(this.systemMq,"change",()=>{this.settings.theme==="system"&&this.applyTheme("system")}),document.querySelectorAll('.pa-panel-tab[data-panel="custom"]').forEach(r=>{this.on(r,"click",()=>{N("custom",r.dataset.tab),this.syncUI()})});let a=new MutationObserver(()=>{i("paCustomPanel")?.classList.contains("visible")&&this.syncUI()}),n=i("paCustomPanel");n&&a.observe(n,{attributes:!0,attributeFilter:["class"]}),this._observer=a}destroy(){this._observer?.disconnect(),super.destroy()}};async function ct(t,e={}){if(!t||!Pe(t))return null;let o=document.querySelector("#paUserDropdownAvatar .pa-avatar img")?.src||null,a=URL.createObjectURL(t);ge(a),e.onPreview?.(a);let n=document.getElementById("paUserDropdownAvatar");n?.classList.add("is-uploading");try{let r=await Fe(t,{folder:"avatars",page:"shell",purpose:"user-avatar"}),l=await h.updateProfile({avatarUrl:r.url}),d=l?.profile??l;if(!d||typeof d!="object")throw new Error("Server did not return an updated profile.");return L({fullName:d.fullName,username:d.username,email:d.email,role:d.role,avatarUrl:d.avatarUrl}),R.emit("profile:updated",d),g("Avatar updated!","success",2200),e.onComplete?.(d),d}catch(r){if(o)ge(o);else try{let l=await h.getProfile();L(l)}catch{}return g(r?.message||"Could not save avatar.","danger"),e.onComplete?.(null),null}finally{URL.revokeObjectURL(a),n?.classList.remove("is-uploading")}}var ve=null,_=null;function be(){return document.querySelector(".pa-header-top-left .pa-search, .pa-header-right .pa-search")}function zt(){return be()?.querySelector("input")}function dt(){return window.innerWidth<=899}function J(){return _?.classList.contains("pa-header-top--search-open")??!1}function C(){if(!_)return;_.classList.remove("pa-header-top--search-open"),document.documentElement.classList.remove("pa-mobile-search-active"),document.getElementById("paMobileSearchToggle")?.setAttribute("aria-expanded","false")}function we(){return!be()||!_||!dt()?!1:(document.getElementById("paNotifWrap")?.classList.remove("open"),_.classList.add("pa-header-top--search-open"),document.documentElement.classList.add("pa-mobile-search-active"),document.getElementById("paMobileSearchToggle")?.setAttribute("aria-expanded","true"),requestAnimationFrame(()=>zt()?.focus()),!0)}function ut(){ve?.abort(),ve=new AbortController;let{signal:t}=ve;_=document.querySelector(".pa-header-top");let e=be(),s=document.querySelector(".pa-header-top-right");if(!_||!e||!s){_=null;return}C();let o=document.getElementById("paMobileSearchToggle");o||(o=document.createElement("button"),o.type="button",o.id="paMobileSearchToggle",o.className="pa-mobile-search-toggle",o.setAttribute("aria-label","Open search"),o.setAttribute("aria-expanded","false"),o.setAttribute("aria-controls",e.id||"paSearchWrap"),o.innerHTML='<i class="ri-search-line" aria-hidden="true"></i>',s.insertBefore(o,s.firstChild));let a=e.querySelector(".pa-mobile-search-dismiss");a||(a=document.createElement("button"),a.type="button",a.className="pa-mobile-search-dismiss",a.setAttribute("aria-label","Close search"),a.innerHTML='<i class="ri-close-line" aria-hidden="true"></i>',e.appendChild(a)),o.addEventListener("click",()=>{J()?C():we()},{signal:t}),a.addEventListener("click",n=>{n.preventDefault(),C()},{signal:t}),window.addEventListener("resize",()=>{dt()||C()},{signal:t}),document.addEventListener("keydown",n=>{n.key!=="Escape"||!J()||(n.preventDefault(),n.stopPropagation(),C())},{signal:t,capture:!0})}var jt="v1",Wt="pa_role_access_briefing",ht={editor:{title:"Editor account",subtitle:"You can manage portfolio content and update selected settings.",icon:"ri-edit-box-line",allowed:["View every dashboard and content page","Create, edit, and delete projects, media, blog posts, and other CMS data","Moderate blog comments and likes on the Comments & Likes page","Update General, Notifications, Profile, and Security settings","Use appearance and customization options"],restricted:["User management or adding new staff accounts","System settings and database tools","Admin-only sidebar links stay hidden for your role"]},viewer:{title:"Viewer account",subtitle:"Your access is read-only across the portfolio dashboard.",icon:"ri-eye-line",allowed:["View dashboard stats and all content pages","Browse projects, media, messages, and other records","Update Notifications, Profile, and Security settings","Use appearance and customization options"],restricted:["Create, edit, or delete any content or records","Access the Comments & Likes moderation page","Dashboard add actions, bulk actions, and edit panels","Changing General site settings (view only)","User management and system settings"]}},pt=!1;function ft(t,e){return`${Wt}_${jt}_${t}_${e}`}function Gt(t,e){try{return localStorage.getItem(ft(t,e))==="1"}catch{return!1}}function Vt(t,e){try{localStorage.setItem(ft(t,e),"1")}catch{}}function Kt(t){return(t||"staff").replace(/_/g," ")}function mt(t,e){return t.map(s=>`<li class="pa-role-access-item pa-role-access-item--${e}">
-      <i class="${e==="allowed"?"ri-check-line":"ri-close-line"}" aria-hidden="true"></i>
-      <span>${s}</span>
-    </li>`).join("")}function Yt(){if(i("paRoleAccessOverlay"))return;let t=document.createElement("div");t.className="pa-role-access-overlay",t.id="paRoleAccessOverlay",t.hidden=!0,t.setAttribute("role","dialog"),t.setAttribute("aria-modal","true"),t.setAttribute("aria-labelledby","paRoleAccessTitle"),t.innerHTML=`
+          </div>`;
+        this.on(btn, "click", () => {
+          this.settings.fontFamily = font.id;
+          this.applyFontFamily(font.id);
+          this.buildFontList($id("customFontSearch")?.value);
+          this.closeFontDropdown();
+          this.save();
+          this.showCustomToast(`Font \u2192 ${font.name}`);
+        });
+        list.appendChild(btn);
+      });
+    });
+    if (noRes) noRes.style.display = total === 0 ? "block" : "none";
+  }
+  openFontDropdown() {
+    const wrap = $id("customFontDropdownWrap");
+    const trigger = $id("customFontTrigger");
+    const search = $id("customFontSearch");
+    if (!wrap) return;
+    wrap.classList.add("open");
+    trigger?.setAttribute("aria-expanded", "true");
+    this.buildFontList("");
+    setTimeout(() => search?.focus(), 60);
+  }
+  closeFontDropdown() {
+    $id("customFontDropdownWrap")?.classList.remove("open");
+    $id("customFontTrigger")?.setAttribute("aria-expanded", "false");
+  }
+  toggleFontDropdown() {
+    $id("customFontDropdownWrap")?.classList.contains("open") ? this.closeFontDropdown() : this.openFontDropdown();
+  }
+  syncUI() {
+    document.querySelectorAll(".custom-theme-card").forEach((el) => {
+      const active = el.dataset.theme === this.settings.theme;
+      el.classList.toggle("active", active);
+      el.setAttribute("aria-checked", String(active));
+    });
+    document.querySelectorAll(".custom-swatch").forEach((el) => {
+      const active = el.dataset.color === this.settings.accent;
+      el.classList.toggle("active", active);
+      el.setAttribute("aria-checked", String(active));
+    });
+    document.querySelectorAll(".custom-fs-btn[data-size]").forEach((el) => {
+      const active = el.dataset.size === this.settings.fontSize;
+      el.classList.toggle("active", active);
+      el.setAttribute("aria-checked", String(active));
+    });
+    document.querySelectorAll(".custom-fs-btn[data-weight]").forEach((el) => {
+      const active = el.dataset.weight === this.settings.fontWeight;
+      el.classList.toggle("active", active);
+      el.setAttribute("aria-checked", String(active));
+    });
+    document.querySelectorAll(".custom-fs-btn[data-spacing]").forEach((el) => {
+      const active = el.dataset.spacing === this.settings.cardSpacing;
+      el.classList.toggle("active", active);
+      el.setAttribute("aria-checked", String(active));
+    });
+    document.querySelectorAll(".custom-cr-btn").forEach((el) => {
+      const active = el.dataset.radius === this.settings.cornerRadius;
+      el.classList.toggle("active", active);
+      el.setAttribute("aria-checked", String(active));
+    });
+    document.querySelectorAll(".custom-icon-size-card").forEach((el) => {
+      const active = el.dataset.iconSize === this.settings.iconSize;
+      el.classList.toggle("active", active);
+      el.setAttribute("aria-checked", String(active));
+    });
+    const font = getFontById(this.settings.fontFamily, this.settings.customFonts);
+    const nameEl = $id("customFontTriggerName");
+    const previewEl = $id("customFontTriggerPreview");
+    if (nameEl) nameEl.textContent = font.name;
+    if (previewEl) {
+      previewEl.textContent = font.sample;
+      previewEl.style.fontFamily = font.stack;
+    }
+    this.renderUploadedFontsList();
+  }
+  showCustomToast(msg, variant = "info") {
+    const wrap = $id("paCustomToastWrap");
+    if (!wrap) return;
+    const el = document.createElement("div");
+    el.className = `pa-toast ${variant}`;
+    el.innerHTML = `<i class="pa-toast-icon ri-palette-line"></i><span>${msg}</span><button class="pa-toast-close" aria-label="Dismiss"><i class="ri-close-line"></i></button>`;
+    const dismiss = () => {
+      el.classList.add("removing");
+      setTimeout(() => el.remove(), 200);
+    };
+    el.querySelector(".pa-toast-close").addEventListener("click", dismiss);
+    wrap.appendChild(el);
+    setTimeout(() => {
+      if (el.parentElement) dismiss();
+    }, 2500);
+  }
+  togglePanel() {
+    const panel = $id("paCustomPanel");
+    const toggleBtn = $id("paCustomToggle") || document.querySelector(".pa-custom-toggle");
+    if (!panel) return;
+    if (panel.classList.contains("visible")) {
+      this.closePanel();
+    } else {
+      closePanels();
+      panel.classList.add("visible");
+      $id("paPanelOverlay")?.classList.add("visible");
+      toggleBtn?.classList.add("active");
+      document.body.style.overflow = "hidden";
+      this.syncUI();
+      activateTab("custom", "theme");
+      setTimeout(() => panel.querySelector("button, input, select")?.focus(), 100);
+    }
+  }
+  closePanel() {
+    $id("paCustomPanel")?.classList.remove("visible");
+    $id("paPanelOverlay")?.classList.remove("visible");
+    ($id("paCustomToggle") || document.querySelector(".pa-custom-toggle"))?.classList.remove("active");
+    document.body.style.overflow = "";
+    this.closeFontDropdown();
+  }
+  bindFontUploadEvents() {
+    const dropzone = $id("customFontUpload");
+    const fileInput = $id("customFontFileInput");
+    const list = $id("customFontUploadList");
+    if (!dropzone || !fileInput) return;
+    this.on(dropzone, "click", (e) => {
+      if (e.target.closest(".custom-font-upload-delete, .custom-font-upload-use")) return;
+      if (dropzone.classList.contains("is-full")) {
+        this.showCustomToast(`Maximum of ${MAX_CUSTOM_FONTS} custom fonts reached`);
+        return;
+      }
+      fileInput.click();
+    });
+    this.on(dropzone, "keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        dropzone.click();
+      }
+    });
+    this.on(fileInput, "change", (e) => this.handleFontUpload(e.target.files));
+    ["dragenter", "dragover"].forEach((evt) => {
+      this.on(dropzone, evt, (e) => {
+        e.preventDefault();
+        if (!dropzone.classList.contains("is-full")) dropzone.classList.add("dragover");
+      });
+    });
+    ["dragleave", "drop"].forEach((evt) => {
+      this.on(dropzone, evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("dragover");
+      });
+    });
+    this.on(dropzone, "drop", (e) => {
+      if (dropzone.classList.contains("is-full")) return;
+      const files = e.dataTransfer?.files;
+      if (files?.length) this.handleFontUpload(files);
+    });
+    if (list) {
+      this.on(list, "click", (e) => {
+        const useBtn = e.target.closest(".custom-font-upload-use");
+        const deleteBtn = e.target.closest(".custom-font-upload-delete");
+        if (useBtn) {
+          const id = useBtn.dataset.fontId;
+          this.settings.fontFamily = id;
+          this.applyFontFamily(id);
+          this.syncUI();
+          this.save();
+          this.showCustomToast(`Font \u2192 ${getFontById(id, this.settings.customFonts).name}`);
+        } else if (deleteBtn) {
+          this.removeCustomFont(deleteBtn.dataset.fontId);
+        }
+      });
+    }
+  }
+  bindEvents() {
+    registerPanel("paCustomPanel");
+    this.bindFontUploadEvents();
+    const toggleBtn = $id("paCustomToggle") || document.querySelector(".pa-custom-toggle");
+    this.on(toggleBtn, "click", () => this.togglePanel());
+    this.on($id("paCustomPanelClose"), "click", () => this.closePanel());
+    this.on($id("paCustomCancel"), "click", () => this.closePanel());
+    this.on($id("paPanelOverlay"), "click", (e) => {
+      if (e.target.id === "paPanelOverlay" && $id("paCustomPanel")?.classList.contains("visible")) {
+        this.closePanel();
+      }
+    });
+    this.on(document, "keydown", (e) => {
+      if (e.key === "Escape" && $id("paCustomPanel")?.classList.contains("visible")) this.closePanel();
+    });
+    document.querySelectorAll(".custom-theme-card").forEach((btn) => {
+      this.on(btn, "click", () => {
+        this.settings.theme = btn.dataset.theme;
+        this.applyTheme(this.settings.theme);
+        this.syncUI();
+        this.save();
+        this.showCustomToast(`Theme \u2192 ${this.settings.theme}`);
+      });
+    });
+    document.querySelectorAll(".custom-swatch").forEach((btn) => {
+      this.on(btn, "click", () => {
+        this.settings.accent = btn.dataset.color;
+        this.applyAccent(this.settings.accent);
+        this.syncUI();
+        this.save();
+        this.showCustomToast("Accent color updated");
+      });
+    });
+    const customPanel = $id("paCustomPanel");
+    this.on(customPanel, "click", (e) => {
+      const btn = e.target.closest(".custom-fs-btn");
+      if (!btn || !customPanel?.contains(btn)) return;
+      if (btn.dataset.size && VALID_FONT_SIZES.includes(btn.dataset.size)) {
+        this.settings.fontSize = btn.dataset.size;
+        this.applyFontSize(this.settings.fontSize);
+        this.syncUI();
+        this.save();
+        this.showCustomToast(`Font size \u2192 ${this.settings.fontSize}`);
+      } else if (btn.dataset.weight && VALID_FONT_WEIGHTS.includes(btn.dataset.weight)) {
+        this.settings.fontWeight = btn.dataset.weight;
+        this.applyFontWeight(this.settings.fontWeight);
+        this.syncUI();
+        this.save();
+        this.showCustomToast(`Font weight \u2192 ${this.settings.fontWeight}`);
+      } else if (btn.dataset.spacing && VALID_SPACINGS.includes(btn.dataset.spacing)) {
+        this.settings.cardSpacing = btn.dataset.spacing;
+        this.applyCardSpacing(this.settings.cardSpacing);
+        this.syncUI();
+        this.save();
+        this.showCustomToast(`Card spacing \u2192 ${this.settings.cardSpacing}`);
+      }
+    });
+    document.querySelectorAll(".custom-icon-size-card").forEach((btn) => {
+      this.on(btn, "click", () => {
+        if (!VALID_ICON_SIZES.includes(btn.dataset.iconSize)) return;
+        this.settings.iconSize = btn.dataset.iconSize;
+        this.applyIconSize(this.settings.iconSize);
+        this.syncUI();
+        this.save();
+        const label = btn.dataset.iconSize.charAt(0).toUpperCase() + btn.dataset.iconSize.slice(1);
+        this.showCustomToast(`Icon size \u2192 ${label}`);
+      });
+    });
+    const radiusLabels = { "0px": "None", "5px": "Small", "14px": "Medium", "25px": "Large" };
+    document.querySelectorAll(".custom-cr-btn").forEach((btn) => {
+      this.on(btn, "click", () => {
+        this.settings.cornerRadius = btn.dataset.radius;
+        this.applyCornerRadius(this.settings.cornerRadius);
+        this.syncUI();
+        this.save();
+        this.showCustomToast(`Corner radius \u2192 ${radiusLabels[this.settings.cornerRadius] || this.settings.cornerRadius}`);
+      });
+      this.on(btn, "keydown", (e) => {
+        const all = [...document.querySelectorAll(".custom-cr-btn")];
+        const idx = all.indexOf(btn);
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+          e.preventDefault();
+          all[(idx + 1) % all.length]?.focus();
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+          e.preventDefault();
+          all[(idx - 1 + all.length) % all.length]?.focus();
+        } else if (e.key === " " || e.key === "Enter") {
+          e.preventDefault();
+          btn.click();
+        }
+      });
+    });
+    this.on($id("customFontTrigger"), "click", () => this.toggleFontDropdown());
+    this.on($id("customFontSearch"), "input", (e) => this.buildFontList(e.target.value));
+    this.on(document, "click", (e) => {
+      const wrap = $id("customFontDropdownWrap");
+      if (wrap && !wrap.contains(e.target)) this.closeFontDropdown();
+    });
+    this.on($id("customFontDropdownWrap"), "keydown", (e) => {
+      if (e.key === "Escape") {
+        this.closeFontDropdown();
+        $id("customFontTrigger")?.focus();
+      }
+    });
+    this.on(this.systemMq, "change", () => {
+      if (this.settings.theme === "system") this.applyTheme("system");
+    });
+    document.querySelectorAll('.pa-panel-tab[data-panel="custom"]').forEach((btn) => {
+      this.on(btn, "click", () => {
+        activateTab("custom", btn.dataset.tab);
+        this.syncUI();
+      });
+    });
+    const observer = new MutationObserver(() => {
+      if ($id("paCustomPanel")?.classList.contains("visible")) this.syncUI();
+    });
+    const panel = $id("paCustomPanel");
+    if (panel) observer.observe(panel, { attributes: true, attributeFilter: ["class"] });
+    this._observer = observer;
+  }
+  destroy() {
+    this._observer?.disconnect();
+    super.destroy();
+  }
+};
+
+// client/utils/avatar-upload.ts
+async function uploadUserAvatar(file, opts = {}) {
+  if (!file) return null;
+  if (!handleFileValidation(file)) return null;
+  const previousImg = document.querySelector("#paUserDropdownAvatar .pa-avatar img");
+  const previousAvatarUrl = previousImg?.src || null;
+  const previewUrl = URL.createObjectURL(file);
+  previewUserAvatar(previewUrl);
+  opts.onPreview?.(previewUrl);
+  const avatarBtn = document.getElementById("paUserDropdownAvatar");
+  avatarBtn?.classList.add("is-uploading");
+  try {
+    const uploaded = await uploadCmsFileWithPreview(file, {
+      folder: "avatars",
+      page: "shell",
+      purpose: "user-avatar"
+    });
+    const data = await authService.updateProfile({ avatarUrl: uploaded.url });
+    const profile = data?.profile ?? data;
+    if (!profile || typeof profile !== "object") {
+      throw new Error("Server did not return an updated profile.");
+    }
+    applyUserDisplay({
+      fullName: profile.fullName,
+      username: profile.username,
+      email: profile.email,
+      role: profile.role,
+      avatarUrl: profile.avatarUrl
+    });
+    eventBus.emit("profile:updated", profile);
+    showToast("Avatar updated!", "success", 2200);
+    opts.onComplete?.(profile);
+    return profile;
+  } catch (err) {
+    if (previousAvatarUrl) {
+      previewUserAvatar(previousAvatarUrl);
+    } else {
+      try {
+        const profile = await authService.getProfile();
+        applyUserDisplay(profile);
+      } catch {
+      }
+    }
+    showToast(err?.message || "Could not save avatar.", "danger");
+    opts.onComplete?.(null);
+    return null;
+  } finally {
+    URL.revokeObjectURL(previewUrl);
+    avatarBtn?.classList.remove("is-uploading");
+  }
+}
+
+// client/modules/shell/mobileHeaderSearch.ts
+var MOBILE_SEARCH_MAX = 899;
+var abortController = null;
+var headerTop = null;
+function getSearchWrap() {
+  return document.querySelector(".pa-header-top-left .pa-search, .pa-header-right .pa-search");
+}
+function getSearchInput() {
+  return getSearchWrap()?.querySelector("input");
+}
+function isMobileSearchViewport() {
+  return window.innerWidth <= MOBILE_SEARCH_MAX;
+}
+function isMobileHeaderSearchOpen() {
+  return headerTop?.classList.contains("pa-header-top--search-open") ?? false;
+}
+function closeMobileHeaderSearch() {
+  if (!headerTop) return;
+  headerTop.classList.remove("pa-header-top--search-open");
+  document.documentElement.classList.remove("pa-mobile-search-active");
+  const toggle = document.getElementById("paMobileSearchToggle");
+  toggle?.setAttribute("aria-expanded", "false");
+}
+function openMobileHeaderSearch() {
+  const wrap = getSearchWrap();
+  if (!wrap || !headerTop || !isMobileSearchViewport()) return false;
+  document.getElementById("paNotifWrap")?.classList.remove("open");
+  headerTop.classList.add("pa-header-top--search-open");
+  document.documentElement.classList.add("pa-mobile-search-active");
+  const toggle = document.getElementById("paMobileSearchToggle");
+  toggle?.setAttribute("aria-expanded", "true");
+  requestAnimationFrame(() => getSearchInput()?.focus());
+  return true;
+}
+function initMobileHeaderSearch() {
+  abortController?.abort();
+  abortController = new AbortController();
+  const { signal } = abortController;
+  headerTop = document.querySelector(".pa-header-top");
+  const searchWrap = getSearchWrap();
+  const headerTopRight = document.querySelector(".pa-header-top-right");
+  if (!headerTop || !searchWrap || !headerTopRight) {
+    headerTop = null;
+    return;
+  }
+  closeMobileHeaderSearch();
+  let toggle = document.getElementById("paMobileSearchToggle");
+  if (!toggle) {
+    toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.id = "paMobileSearchToggle";
+    toggle.className = "pa-mobile-search-toggle";
+    toggle.setAttribute("aria-label", "Open search");
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-controls", searchWrap.id || "paSearchWrap");
+    toggle.innerHTML = '<i class="ri-search-line" aria-hidden="true"></i>';
+    headerTopRight.insertBefore(toggle, headerTopRight.firstChild);
+  }
+  let dismiss = searchWrap.querySelector(".pa-mobile-search-dismiss");
+  if (!dismiss) {
+    dismiss = document.createElement("button");
+    dismiss.type = "button";
+    dismiss.className = "pa-mobile-search-dismiss";
+    dismiss.setAttribute("aria-label", "Close search");
+    dismiss.innerHTML = '<i class="ri-close-line" aria-hidden="true"></i>';
+    searchWrap.appendChild(dismiss);
+  }
+  toggle.addEventListener("click", () => {
+    if (isMobileHeaderSearchOpen()) closeMobileHeaderSearch();
+    else openMobileHeaderSearch();
+  }, { signal });
+  dismiss.addEventListener("click", (e) => {
+    e.preventDefault();
+    closeMobileHeaderSearch();
+  }, { signal });
+  window.addEventListener("resize", () => {
+    if (!isMobileSearchViewport()) closeMobileHeaderSearch();
+  }, { signal });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !isMobileHeaderSearchOpen()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeMobileHeaderSearch();
+  }, { signal, capture: true });
+}
+
+// client/modules/shell/roleAccessModal.ts
+var BRIEFING_VERSION = "v1";
+var STORAGE_PREFIX = "pa_role_access_briefing";
+var ROLE_BRIEFINGS = {
+  editor: {
+    title: "Editor account",
+    subtitle: "You can manage portfolio content and update selected settings.",
+    icon: "ri-edit-box-line",
+    allowed: [
+      "View every dashboard and content page",
+      "Create, edit, and delete projects, media, blog posts, and other CMS data",
+      "Moderate blog comments and likes on the Comments & Likes page",
+      "Update General, Notifications, Profile, and Security settings",
+      "Use appearance and customization options"
+    ],
+    restricted: [
+      "User management or adding new staff accounts",
+      "System settings and database tools",
+      "Admin-only sidebar links stay hidden for your role"
+    ]
+  },
+  viewer: {
+    title: "Viewer account",
+    subtitle: "Your access is read-only across the portfolio dashboard.",
+    icon: "ri-eye-line",
+    allowed: [
+      "View dashboard stats and all content pages",
+      "Browse projects, media, messages, and other records",
+      "Update Notifications, Profile, and Security settings",
+      "Use appearance and customization options"
+    ],
+    restricted: [
+      "Create, edit, or delete any content or records",
+      "Access the Comments & Likes moderation page",
+      "Dashboard add actions, bulk actions, and edit panels",
+      "Changing General site settings (view only)",
+      "User management and system settings"
+    ]
+  }
+};
+var bindingsReady = false;
+function storageKey(userId, role) {
+  return `${STORAGE_PREFIX}_${BRIEFING_VERSION}_${userId}_${role}`;
+}
+function hasSeenBriefing(userId, role) {
+  try {
+    return localStorage.getItem(storageKey(userId, role)) === "1";
+  } catch {
+    return false;
+  }
+}
+function markBriefingSeen(userId, role) {
+  try {
+    localStorage.setItem(storageKey(userId, role), "1");
+  } catch {
+  }
+}
+function formatRoleLabel(role) {
+  return (role || "staff").replace(/_/g, " ");
+}
+function renderList(items, variant) {
+  return items.map((item) => `<li class="pa-role-access-item pa-role-access-item--${variant}">
+      <i class="${variant === "allowed" ? "ri-check-line" : "ri-close-line"}" aria-hidden="true"></i>
+      <span>${item}</span>
+    </li>`).join("");
+}
+function ensureModalInDom() {
+  if ($id("paRoleAccessOverlay")) return;
+  const overlay = document.createElement("div");
+  overlay.className = "pa-role-access-overlay";
+  overlay.id = "paRoleAccessOverlay";
+  overlay.hidden = true;
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-labelledby", "paRoleAccessTitle");
+  overlay.innerHTML = `
     <div class="pa-role-access-box">
       <div class="pa-role-access-head">
         <div class="pa-role-access-icon" id="paRoleAccessIcon" aria-hidden="true">
@@ -84,8 +1148,1228 @@ import{a as We,b as Ge,c as Ve,d as Ke,e as Ye,f as Xe,g as at}from"./chunks/chu
         <p class="pa-role-access-note">These limits are enforced in the sidebar, settings, and API. To request a role change, open Settings \u2192 Security and use the "Request role update" form.</p>
         <button type="button" class="pa-btn pa-btn-primary w-100" id="paRoleAccessOk">Got it</button>
       </div>
-    </div>`,document.body.appendChild(t)}function Xt(){if(pt)return;pt=!0;let t=i("paRoleAccessOverlay"),e=i("paRoleAccessOk");if(!t||!e)return;let s=()=>{t.classList.remove("visible"),t.hidden=!0,document.body.classList.remove("pa-role-access-open"),t.dataset.userId="",t.dataset.role=""};e.addEventListener("click",()=>{let o=t.dataset.userId,a=t.dataset.role;o&&a&&Vt(o,a),s()}),t.addEventListener("click",o=>{o.target===t&&s()}),document.addEventListener("keydown",o=>{o.key==="Escape"&&t.classList.contains("visible")&&s()})}function Jt(t){let e=ht[t];if(!e)return;let s=i("paRoleAccessIcon"),o=i("paRoleAccessEyebrow"),a=i("paRoleAccessTitle"),n=i("paRoleAccessSubtitle"),r=i("paRoleAccessAllowed"),l=i("paRoleAccessRestricted");s&&(s.innerHTML=`<i class="${e.icon}"></i>`),o&&(o.textContent=`${Kt(t)} access`),a&&(a.textContent=e.title),n&&(n.textContent=e.subtitle),r&&(r.innerHTML=mt(e.allowed,"allowed")),l&&(l.innerHTML=mt(e.restricted,"restricted"))}function Qt(t,e){Yt(),Xt();let s=i("paRoleAccessOverlay");s&&(Jt(e),s.dataset.userId=t,s.dataset.role=e,s.hidden=!1,s.classList.add("visible"),document.body.classList.add("pa-role-access-open"),i("paRoleAccessOk")?.focus())}async function Ae(t=null){if(typeof window>"u"||window.location.pathname.includes("/login"))return;let e=t?.id,s=t?.role;if(!s||!e)try{let o=await h.session();if(e=e||o?.user?.id,!s){let a=await h.getProfile().catch(()=>null);s=a?.role||o?.user?.role,e=e||a?.id}}catch{return}!e||!s||!ht[s]||Gt(e,s)||requestAnimationFrame(()=>{Qt(e,s)})}var gt="paElevationBanner",Q=null;function Zt(){Q&&(clearTimeout(Q),Q=null)}function es(t){try{return new Date(t).toLocaleString(void 0,{dateStyle:"medium",timeStyle:"short"})}catch{return t}}async function ts(){try{let e=(await h.session())?.user;e&&(L(e),M(e.role,e.capabilities),I(e.capabilities))}catch{}Z()}function Z(){Zt();let t=E(),e=document.querySelector(".pa-main");if(!e)return;let s=i(gt);if(!t.isElevated||!t.elevatedUntil){s?.remove();return}let o=s;o||(o=document.createElement("div"),o.id=gt,o.className="pa-elevation-banner",o.setAttribute("role","status"),e.insertBefore(o,e.firstChild)),o.innerHTML=`<i class="ri-shield-check-line" aria-hidden="true"></i>
-    <span>Temporary <strong>editor</strong> role active until <strong>${es(t.elevatedUntil)}</strong>, then your account reverts automatically.</span>`;let a=new Date(t.elevatedUntil).getTime()-Date.now();a>0&&a<1440*60*1e3&&(Q=setTimeout(()=>{ts()},a+500))}var P=null,ee=null,yt=!1;function bt(){return document.querySelector(".pa-header-top-left .pa-global-search input, .pa-header-top .pa-global-search input, .pa-header-top-left .pa-search input")}function ss(){if(!ee)return null;let t=ee.closest(".pa-search");if(!t)return null;let e=t.querySelector(".pa-global-search-results");return e||(e=document.createElement("div"),e.className="pa-global-search-results",e.setAttribute("role","listbox"),e.hidden=!0,t.appendChild(e)),P=e,e}function as(t){let e=ss();if(e){if(!t.length){e.innerHTML='<div class="pa-global-search-empty">No matches</div>',e.hidden=!1;return}e.innerHTML=t.map(s=>`<a class="pa-global-search-item" role="option" href="${s.href}">
-        <span class="pa-global-search-item-title">${s.title}</span>
-        <span class="pa-global-search-item-meta">${s.type}${s.subtitle?` \xB7 ${s.subtitle}`:""}</span>
-      </a>`).join(""),e.hidden=!1}}async function os(t){let e=t.trim();if(e.length<2){P&&(P.hidden=!0);return}try{let s=await fetch(`/api/search?q=${encodeURIComponent(e)}&limit=12`,{credentials:"same-origin"});if(!s.ok)return;let o=await s.json();as(o.results||[])}catch{}}var vt=st(t=>{os(t)},280);function wt(){let t=document.querySelector(".pa-header-top-left");if(!t||t.querySelector(".pa-search input"))return;let e=document.createElement("div");e.id="paGlobalSearchWrap",e.className="pa-search pa-global-search",e.innerHTML='<i class="ri-search-line" aria-hidden="true"></i><input type="search" placeholder="Search CMS\u2026" aria-label="Search CMS">',t.appendChild(e)}function is(){yt||(yt=!0,document.addEventListener("click",t=>{let e=t.target;!ee?.closest(".pa-search")?.contains(e)&&P&&!P.contains(e)&&(P.hidden=!0)}))}function At(t){ee=t,t.dataset.paGlobalSearchBound!=="1"&&(t.dataset.paGlobalSearchBound="1",t.setAttribute("autocomplete","off"),t.addEventListener("input",()=>vt(t.value||"")),t.addEventListener("focus",()=>{(t.value||"").trim().length>=2&&vt(t.value||"")}))}function ns(){return wt(),bt()}function Se(){let t=ns();return t?(At(t),t.focus(),!0):!1}function St(){wt(),is();let t=bt();t&&At(t)}var rs=["Projects","Categories","Tags","Technologies","Tool Categories","Tools","Media Library","Testimonials","Blog Posts","Blog Categories","Experience","Dashboard","Contact Messages","Recent Activities","Settings","Users","Access Requests","Comments & Likes"],te=class extends G{constructor(){super({name:"Shell"}),this._sessionExpiryTimer=null,this.customization=new X,this.addUser=new Y({on:this.on.bind(this),closeUserMenu:()=>{this._userMenuWrap?.classList.remove("open"),i("paUserMenu")?.setAttribute("aria-expanded","false")}})}async init(){D(),this.bindEvents(),this.addUser.bindEvents(),this.onBus("profile:updated",e=>{L(e),M(e?.role),this.addUser.setProfileRole(e?.role)}),await Promise.all([this.loadUserSession(),this.customization.init(),B({force:!0})]),me(),q(),K(),V(),St()}async loadUserSession(){try{let{user:e,sessionExpiresAt:s}=await h.session();if(!e)return;this.scheduleSessionExpiry(s);try{let o=await h.getProfile();L({fullName:o.fullName,username:o.username,email:o.email||e.email,role:o.role||e.role,avatarUrl:o.avatarUrl}),M(o.role||e.role,e.capabilities),Z(),b.reconcileRecentActivitiesScope({user:{id:o.id||e.id,capabilities:e.capabilities}}),this.addUser.setProfileRole(o.role||e.role),Ae({id:o.id||e.id,role:o.role||e.role})}catch{L(e),M(e.role,e.capabilities),Z(),b.reconcileRecentActivitiesScope({user:e}),this.addUser.setProfileRole(e.role),Ae({id:e.id,role:e.role})}}catch(e){console.warn("[Shell] session load failed:",e)}}scheduleSessionExpiry(e){if(this._sessionExpiryTimer&&(window.clearTimeout(this._sessionExpiryTimer),this._sessionExpiryTimer=null),!e)return;let s=new Date(e).getTime()-Date.now();if(s<=0){this.expireSessionNow();return}this._sessionExpiryTimer=window.setTimeout(()=>{this.expireSessionNow()},s)}async expireSessionNow(){try{await h.logout()}catch{}window.location.assign(`${re()}?session=expired`)}bindEvents(){let e=i("paSidebar"),s=i("paSidebarOverlay"),o=i("paMobileToggle"),a=()=>{e?.classList.remove("mobile-open"),s?.classList.remove("visible")};this._closeMobileSidebar=a,this.on(o,"click",()=>{e?.classList.add("mobile-open"),s?.classList.add("visible")}),this.on(s,"click",a);let n=c=>{if(c.getAttribute("href")==="#")return;document.querySelectorAll(".pa-nav-subitem").forEach(U=>U.classList.remove("active")),document.querySelectorAll(".pa-nav-toggle").forEach(U=>U.classList.remove("active")),c.classList.add("active");let f=c.dataset.nav;f&&!rs.includes(f)&&g(`"${f}" section is not implemented in this demo`,"info"),a()};document.querySelectorAll(".pa-nav-subitem[data-nav], .pa-nav-subitem[data-settings-tab]").forEach(c=>{this.on(c,"click",m=>{c.getAttribute("href")==="#"&&m.preventDefault(),n(c)})});let r=i("paUserMenuWrap"),l=i("paUserMenu");this._userMenuWrap=r,l&&r&&(this.on(l,"click",c=>{c.stopPropagation();let m=r.classList.toggle("open");l.setAttribute("aria-expanded",m?"true":"false"),m&&p?.classList.remove("open")}),this.on(l,"keydown",c=>{if(c.key==="Enter"||c.key===" "){c.preventDefault();let m=r.classList.toggle("open");l.setAttribute("aria-expanded",m?"true":"false")}})),this.bindHeaderAvatarUpload();let d=i("paUserDropdownLogout");d&&this.on(d,"click",c=>{c.stopPropagation(),r?.classList.remove("open"),l?.setAttribute("aria-expanded","false"),this.handleLogout()});let u=i("paLogoutBtn");u&&this.on(u,"click",()=>this.handleLogout());let p=i("paNotifWrap"),ne=i("paNotifBtn");if(this._notifWrap=p,ne&&p){this.on(ne,"click",m=>{m.stopPropagation();let f=!p.classList.contains("open");p.classList.toggle("open"),p.classList.contains("open")&&(r?.classList.remove("open"),l?.setAttribute("aria-expanded","false"),f&&B({force:!0}))}),this.on(ne,"keydown",m=>{if(m.key==="Enter"||m.key===" "){m.preventDefault();let f=!p.classList.contains("open");p.classList.toggle("open"),f&&B({force:!0})}}),this.on(i("paNotifClearBtn"),"click",m=>{if(m.stopPropagation(),!E().canClearAllNotifications){g("You do not have permission to clear notifications.","warning",2200);return}ze().then(()=>{g("Notifications cleared","info",1800)}).catch(f=>{g(f?.message||"Could not clear notifications.","danger",2200)})});let c=i("paNotifList");c&&this.on(c,"click",m=>{let f=m.target.closest("[data-notif-id]");if(!f)return;let U=f.dataset.notifId,_e=f.dataset.notifLink;je(U).then(()=>{_e&&(window.location.href=_e)})})}this.onBus("notifications:updated",()=>{me()}),this.onBus("storage:invalidated",c=>{(c==="pa_notifications"||c==="pa_recent_activities")&&B({silent:!0})}),this.on(document,"click",c=>{p&&!p.contains(c.target)&&p.classList.remove("open"),r&&!r.contains(c.target)&&(r.classList.contains("pa-user-menu--locked")||(r.classList.remove("open"),l?.setAttribute("aria-expanded","false"))),c.target.closest(".pa-card-actions, .pa-lv-more-wrap, .pa-lv-actions, .pa-cat-card__list-actions, .pa-cat-card__footer-more, .pa-proj-card__head-more, .pa-proj-card__list-more, .pa-proj-card__list-actions, .pa-media-card__thumb-more, .pa-media-card__footer-more, .pa-media-card__list-more, .pa-media-card__list-actions")||he()}),this.on(document,"keydown",c=>{(c.metaKey||c.ctrlKey)&&c.key?.toLowerCase()==="k"&&(c.preventDefault(),window.innerWidth<=899?we()||Se():Se()),c.key==="Escape"&&(J()?C():Oe()?qe():i("paBulkConfirmOverlay")?.classList.contains("visible")?R.emit("bulk-confirm:close"):pe()?A():(he(),p?.classList.remove("open"),r?.classList.remove("open"),l?.setAttribute("aria-expanded","false"),a())),c.key?.toLowerCase()==="n"&&!pe()&&!document.activeElement.matches("input, textarea, select, [contenteditable]")&&R.emit("shortcut:new-item",{page:Te})})}bindHeaderAvatarUpload(){let e=i("paUserDropdownAvatar"),s=this._userMenuWrap||i("paUserMenuWrap"),o=i("paUserMenu");if(!e)return;let a=i("paHeaderAvatarInput");a||(a=document.createElement("input"),a.type="file",a.id="paHeaderAvatarInput",a.accept="image/png,image/jpeg,image/webp",a.hidden=!0,document.body.appendChild(a));let n=()=>{s?.classList.add("pa-user-menu--locked","open"),o?.setAttribute("aria-expanded","true")},r=(l=!1)=>{s?.classList.remove("pa-user-menu--locked"),l&&(s?.classList.remove("open"),o?.setAttribute("aria-expanded","false"))};this.on(e,"click",l=>{l.preventDefault(),l.stopPropagation(),n(),a.click()}),this.on(a,"cancel",()=>{r(!1),a.value=""}),this.on(window,"focus",()=>{s?.classList.contains("pa-user-menu--locked")&&window.setTimeout(()=>{!a.files?.length&&!e.classList.contains("is-uploading")&&r(!1)},280)}),this.on(a,"change",async l=>{let d=l.target.files?.[0];if(!d){r(!1),l.target.value="";return}n(),await ct(d,{onComplete:u=>r(!!u)}),l.target.value=""})}handleLogout(){He(async()=>{g("Logging out...","info",1500);try{await h.logout()}catch(e){console.warn("[Shell] logout failed:",e)}try{await b.clearPersistentCache()}catch(e){console.warn("[Shell] cache clear failed:",e)}window.location.href=re()})}destroy(){this.customization.destroy(),super.destroy()}};var ls=[["/settings","settings"],["/tool-categories","tools"],["/technologies","tools"],["/tools","tools"],["/blog-categories","content"],["/blog-engagement","content"],["/blog-tags","content"],["/blog-post","content"],["/testimonials","content"],["/experience","content"],["/media-library","content"],["/project-technologies","projects"],["/project-tags","projects"],["/project-categories","projects"],["/categories","projects"],["/tags","projects"],["/projects","projects"],["/recent-activities","home"],["/contact-messages","home"],["/access-requests","home"],["/users","home"]],cs=[...ls].sort((t,e)=>e[0].length-t[0].length);function ds(t=window.location.pathname){if(t==="/"||t==="")return"home";for(let[e,s]of cs)if(t.includes(e))return s;return"home"}function us(t){return document.querySelector(`.pa-nav-group[data-nav-group="${t}"]`)}function O(){let t=ds();document.querySelectorAll(".pa-rail-btn[data-rail-target]").forEach(e=>{e.classList.toggle("active",e.dataset.railTarget===t)})}function ps(t,e){t&&(t.classList.add("pa-nav-anim-ready"),t.classList.toggle("open",e),t.querySelector(":scope > .pa-nav-parent-row .pa-nav-toggle")?.setAttribute("aria-expanded",e?"true":"false"))}function ms(t){let e=us(t);if(!e)return;if(et()){if(document.getElementById("paNavFlyout")?.classList.contains("visible")&&e.classList.contains("flyout-open")){fe();return}Ze(e);return}fe();let s=!e.classList.contains("open");ps(e,s),s&&e.scrollIntoView({block:"nearest",behavior:"smooth"})}var Lt=!1;function _t(){O(),!Lt&&(Lt=!0,document.querySelectorAll(".pa-rail-btn[data-rail-target]").forEach(t=>{t.addEventListener("click",e=>{e.preventDefault();let s=t.dataset.railTarget;s&&(ms(s),O())})}),window.addEventListener("popstate",O))}var hs=[["/tool-categories","Tool Categories"],["/recent-activities","Recent Activities"],["/access-requests","Access Requests"],["/users","Users"],["/contact-messages","Contact Messages"],["/media-library","Media Library"],["/technologies","Technologies"],["/blog-categories","Blog Categories"],["/project-categories","Project Categories"],["/categories","Project Categories"],["/project-technologies","Project Technologies"],["/project-tags","Project Tags"],["/blog-tags","Blog Tags"],["/blog-engagement","Comments & Likes"],["/blog-post","Blog Posts"],["/testimonials","Testimonials"],["/experience","Experience"],["/tags","Project Tags"],["/projects","Projects"],["/settings","Settings"],["/tools","Tools"]],fs=[...hs].sort((t,e)=>e[0].length-t[0].length);function gs(t=window.location.pathname){if(t==="/"||t==="")return"Dashboard";for(let[e,s]of fs)if(t.includes(e))return s;return null}function se(){let t=gs();if(t){if(document.querySelectorAll(".pa-nav-subitem[data-nav]").forEach(e=>{e.classList.toggle("active",e.dataset.nav===t)}),t==="Settings"&&window.location.pathname.includes("/settings")){let e=Ee();document.querySelectorAll(".pa-nav-subitem[data-settings-tab]").forEach(s=>{s.classList.toggle("active",s.dataset.settingsTab===e)})}else document.querySelectorAll(".pa-nav-subitem[data-settings-tab]").forEach(e=>{e.classList.remove("active")});tt(),O()}}var Et=!1;function ys(){let t=typeof window.__paWarmPrefetchPath=="function"?window.__paWarmPrefetchPath:null;t&&document.querySelectorAll(".pa-nav-subitem[href], .pa-logo-link[href]").forEach(e=>{e.addEventListener("pointerenter",()=>{let s=e.getAttribute("href");s&&t(s)},{passive:!0})})}function Ct(){se(),Et||(window.addEventListener("popstate",se),ys(),Et=!0)}async function vs(){let t=x();if(t)return t;let s=(typeof window<"u"?window.__paPrefetch:null)?.appearance_settings_v2;if(s&&typeof s.then=="function")try{let n=await s;if(n)return T(n),n}catch{}let o=await fetch("/api/appearance/public",{method:"GET",credentials:"same-origin",headers:{Accept:"application/json"}});if(!o.ok)return null;let a=await o.json();return a&&T(a),a}async function Tt(){try{let t=x();t&&y(t);let e=await vs();e&&y(e);let{updateFaviconFromAppearance:s}=await import("./chunks/favicon-7AQ5356Y.js");s(e||t||{})}catch{}}var Mt=.45,Pt=[.22,1,.36,1],Ft=it,ae="data-pa-collapse-bound",w="data-pa-collapse-animating";function kt(t){let e=t.style.height,s=t.style.overflow,o=t.style.display;t.style.height="auto",t.style.overflow="hidden",t.style.display="block";let a=t.scrollHeight;return t.style.height=e,t.style.overflow=s,t.style.display=o,a}function Ut(t){t.style.removeProperty("height"),t.style.removeProperty("max-height"),t.style.removeProperty("opacity"),t.style.removeProperty("overflow"),t.style.removeProperty("overflow-y"),t.style.removeProperty("pointer-events")}async function oe(t,e){if(t.classList.contains("pa-collapse-panel--dropdown")){t.classList.toggle("is-pa-collapse-open",e);return}if(nt()){t.classList.toggle("is-pa-collapse-open",e),Ut(t);return}if(t.classList.add("is-pa-collapse-animating"),t.style.overflow="hidden",e){let s=kt(t);t.style.opacity="0",t.style.height="0px";let o={height:["0px",`${s}px`],opacity:[0,1]};await Ft(t,o,{duration:Mt,easing:Pt}).finished}else{let o={height:[`${t.getBoundingClientRect().height||kt(t)}px`,"0px"],opacity:[1,0]};await Ft(t,o,{duration:Mt,easing:Pt}).finished}Ut(t),t.classList.remove("is-pa-collapse-animating"),t.classList.toggle("is-pa-collapse-open",e)}function bs(t,e){return e||t.querySelector("[data-pa-collapse-panel], .pa-collapse-panel")}function Rt(t,e,s){let o=t.classList.contains(e);return s?o:!o}function Dt(t,e,s,o){s?t.classList.toggle(e,o):t.classList.toggle(e,!o),t.dataset.paCollapseOpen=o?"true":"false"}async function ws(t,e,s,o){if(t.getAttribute(w)!=="1"){t.setAttribute(w,"1"),Dt(t,s,o,!0);try{await oe(e,!0),e.classList.add("is-pa-collapse-reveal")}finally{t.removeAttribute(w)}}}async function As(t,e,s,o){if(t.getAttribute(w)!=="1"){t.setAttribute(w,"1"),e.classList.remove("is-pa-collapse-reveal");try{await oe(e,!1),Dt(t,s,o,!1)}finally{t.removeAttribute(w)}}}function xt(t){if(t.getAttribute(ae)==="1")return;let e=bs(t),s=t.querySelector("[data-pa-collapse-trigger], .pa-collapse-trigger");if(!e||!s)return;t.setAttribute(ae,"1"),t.classList.add("pa-collapse-root"),e.classList.add("pa-collapse-panel"),e.hasAttribute("data-pa-collapse-panel")||e.setAttribute("data-pa-collapse-panel","");let o=t.dataset.paCollapseClass||"is-collapsed",a=t.hasAttribute("data-pa-collapse-inverted"),n=Rt(t,o,a);e.classList.toggle("is-pa-collapse-open",n),n&&e.classList.add("is-pa-collapse-reveal"),s.addEventListener("click",r=>{s.tagName!=="BUTTON"&&s.tagName!=="A"&&r.preventDefault(),Rt(t,o,a)?As(t,e,o,a).then(()=>{s.setAttribute("aria-expanded","false")}):ws(t,e,o,a).then(()=>{s.setAttribute("aria-expanded","true")})})}function Ss(t){if(t.getAttribute(ae)==="1")return;let e=t.querySelector("summary"),s=t.querySelector("[data-pa-collapse-panel], .pa-collapse-panel")??(e?.nextElementSibling instanceof HTMLElement?e.nextElementSibling:null);!e||!s||(t.setAttribute(ae,"1"),t.classList.add("pa-collapse-details","pa-collapse-root"),s.classList.add("pa-collapse-panel"),s.hasAttribute("data-pa-collapse-panel")||s.setAttribute("data-pa-collapse-panel",""),s.classList.toggle("is-pa-collapse-open",t.open),t.open&&s.classList.add("is-pa-collapse-reveal"),e.addEventListener("click",o=>{o.preventDefault(),t.getAttribute(w)!=="1"&&(t.open?(async()=>{t.setAttribute(w,"1"),s.classList.remove("is-pa-collapse-reveal");try{await oe(s,!1),t.removeAttribute("open")}finally{t.removeAttribute(w)}})():(async()=>{t.setAttribute(w,"1"),t.setAttribute("open","");try{await oe(s,!0),s.classList.add("is-pa-collapse-reveal")}finally{t.removeAttribute(w)}})())}))}function Ls(t){return typeof t.querySelectorAll=="function"}function Bt(t){t instanceof HTMLElement&&t.matches("[data-pa-collapse]")&&xt(t),Ls(t)&&(t.querySelectorAll("[data-pa-collapse]").forEach(xt),t.querySelectorAll('details:not([data-pa-collapse="off"])').forEach(Ss))}var It=!1,Nt=null;function _s(){It||typeof document>"u"||(It=!0,Nt=new MutationObserver(t=>{for(let e of t)e.addedNodes.forEach(s=>{s instanceof HTMLElement&&Bt(s)})}),Nt.observe(document.documentElement,{childList:!0,subtree:!0}))}function qt(t=document){Bt(t),_s()}var Ht=new Set(["login","forgot-password","reset-password"]),Es=window.__paPrefetchConfig?.PAGE_KEYS||{};async function Cs(t){switch(t){case"dashboard":return(await import("./chunks/DashboardModule-KLBID42S.js")).DashboardModule;case"projects":return(await import("./chunks/ProjectsModule-PNJAZLV5.js")).ProjectsModule;case"categories":return(await import("./chunks/CategoriesModule-2YU4KDAR.js")).CategoriesModule;case"project-tags":case"tags":return(await import("./chunks/TagsModule-NIUFSW55.js")).TagsModule;case"project-technologies":return(await import("./chunks/ProjectTechnologiesModule-NS5A7XMJ.js")).ProjectTechnologiesModule;case"blog-tags":return(await import("./chunks/BlogTagsModule-VMFLEQN4.js")).BlogTagsModule;case"technologies":return(await import("./chunks/TechnologiesModule-KBYFOP4A.js")).TechnologiesModule;case"tool-categories":return(await import("./chunks/ToolCategoriesModule-KC7VJV73.js")).ToolCategoriesModule;case"blog-categories":return(await import("./chunks/BlogCategoriesModule-LAB6M2OH.js")).BlogCategoriesModule;case"tools":return(await import("./chunks/ToolsModule-SRX66GTR.js")).ToolsModule;case"media":return(await import("./chunks/MediaModule-P26NUHT3.js")).MediaModule;case"testimonials":return(await import("./chunks/TestimonialsModule-IB6AAUVA.js")).TestimonialsModule;case"blogposts":return(await import("./chunks/BlogModule-AQANPMQX.js")).BlogModule;case"experience":return(await import("./chunks/ExperienceModule-H5UE6LNW.js")).ExperienceModule;case"contact-messages":return(await import("./chunks/ContactMessagesModule-XXNV6ESB.js")).ContactMessagesModule;case"blog-engagement":return(await import("./chunks/BlogEngagementModule-2LC4HFZQ.js")).BlogEngagementModule;case"access-requests":return(await import("./chunks/AccessRequestsModule-2MEYUB75.js")).AccessRequestsModule;case"users":return(await import("./chunks/UsersModule-CG4D2SX4.js")).UsersModule;case"recent-activities":return(await import("./chunks/RecentActivitiesModule-CFMNOC5O.js")).RecentActivitiesModule;case"settings":return(await import("./chunks/SettingsModule-KSV2NATM.js")).SettingsModule;case"login":return(await import("./chunks/LoginModule-CS4EJST3.js")).LoginModule;case"forgot-password":return(await import("./chunks/ForgotPasswordModule-VCQA63LZ.js")).ForgotPasswordModule;case"reset-password":return(await import("./chunks/ResetPasswordModule-U2P2ERTD.js")).ResetPasswordModule;default:return null}}var F=null,k=null,$=null,Le=!1;function Ts(){Ve(),at(),Me(".pa-panel-tab").forEach(t=>{t instanceof HTMLElement&&t.addEventListener("click",()=>{N(t.dataset.panel,t.dataset.tab)})}),i("paPanelOverlay")?.addEventListener("click",t=>{t.target instanceof HTMLElement&&t.target.id==="paPanelOverlay"&&A()})}var ie=null;async function Ms(t){if(ie)return;let{QuickAddModule:e}=await import("./chunks/QuickAddModule-J6UOCFTF.js");ie=new e(t),ie.bindEvents()}async function Ps(t){await t.load(),S.end(),S.reset(),await new Promise(e=>{requestAnimationFrame(()=>{t.render(),t.bindEvents(),I(E()),e()})})}async function Fs(){k||(k=new te,await k.init().catch(t=>{console.warn("[main] shell init failed:",t)}))}function ks(){if(Le){q(),se();return}Le=!0,q(),Ct(),K(),_t(),V(),ut()}async function Us(t,e){document.documentElement.classList.add("pa-auth-route"),z(),D(),await Tt();let s=new t;await s.load(),s.render(),s.bindEvents(),F=s,window.__paDebug={pageModule:s,page:e}}async function Rs(t,e){S.mount(),S.begin("Loading your data\u2026");let s=Es[e];s?.length&&(await b.hydrateFromPersistentCache(s),b.prefetch(s)),z(),D();let o=new t,a=b.isBootstrapPending();await Fs(),await Ps(o),ot(),qt(),Ts(),e==="dashboard"&&Ms(o),ks(),F=o,window.__paDebug={pageModule:o,page:e},a&&b.waitForBootstrap().then(()=>{F===o&&typeof o.render=="function"&&(o.render(),I(E()))})}async function xs(){De(),rt();let t=Ce(),e=await Cs(t);if(!e){console.warn(`[main] no module registered for page "${t}"`),S.reset();return}try{Ht.has(t)?await Us(e,t):await Rs(e,t)}catch(s){throw Ht.has(t)||(S.end(),S.reset()),s}}function Ot(){if(F?.destroy)try{F.destroy()}catch(t){console.warn("[main] page teardown failed:",t)}F=null,ie=null,k&&(k.destroy(),k=null,Le=!1),z(),S.reset(),A()}function Is(){return $||($=(async()=>{Ot(),window.__paBooted=!0,typeof window.__paStartPrefetch=="function"&&window.__paStartPrefetch(window.location.pathname),await xs()})().catch(t=>{throw window.__paBooted=!1,S.reset(),console.error("[main] fatal error during boot:",t),t}).finally(()=>{$=null}),$)}window.__paBootPortfolioApp=Is;window.__paTeardownPortfolioApp=Ot;export{Is as bootPortfolioApp,Ot as teardownPortfolioApp};
+    </div>`;
+  document.body.appendChild(overlay);
+}
+function bindModalEvents() {
+  if (bindingsReady) return;
+  bindingsReady = true;
+  const overlay = $id("paRoleAccessOverlay");
+  const okBtn = $id("paRoleAccessOk");
+  if (!overlay || !okBtn) return;
+  const close = () => {
+    overlay.classList.remove("visible");
+    overlay.hidden = true;
+    document.body.classList.remove("pa-role-access-open");
+    overlay.dataset.userId = "";
+    overlay.dataset.role = "";
+  };
+  okBtn.addEventListener("click", () => {
+    const userId = overlay.dataset.userId;
+    const role = overlay.dataset.role;
+    if (userId && role) markBriefingSeen(userId, role);
+    close();
+  });
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overlay.classList.contains("visible")) close();
+  });
+}
+function populateModal(role) {
+  const briefing = ROLE_BRIEFINGS[role];
+  if (!briefing) return;
+  const iconWrap = $id("paRoleAccessIcon");
+  const eyebrow = $id("paRoleAccessEyebrow");
+  const title = $id("paRoleAccessTitle");
+  const subtitle = $id("paRoleAccessSubtitle");
+  const allowed = $id("paRoleAccessAllowed");
+  const restricted = $id("paRoleAccessRestricted");
+  if (iconWrap) iconWrap.innerHTML = `<i class="${briefing.icon}"></i>`;
+  if (eyebrow) eyebrow.textContent = `${formatRoleLabel(role)} access`;
+  if (title) title.textContent = briefing.title;
+  if (subtitle) subtitle.textContent = briefing.subtitle;
+  if (allowed) allowed.innerHTML = renderList(briefing.allowed, "allowed");
+  if (restricted) restricted.innerHTML = renderList(briefing.restricted, "restricted");
+}
+function openModal(userId, role) {
+  ensureModalInDom();
+  bindModalEvents();
+  const overlay = $id("paRoleAccessOverlay");
+  if (!overlay) return;
+  populateModal(role);
+  overlay.dataset.userId = userId;
+  overlay.dataset.role = role;
+  overlay.hidden = false;
+  overlay.classList.add("visible");
+  document.body.classList.add("pa-role-access-open");
+  $id("paRoleAccessOk")?.focus();
+}
+async function maybeShowRoleAccessModal(profile = null) {
+  if (typeof window === "undefined") return;
+  if (window.location.pathname.includes("/login")) return;
+  let userId = profile?.id;
+  let role = profile?.role;
+  if (!role || !userId) {
+    try {
+      const session = await authService.session();
+      userId = userId || session?.user?.id;
+      if (!role) {
+        const loaded = await authService.getProfile().catch(() => null);
+        role = loaded?.role || session?.user?.role;
+        userId = userId || loaded?.id;
+      }
+    } catch {
+      return;
+    }
+  }
+  if (!userId || !role || !ROLE_BRIEFINGS[role]) return;
+  if (hasSeenBriefing(userId, role)) return;
+  requestAnimationFrame(() => {
+    openModal(userId, role);
+  });
+}
+
+// client/modules/shell/elevationBanner.ts
+var BANNER_ID = "paElevationBanner";
+var expiryTimer = null;
+function clearExpiryTimer() {
+  if (expiryTimer) {
+    clearTimeout(expiryTimer);
+    expiryTimer = null;
+  }
+}
+function formatUntil(iso) {
+  try {
+    return new Date(iso).toLocaleString(void 0, { dateStyle: "medium", timeStyle: "short" });
+  } catch {
+    return iso;
+  }
+}
+async function refreshSessionAfterExpiry() {
+  try {
+    const data = await authService.session();
+    const user = data?.user;
+    if (user) {
+      applyUserDisplay(user);
+      applyRoleBasedAccess(user.role, user.capabilities);
+      applyCapabilityGatedElements(user.capabilities);
+    }
+  } catch {
+  }
+  syncElevationBanner();
+}
+function syncElevationBanner() {
+  clearExpiryTimer();
+  const caps = getAccessCapabilities();
+  const main = document.querySelector(".pa-main");
+  if (!main) return;
+  const existing = $id(BANNER_ID);
+  if (!caps.isElevated || !caps.elevatedUntil) {
+    existing?.remove();
+    return;
+  }
+  let banner = existing;
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = BANNER_ID;
+    banner.className = "pa-elevation-banner";
+    banner.setAttribute("role", "status");
+    main.insertBefore(banner, main.firstChild);
+  }
+  banner.innerHTML = `<i class="ri-shield-check-line" aria-hidden="true"></i>
+    <span>Temporary <strong>editor</strong> role active until <strong>${formatUntil(caps.elevatedUntil)}</strong>, then your account reverts automatically.</span>`;
+  const ms = new Date(caps.elevatedUntil).getTime() - Date.now();
+  if (ms > 0 && ms < 24 * 60 * 60 * 1e3) {
+    expiryTimer = setTimeout(() => {
+      void refreshSessionAfterExpiry();
+    }, ms + 500);
+  }
+}
+
+// client/modules/shell/globalSearch.ts
+var listEl = null;
+var inputEl = null;
+var documentClickBound = false;
+function findHeaderSearchInput() {
+  return document.querySelector(
+    ".pa-header-top-left .pa-global-search input, .pa-header-top .pa-global-search input, .pa-header-top-left .pa-search input"
+  );
+}
+function ensureResultsList() {
+  if (!inputEl) return null;
+  const wrap = inputEl.closest(".pa-search");
+  if (!wrap) return null;
+  let panel = wrap.querySelector(".pa-global-search-results");
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.className = "pa-global-search-results";
+    panel.setAttribute("role", "listbox");
+    panel.hidden = true;
+    wrap.appendChild(panel);
+  }
+  listEl = panel;
+  return panel;
+}
+function renderResults(results) {
+  const panel = ensureResultsList();
+  if (!panel) return;
+  if (!results.length) {
+    panel.innerHTML = '<div class="pa-global-search-empty">No matches</div>';
+    panel.hidden = false;
+    return;
+  }
+  panel.innerHTML = results.map(
+    (item) => `<a class="pa-global-search-item" role="option" href="${item.href}">
+        <span class="pa-global-search-item-title">${item.title}</span>
+        <span class="pa-global-search-item-meta">${item.type}${item.subtitle ? ` \xB7 ${item.subtitle}` : ""}</span>
+      </a>`
+  ).join("");
+  panel.hidden = false;
+}
+async function runSearch(query) {
+  const q = query.trim();
+  if (q.length < 2) {
+    if (listEl) listEl.hidden = true;
+    return;
+  }
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=12`, {
+      credentials: "same-origin"
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    renderResults(data.results || []);
+  } catch {
+  }
+}
+var debouncedSearch = debounce((value) => {
+  void runSearch(value);
+}, 280);
+function ensureHeaderSearchInput() {
+  const left = document.querySelector(".pa-header-top-left");
+  if (!left || left.querySelector(".pa-search input")) return;
+  const wrap = document.createElement("div");
+  wrap.id = "paGlobalSearchWrap";
+  wrap.className = "pa-search pa-global-search";
+  wrap.innerHTML = '<i class="ri-search-line" aria-hidden="true"></i><input type="search" placeholder="Search CMS\u2026" aria-label="Search CMS">';
+  left.appendChild(wrap);
+}
+function bindDocumentDismiss() {
+  if (documentClickBound) return;
+  documentClickBound = true;
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!inputEl?.closest(".pa-search")?.contains(target) && listEl && !listEl.contains(target)) {
+      listEl.hidden = true;
+    }
+  });
+}
+function bindSearchInput(input) {
+  inputEl = input;
+  if (input.dataset.paGlobalSearchBound === "1") return;
+  input.dataset.paGlobalSearchBound = "1";
+  input.setAttribute("autocomplete", "off");
+  input.addEventListener("input", () => debouncedSearch(input.value || ""));
+  input.addEventListener("focus", () => {
+    if ((input.value || "").trim().length >= 2) debouncedSearch(input.value || "");
+  });
+}
+function getGlobalSearchInput() {
+  ensureHeaderSearchInput();
+  return findHeaderSearchInput();
+}
+function focusGlobalSearch() {
+  const input = getGlobalSearchInput();
+  if (!input) return false;
+  bindSearchInput(input);
+  input.focus();
+  return true;
+}
+function initGlobalSearch() {
+  ensureHeaderSearchInput();
+  bindDocumentDismiss();
+  const input = findHeaderSearchInput();
+  if (!input) return;
+  bindSearchInput(input);
+}
+
+// client/modules/shell/ShellModule.ts
+var KNOWN_NAV_LABELS = [
+  "Projects",
+  "Categories",
+  "Tags",
+  "Technologies",
+  "Tool Categories",
+  "Tools",
+  "Media Library",
+  "Testimonials",
+  "Blog Posts",
+  "Blog Categories",
+  "Experience",
+  "Dashboard",
+  "Contact Messages",
+  "Recent Activities",
+  "Settings",
+  "Users",
+  "Access Requests",
+  "Comments & Likes"
+];
+var ShellModule = class extends Module {
+  constructor() {
+    super({ name: "Shell" });
+    this._sessionExpiryTimer = null;
+    this.customization = new CustomizationModule();
+    this.addUser = new AddUserManager({
+      on: this.on.bind(this),
+      closeUserMenu: () => {
+        this._userMenuWrap?.classList.remove("open");
+        $id("paUserMenu")?.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
+  async init() {
+    initConfirmDialog();
+    this.bindEvents();
+    this.addUser.bindEvents();
+    this.onBus("profile:updated", (profile) => {
+      applyUserDisplay(profile);
+      applyRoleBasedAccess(profile?.role);
+      this.addUser.setProfileRole(profile?.role);
+    });
+    await Promise.all([
+      this.loadUserSession(),
+      this.customization.init(),
+      loadNotifications({ force: true })
+    ]);
+    renderNotifications();
+    initSettingsNav();
+    initSidebarGroupNav();
+    initSidebarCollapse();
+    initGlobalSearch();
+  }
+  async loadUserSession() {
+    try {
+      const { user, sessionExpiresAt } = await authService.session();
+      if (!user) return;
+      this.scheduleSessionExpiry(sessionExpiresAt);
+      try {
+        const profile = await authService.getProfile();
+        applyUserDisplay({
+          fullName: profile.fullName,
+          username: profile.username,
+          email: profile.email || user.email,
+          role: profile.role || user.role,
+          avatarUrl: profile.avatarUrl
+        });
+        applyRoleBasedAccess(profile.role || user.role, user.capabilities);
+        syncElevationBanner();
+        storage.reconcileRecentActivitiesScope({
+          user: { id: profile.id || user.id, capabilities: user.capabilities }
+        });
+        this.addUser.setProfileRole(profile.role || user.role);
+        void maybeShowRoleAccessModal({
+          id: profile.id || user.id,
+          role: profile.role || user.role
+        });
+      } catch {
+        applyUserDisplay(user);
+        applyRoleBasedAccess(user.role, user.capabilities);
+        syncElevationBanner();
+        storage.reconcileRecentActivitiesScope({ user });
+        this.addUser.setProfileRole(user.role);
+        void maybeShowRoleAccessModal({ id: user.id, role: user.role });
+      }
+    } catch (err) {
+      console.warn("[Shell] session load failed:", err);
+    }
+  }
+  scheduleSessionExpiry(sessionExpiresAt) {
+    if (this._sessionExpiryTimer) {
+      window.clearTimeout(this._sessionExpiryTimer);
+      this._sessionExpiryTimer = null;
+    }
+    if (!sessionExpiresAt) return;
+    const ms = new Date(sessionExpiresAt).getTime() - Date.now();
+    if (ms <= 0) {
+      void this.expireSessionNow();
+      return;
+    }
+    this._sessionExpiryTimer = window.setTimeout(() => {
+      void this.expireSessionNow();
+    }, ms);
+  }
+  async expireSessionNow() {
+    try {
+      await authService.logout();
+    } catch {
+    }
+    window.location.assign(`${getLoginPath()}?session=expired`);
+  }
+  bindEvents() {
+    const sidebar = $id("paSidebar");
+    const overlay = $id("paSidebarOverlay");
+    const toggle = $id("paMobileToggle");
+    const closeMobileSidebar = () => {
+      sidebar?.classList.remove("mobile-open");
+      overlay?.classList.remove("visible");
+    };
+    this._closeMobileSidebar = closeMobileSidebar;
+    this.on(toggle, "click", () => {
+      sidebar?.classList.add("mobile-open");
+      overlay?.classList.add("visible");
+    });
+    this.on(overlay, "click", closeMobileSidebar);
+    const handleNavSelection = (item) => {
+      const href = item.getAttribute("href");
+      if (href === "#") return;
+      document.querySelectorAll(".pa-nav-subitem").forEach((i) => i.classList.remove("active"));
+      document.querySelectorAll(".pa-nav-toggle").forEach((i) => i.classList.remove("active"));
+      item.classList.add("active");
+      const label = item.dataset.nav;
+      if (label && !KNOWN_NAV_LABELS.includes(label)) {
+        showToast(`"${label}" section is not implemented in this demo`, "info");
+      }
+      closeMobileSidebar();
+    };
+    document.querySelectorAll(".pa-nav-subitem[data-nav], .pa-nav-subitem[data-settings-tab]").forEach((item) => {
+      this.on(item, "click", (e) => {
+        if (item.getAttribute("href") === "#") e.preventDefault();
+        handleNavSelection(item);
+      });
+    });
+    const userMenuWrap = $id("paUserMenuWrap");
+    const userMenuBtn = $id("paUserMenu");
+    this._userMenuWrap = userMenuWrap;
+    if (userMenuBtn && userMenuWrap) {
+      this.on(userMenuBtn, "click", (e) => {
+        e.stopPropagation();
+        const isOpen = userMenuWrap.classList.toggle("open");
+        userMenuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        if (isOpen) notifWrap?.classList.remove("open");
+      });
+      this.on(userMenuBtn, "keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          const isOpen = userMenuWrap.classList.toggle("open");
+          userMenuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        }
+      });
+    }
+    this.bindHeaderAvatarUpload();
+    const userDropdownLogout = $id("paUserDropdownLogout");
+    if (userDropdownLogout) {
+      this.on(userDropdownLogout, "click", (e) => {
+        e.stopPropagation();
+        userMenuWrap?.classList.remove("open");
+        userMenuBtn?.setAttribute("aria-expanded", "false");
+        this.handleLogout();
+      });
+    }
+    const logoutBtn = $id("paLogoutBtn");
+    if (logoutBtn) {
+      this.on(logoutBtn, "click", () => this.handleLogout());
+    }
+    const notifWrap = $id("paNotifWrap");
+    const notifBtn = $id("paNotifBtn");
+    this._notifWrap = notifWrap;
+    if (notifBtn && notifWrap) {
+      this.on(notifBtn, "click", (e) => {
+        e.stopPropagation();
+        const opening = !notifWrap.classList.contains("open");
+        notifWrap.classList.toggle("open");
+        if (notifWrap.classList.contains("open")) {
+          userMenuWrap?.classList.remove("open");
+          userMenuBtn?.setAttribute("aria-expanded", "false");
+          if (opening) void loadNotifications({ force: true });
+        }
+      });
+      this.on(notifBtn, "keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          const opening = !notifWrap.classList.contains("open");
+          notifWrap.classList.toggle("open");
+          if (opening) void loadNotifications({ force: true });
+        }
+      });
+      this.on($id("paNotifClearBtn"), "click", (e) => {
+        e.stopPropagation();
+        if (!getAccessCapabilities().canClearAllNotifications) {
+          showToast("You do not have permission to clear notifications.", "warning", 2200);
+          return;
+        }
+        void clearNotifications().then(() => {
+          showToast("Notifications cleared", "info", 1800);
+        }).catch((err) => {
+          showToast(err?.message || "Could not clear notifications.", "danger", 2200);
+        });
+      });
+      const notifList = $id("paNotifList");
+      if (notifList) {
+        this.on(notifList, "click", (e) => {
+          const item = e.target.closest("[data-notif-id]");
+          if (!item) return;
+          const id = item.dataset.notifId;
+          const link = item.dataset.notifLink;
+          void markNotificationRead(id).then(() => {
+            if (link) window.location.href = link;
+          });
+        });
+      }
+    }
+    this.onBus("notifications:updated", () => {
+      renderNotifications();
+    });
+    this.onBus("storage:invalidated", (key) => {
+      if (key === "pa_notifications" || key === "pa_recent_activities") {
+        void loadNotifications({ silent: true });
+      }
+    });
+    this.on(document, "click", (e) => {
+      if (notifWrap && !notifWrap.contains(e.target)) notifWrap.classList.remove("open");
+      if (userMenuWrap && !userMenuWrap.contains(e.target)) {
+        if (!userMenuWrap.classList.contains("pa-user-menu--locked")) {
+          userMenuWrap.classList.remove("open");
+          userMenuBtn?.setAttribute("aria-expanded", "false");
+        }
+      }
+      if (!e.target.closest(".pa-card-actions, .pa-lv-more-wrap, .pa-lv-actions, .pa-cat-card__list-actions, .pa-cat-card__footer-more, .pa-proj-card__head-more, .pa-proj-card__list-more, .pa-proj-card__list-actions, .pa-media-card__thumb-more, .pa-media-card__footer-more, .pa-media-card__list-more, .pa-media-card__list-actions")) closeAllCardMenus();
+    });
+    this.on(document, "keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key?.toLowerCase() === "k") {
+        e.preventDefault();
+        if (window.innerWidth <= 899) {
+          if (!openMobileHeaderSearch()) focusGlobalSearch();
+        } else {
+          focusGlobalSearch();
+        }
+      }
+      if (e.key === "Escape") {
+        if (isMobileHeaderSearchOpen()) {
+          closeMobileHeaderSearch();
+        } else if (isConfirmOpen()) {
+          closeConfirm();
+        } else if ($id("paBulkConfirmOverlay")?.classList.contains("visible")) {
+          eventBus.emit("bulk-confirm:close");
+        } else if (anyPanelOpen()) {
+          closePanels();
+        } else {
+          closeAllCardMenus();
+          notifWrap?.classList.remove("open");
+          userMenuWrap?.classList.remove("open");
+          userMenuBtn?.setAttribute("aria-expanded", "false");
+          closeMobileSidebar();
+        }
+      }
+      if (e.key?.toLowerCase() === "n" && !anyPanelOpen() && !document.activeElement.matches("input, textarea, select, [contenteditable]")) {
+        eventBus.emit("shortcut:new-item", { page: PAGE });
+      }
+    });
+  }
+  bindHeaderAvatarUpload() {
+    const avatarBtn = $id("paUserDropdownAvatar");
+    const userMenuWrap = this._userMenuWrap || $id("paUserMenuWrap");
+    const userMenuBtn = $id("paUserMenu");
+    if (!avatarBtn) return;
+    let avatarInput = $id("paHeaderAvatarInput");
+    if (!avatarInput) {
+      avatarInput = document.createElement("input");
+      avatarInput.type = "file";
+      avatarInput.id = "paHeaderAvatarInput";
+      avatarInput.accept = "image/png,image/jpeg,image/webp";
+      avatarInput.hidden = true;
+      document.body.appendChild(avatarInput);
+    }
+    const lockMenu = () => {
+      userMenuWrap?.classList.add("pa-user-menu--locked", "open");
+      userMenuBtn?.setAttribute("aria-expanded", "true");
+    };
+    const unlockMenu = (closeAfter = false) => {
+      userMenuWrap?.classList.remove("pa-user-menu--locked");
+      if (closeAfter) {
+        userMenuWrap?.classList.remove("open");
+        userMenuBtn?.setAttribute("aria-expanded", "false");
+      }
+    };
+    this.on(avatarBtn, "click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      lockMenu();
+      avatarInput.click();
+    });
+    this.on(avatarInput, "cancel", () => {
+      unlockMenu(false);
+      avatarInput.value = "";
+    });
+    this.on(window, "focus", () => {
+      if (!userMenuWrap?.classList.contains("pa-user-menu--locked")) return;
+      window.setTimeout(() => {
+        if (!avatarInput.files?.length && !avatarBtn.classList.contains("is-uploading")) {
+          unlockMenu(false);
+        }
+      }, 280);
+    });
+    this.on(avatarInput, "change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) {
+        unlockMenu(false);
+        e.target.value = "";
+        return;
+      }
+      lockMenu();
+      await uploadUserAvatar(file, {
+        onComplete: (profile) => unlockMenu(!!profile)
+      });
+      e.target.value = "";
+    });
+  }
+  handleLogout() {
+    requestLogout(async () => {
+      showToast("Logging out...", "info", 1500);
+      try {
+        await authService.logout();
+      } catch (err) {
+        console.warn("[Shell] logout failed:", err);
+      }
+      try {
+        await storage.clearPersistentCache();
+      } catch (err) {
+        console.warn("[Shell] cache clear failed:", err);
+      }
+      window.location.href = getLoginPath();
+    });
+  }
+  destroy() {
+    this.customization.destroy();
+    super.destroy();
+  }
+};
+
+// client/modules/shell/sidebarRailNav.ts
+var ROUTE_RAIL = [
+  ["/settings", "settings"],
+  ["/tool-categories", "tools"],
+  ["/technologies", "tools"],
+  ["/tools", "tools"],
+  ["/blog-categories", "content"],
+  ["/blog-engagement", "content"],
+  ["/blog-tags", "content"],
+  ["/blog-post", "content"],
+  ["/testimonials", "content"],
+  ["/experience", "content"],
+  ["/media-library", "content"],
+  ["/project-technologies", "projects"],
+  ["/project-tags", "projects"],
+  ["/project-categories", "projects"],
+  ["/categories", "projects"],
+  ["/tags", "projects"],
+  ["/projects", "projects"],
+  ["/recent-activities", "home"],
+  ["/contact-messages", "home"],
+  ["/access-requests", "home"],
+  ["/users", "home"]
+];
+var ROUTE_RAIL_SORTED = [...ROUTE_RAIL].sort((a, b) => b[0].length - a[0].length);
+function resolveRailSection(path = window.location.pathname) {
+  if (path === "/" || path === "") return "home";
+  for (const [needle, section] of ROUTE_RAIL_SORTED) {
+    if (path.includes(needle)) return section;
+  }
+  return "home";
+}
+function getNavGroup(section) {
+  return document.querySelector(`.pa-nav-group[data-nav-group="${section}"]`);
+}
+function syncSidebarRailActive() {
+  const section = resolveRailSection();
+  document.querySelectorAll(".pa-rail-btn[data-rail-target]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.railTarget === section);
+  });
+}
+function setGroupExpanded(group, open) {
+  if (!group) return;
+  group.classList.add("pa-nav-anim-ready");
+  group.classList.toggle("open", open);
+  group.querySelector(":scope > .pa-nav-parent-row .pa-nav-toggle")?.setAttribute("aria-expanded", open ? "true" : "false");
+}
+function toggleNavGroup(section) {
+  const group = getNavGroup(section);
+  if (!group) return;
+  if (isSidebarCollapsedDesktop()) {
+    const flyout = document.getElementById("paNavFlyout");
+    if (flyout?.classList.contains("visible") && group.classList.contains("flyout-open")) {
+      hideNavFlyout();
+      return;
+    }
+    showNavFlyout(group);
+    return;
+  }
+  hideNavFlyout();
+  const nextOpen = !group.classList.contains("open");
+  setGroupExpanded(group, nextOpen);
+  if (nextOpen) {
+    group.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+}
+var railBound = false;
+function initSidebarRailNav() {
+  syncSidebarRailActive();
+  if (railBound) return;
+  railBound = true;
+  document.querySelectorAll(".pa-rail-btn[data-rail-target]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const section = btn.dataset.railTarget;
+      if (!section) return;
+      toggleNavGroup(section);
+      syncSidebarRailActive();
+    });
+  });
+  window.addEventListener("popstate", syncSidebarRailActive);
+}
+
+// client/modules/shell/sidebarNav.ts
+var NAV_BY_PATH = [
+  ["/tool-categories", "Tool Categories"],
+  ["/recent-activities", "Recent Activities"],
+  ["/access-requests", "Access Requests"],
+  ["/users", "Users"],
+  ["/contact-messages", "Contact Messages"],
+  ["/media-library", "Media Library"],
+  ["/technologies", "Technologies"],
+  ["/blog-categories", "Blog Categories"],
+  ["/project-categories", "Project Categories"],
+  ["/categories", "Project Categories"],
+  ["/project-technologies", "Project Technologies"],
+  ["/project-tags", "Project Tags"],
+  ["/blog-tags", "Blog Tags"],
+  ["/blog-engagement", "Comments & Likes"],
+  ["/blog-post", "Blog Posts"],
+  ["/testimonials", "Testimonials"],
+  ["/experience", "Experience"],
+  ["/tags", "Project Tags"],
+  ["/projects", "Projects"],
+  ["/settings", "Settings"],
+  ["/tools", "Tools"]
+];
+var NAV_BY_PATH_SORTED = [...NAV_BY_PATH].sort((a, b) => b[0].length - a[0].length);
+function resolveActiveNav(path = window.location.pathname) {
+  if (path === "/" || path === "") return "Dashboard";
+  for (const [needle, label] of NAV_BY_PATH_SORTED) {
+    if (path.includes(needle)) return label;
+  }
+  return null;
+}
+function syncSidebarActiveNav() {
+  const active = resolveActiveNav();
+  if (!active) return;
+  document.querySelectorAll(".pa-nav-subitem[data-nav]").forEach((item) => {
+    item.classList.toggle("active", item.dataset.nav === active);
+  });
+  if (active === "Settings" && window.location.pathname.includes("/settings")) {
+    const tab = getSettingsTabFromPath();
+    document.querySelectorAll(".pa-nav-subitem[data-settings-tab]").forEach((item) => {
+      item.classList.toggle("active", item.dataset.settingsTab === tab);
+    });
+  } else {
+    document.querySelectorAll(".pa-nav-subitem[data-settings-tab]").forEach((item) => {
+      item.classList.remove("active");
+    });
+  }
+  syncSidebarGroupNav();
+  syncSidebarRailActive();
+}
+var sidebarNavBound = false;
+function bindSidebarPrefetch() {
+  const warm = typeof window.__paWarmPrefetchPath === "function" ? window.__paWarmPrefetchPath : null;
+  if (!warm) return;
+  document.querySelectorAll(".pa-nav-subitem[href], .pa-logo-link[href]").forEach((link) => {
+    link.addEventListener("pointerenter", () => {
+      const href = link.getAttribute("href");
+      if (href) warm(href);
+    }, { passive: true });
+  });
+}
+function initSidebarNav() {
+  syncSidebarActiveNav();
+  if (!sidebarNavBound) {
+    window.addEventListener("popstate", syncSidebarActiveNav);
+    bindSidebarPrefetch();
+    sidebarNavBound = true;
+  }
+}
+
+// client/utils/appearanceApply.ts
+async function loadPublicAppearance() {
+  const cached = readAppearanceCache();
+  if (cached) return cached;
+  const bag = typeof window !== "undefined" ? window.__paPrefetch : null;
+  const pending = bag?.appearance_settings_v2;
+  if (pending && typeof pending.then === "function") {
+    try {
+      const value = await pending;
+      if (value) {
+        writeAppearanceCache(value);
+        return value;
+      }
+    } catch {
+    }
+  }
+  const res = await fetch("/api/appearance/public", {
+    method: "GET",
+    credentials: "same-origin",
+    headers: { Accept: "application/json" }
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (data) writeAppearanceCache(data);
+  return data;
+}
+async function initAuthAppearance() {
+  try {
+    const cached = readAppearanceCache();
+    if (cached) applyAppearanceSettings(cached);
+    const settings = await loadPublicAppearance();
+    if (settings) applyAppearanceSettings(settings);
+    const { updateFaviconFromAppearance } = await import("./chunks/favicon-E5RED5ZK.js");
+    updateFaviconFromAppearance(settings || cached || {});
+  } catch {
+  }
+}
+
+// client/utils/collapse-motion.ts
+var PA_COLLAPSE_DURATION = 0.45;
+var PA_COLLAPSE_EASE = [0.22, 1, 0.36, 1];
+var animateDomKeyframes = animate;
+var BOUND = "data-pa-collapse-bound";
+var ANIMATING = "data-pa-collapse-animating";
+function measureCollapsePanel(panel) {
+  const prevHeight = panel.style.height;
+  const prevOverflow = panel.style.overflow;
+  const prevDisplay = panel.style.display;
+  panel.style.height = "auto";
+  panel.style.overflow = "hidden";
+  panel.style.display = "block";
+  const h = panel.scrollHeight;
+  panel.style.height = prevHeight;
+  panel.style.overflow = prevOverflow;
+  panel.style.display = prevDisplay;
+  return h;
+}
+function clearCollapseInlineStyles(panel) {
+  panel.style.removeProperty("height");
+  panel.style.removeProperty("max-height");
+  panel.style.removeProperty("opacity");
+  panel.style.removeProperty("overflow");
+  panel.style.removeProperty("overflow-y");
+  panel.style.removeProperty("pointer-events");
+}
+async function animateCollapsePanel(panel, open) {
+  if (panel.classList.contains("pa-collapse-panel--dropdown")) {
+    panel.classList.toggle("is-pa-collapse-open", open);
+    return;
+  }
+  if (prefersReducedMotion()) {
+    panel.classList.toggle("is-pa-collapse-open", open);
+    clearCollapseInlineStyles(panel);
+    return;
+  }
+  panel.classList.add("is-pa-collapse-animating");
+  panel.style.overflow = "hidden";
+  if (open) {
+    const target = measureCollapsePanel(panel);
+    panel.style.opacity = "0";
+    panel.style.height = "0px";
+    const keyframes = {
+      height: ["0px", `${target}px`],
+      opacity: [0, 1]
+    };
+    const controls = animateDomKeyframes(panel, keyframes, {
+      duration: PA_COLLAPSE_DURATION,
+      easing: PA_COLLAPSE_EASE
+    });
+    await controls.finished;
+  } else {
+    const current = panel.getBoundingClientRect().height || measureCollapsePanel(panel);
+    const keyframes = {
+      height: [`${current}px`, "0px"],
+      opacity: [1, 0]
+    };
+    const controls = animateDomKeyframes(panel, keyframes, {
+      duration: PA_COLLAPSE_DURATION,
+      easing: PA_COLLAPSE_EASE
+    });
+    await controls.finished;
+  }
+  clearCollapseInlineStyles(panel);
+  panel.classList.remove("is-pa-collapse-animating");
+  panel.classList.toggle("is-pa-collapse-open", open);
+}
+function resolvePanel(root, explicit) {
+  if (explicit) return explicit;
+  return root.querySelector("[data-pa-collapse-panel], .pa-collapse-panel");
+}
+function isRootOpen(root, closedClass, inverted) {
+  const hasClosed = root.classList.contains(closedClass);
+  return inverted ? hasClosed : !hasClosed;
+}
+function setRootOpen(root, closedClass, inverted, open) {
+  if (inverted) {
+    root.classList.toggle(closedClass, open);
+  } else {
+    root.classList.toggle(closedClass, !open);
+  }
+  root.dataset.paCollapseOpen = open ? "true" : "false";
+}
+async function openRootCollapse(root, panel, closedClass, inverted) {
+  if (root.getAttribute(ANIMATING) === "1") return;
+  root.setAttribute(ANIMATING, "1");
+  setRootOpen(root, closedClass, inverted, true);
+  try {
+    await animateCollapsePanel(panel, true);
+    panel.classList.add("is-pa-collapse-reveal");
+  } finally {
+    root.removeAttribute(ANIMATING);
+  }
+}
+async function closeRootCollapse(root, panel, closedClass, inverted) {
+  if (root.getAttribute(ANIMATING) === "1") return;
+  root.setAttribute(ANIMATING, "1");
+  panel.classList.remove("is-pa-collapse-reveal");
+  try {
+    await animateCollapsePanel(panel, false);
+    setRootOpen(root, closedClass, inverted, false);
+  } finally {
+    root.removeAttribute(ANIMATING);
+  }
+}
+function bindRootCollapse(root) {
+  if (root.getAttribute(BOUND) === "1") return;
+  const panel = resolvePanel(root);
+  const trigger = root.querySelector("[data-pa-collapse-trigger], .pa-collapse-trigger");
+  if (!panel || !trigger) return;
+  root.setAttribute(BOUND, "1");
+  root.classList.add("pa-collapse-root");
+  panel.classList.add("pa-collapse-panel");
+  if (!panel.hasAttribute("data-pa-collapse-panel")) {
+    panel.setAttribute("data-pa-collapse-panel", "");
+  }
+  const closedClass = root.dataset.paCollapseClass || "is-collapsed";
+  const inverted = root.hasAttribute("data-pa-collapse-inverted");
+  const open = isRootOpen(root, closedClass, inverted);
+  panel.classList.toggle("is-pa-collapse-open", open);
+  if (open) panel.classList.add("is-pa-collapse-reveal");
+  trigger.addEventListener("click", (e) => {
+    if (trigger.tagName !== "BUTTON" && trigger.tagName !== "A") e.preventDefault();
+    const expanded = isRootOpen(root, closedClass, inverted);
+    if (expanded) {
+      void closeRootCollapse(root, panel, closedClass, inverted).then(() => {
+        trigger.setAttribute("aria-expanded", "false");
+      });
+    } else {
+      void openRootCollapse(root, panel, closedClass, inverted).then(() => {
+        trigger.setAttribute("aria-expanded", "true");
+      });
+    }
+  });
+}
+function bindDetailsCollapse(details) {
+  if (details.getAttribute(BOUND) === "1") return;
+  const summary = details.querySelector("summary");
+  const panel = details.querySelector("[data-pa-collapse-panel], .pa-collapse-panel") ?? (summary?.nextElementSibling instanceof HTMLElement ? summary.nextElementSibling : null);
+  if (!summary || !panel) return;
+  details.setAttribute(BOUND, "1");
+  details.classList.add("pa-collapse-details", "pa-collapse-root");
+  panel.classList.add("pa-collapse-panel");
+  if (!panel.hasAttribute("data-pa-collapse-panel")) {
+    panel.setAttribute("data-pa-collapse-panel", "");
+  }
+  panel.classList.toggle("is-pa-collapse-open", details.open);
+  if (details.open) panel.classList.add("is-pa-collapse-reveal");
+  summary.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (details.getAttribute(ANIMATING) === "1") return;
+    if (details.open) {
+      void (async () => {
+        details.setAttribute(ANIMATING, "1");
+        panel.classList.remove("is-pa-collapse-reveal");
+        try {
+          await animateCollapsePanel(panel, false);
+          details.removeAttribute("open");
+        } finally {
+          details.removeAttribute(ANIMATING);
+        }
+      })();
+    } else {
+      void (async () => {
+        details.setAttribute(ANIMATING, "1");
+        details.setAttribute("open", "");
+        try {
+          await animateCollapsePanel(panel, true);
+          panel.classList.add("is-pa-collapse-reveal");
+        } finally {
+          details.removeAttribute(ANIMATING);
+        }
+      })();
+    }
+  });
+}
+function canQueryDescendants(node) {
+  return typeof node.querySelectorAll === "function";
+}
+function scanCollapseRoots(root) {
+  if (root instanceof HTMLElement && root.matches("[data-pa-collapse]")) {
+    bindRootCollapse(root);
+  }
+  if (!canQueryDescendants(root)) return;
+  root.querySelectorAll("[data-pa-collapse]").forEach(bindRootCollapse);
+  root.querySelectorAll('details:not([data-pa-collapse="off"])').forEach(bindDetailsCollapse);
+}
+var observerStarted = false;
+var collapseMutationObserver = null;
+function startCollapseObserver() {
+  if (observerStarted || typeof document === "undefined") return;
+  observerStarted = true;
+  collapseMutationObserver = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      mutation.addedNodes.forEach((node) => {
+        if (node instanceof HTMLElement) {
+          scanCollapseRoots(node);
+        }
+      });
+    }
+  });
+  collapseMutationObserver.observe(document.documentElement, { childList: true, subtree: true });
+}
+function initCollapseMotion(root = document) {
+  scanCollapseRoots(root);
+  startCollapseObserver();
+}
+
+// client/main.ts
+var AUTH_PAGES = /* @__PURE__ */ new Set(["login", "forgot-password", "reset-password"]);
+var PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
+async function loadPageModuleClass(page) {
+  switch (page) {
+    case "dashboard":
+      return (await import("./chunks/DashboardModule-WPXMSEO5.js")).DashboardModule;
+    case "projects":
+      return (await import("./chunks/ProjectsModule-IWL6C56S.js")).ProjectsModule;
+    case "categories":
+      return (await import("./chunks/CategoriesModule-VMT2RDXC.js")).CategoriesModule;
+    case "project-tags":
+    case "tags":
+      return (await import("./chunks/TagsModule-27PIEO3Q.js")).TagsModule;
+    case "project-technologies":
+      return (await import("./chunks/ProjectTechnologiesModule-7HYSWWEE.js")).ProjectTechnologiesModule;
+    case "blog-tags":
+      return (await import("./chunks/BlogTagsModule-7NMF4ZUS.js")).BlogTagsModule;
+    case "technologies":
+      return (await import("./chunks/TechnologiesModule-65UAAF4G.js")).TechnologiesModule;
+    case "tool-categories":
+      return (await import("./chunks/ToolCategoriesModule-IXBLJ5AO.js")).ToolCategoriesModule;
+    case "blog-categories":
+      return (await import("./chunks/BlogCategoriesModule-BEFERQPV.js")).BlogCategoriesModule;
+    case "tools":
+      return (await import("./chunks/ToolsModule-ZCOAFQJD.js")).ToolsModule;
+    case "media":
+      return (await import("./chunks/MediaModule-D5BQUEI4.js")).MediaModule;
+    case "testimonials":
+      return (await import("./chunks/TestimonialsModule-JZ5LHODC.js")).TestimonialsModule;
+    case "blogposts":
+      return (await import("./chunks/BlogModule-LGHY3A7G.js")).BlogModule;
+    case "experience":
+      return (await import("./chunks/ExperienceModule-XNRE6HBI.js")).ExperienceModule;
+    case "contact-messages":
+      return (await import("./chunks/ContactMessagesModule-D7N5GEVR.js")).ContactMessagesModule;
+    case "blog-engagement":
+      return (await import("./chunks/BlogEngagementModule-5DGIX3T2.js")).BlogEngagementModule;
+    case "access-requests":
+      return (await import("./chunks/AccessRequestsModule-YQGN4EYG.js")).AccessRequestsModule;
+    case "users":
+      return (await import("./chunks/UsersModule-O4Z5PWAB.js")).UsersModule;
+    case "recent-activities":
+      return (await import("./chunks/RecentActivitiesModule-A23N7RKR.js")).RecentActivitiesModule;
+    case "settings":
+      return (await import("./chunks/SettingsModule-6XCSRBOD.js")).SettingsModule;
+    case "login":
+      return (await import("./chunks/LoginModule-R5HD7JXK.js")).LoginModule;
+    case "forgot-password":
+      return (await import("./chunks/ForgotPasswordModule-3DQK4BE6.js")).ForgotPasswordModule;
+    case "reset-password":
+      return (await import("./chunks/ResetPasswordModule-5377D3KB.js")).ResetPasswordModule;
+    default:
+      return null;
+  }
+}
+var activePageModule = null;
+var shellInstance = null;
+var bootPromise = null;
+var appChromeInitialized = false;
+function bindGlobalPanelChrome() {
+  initUserCredentialsPanel();
+  initStaffInviteLinkModal();
+  $all(".pa-panel-tab").forEach((btn) => {
+    if (!(btn instanceof HTMLElement)) return;
+    btn.addEventListener("click", () => {
+      activateTab(btn.dataset.panel, btn.dataset.tab);
+    });
+  });
+  $id("paPanelOverlay")?.addEventListener("click", (e) => {
+    if (e.target instanceof HTMLElement && e.target.id === "paPanelOverlay") closePanels();
+  });
+}
+var quickAddModule = null;
+async function bindQuickAddButton(pageModule) {
+  if (quickAddModule) return;
+  const { QuickAddModule } = await import("./chunks/QuickAddModule-FTXAJEVI.js");
+  quickAddModule = new QuickAddModule(pageModule);
+  quickAddModule.bindEvents();
+}
+async function initPageModule(pageModule) {
+  await pageModule.load();
+  bodyLoader.end();
+  bodyLoader.reset();
+  await new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      pageModule.render();
+      pageModule.bindEvents();
+      applyCapabilityGatedElements(getAccessCapabilities());
+      resolve();
+    });
+  });
+}
+async function ensureShell() {
+  if (!shellInstance) {
+    shellInstance = new ShellModule();
+    await shellInstance.init().catch((err) => {
+      console.warn("[main] shell init failed:", err);
+    });
+  }
+}
+function initAppChrome() {
+  if (appChromeInitialized) {
+    initSettingsNav();
+    syncSidebarActiveNav();
+    return;
+  }
+  appChromeInitialized = true;
+  initSettingsNav();
+  initSidebarNav();
+  initSidebarGroupNav();
+  initSidebarRailNav();
+  initSidebarCollapse();
+  initMobileHeaderSearch();
+}
+async function bootAuthPage(ModuleClass, page) {
+  document.documentElement.classList.add("pa-auth-route");
+  clearDomCache();
+  initConfirmDialog();
+  await initAuthAppearance();
+  const pageModule = new ModuleClass();
+  await pageModule.load();
+  pageModule.render();
+  pageModule.bindEvents();
+  activePageModule = pageModule;
+  window.__paDebug = { pageModule, page };
+}
+async function bootAppPage(ModuleClass, page) {
+  bodyLoader.mount();
+  bodyLoader.begin("Loading your data\u2026");
+  const prefetchKeys = PREFETCH_BY_PAGE[page];
+  if (prefetchKeys?.length) {
+    await storage.hydrateFromPersistentCache(prefetchKeys);
+    storage.prefetch(prefetchKeys);
+  }
+  clearDomCache();
+  initConfirmDialog();
+  const pageModule = new ModuleClass();
+  const bootstrapPending = storage.isBootstrapPending();
+  await ensureShell();
+  await initPageModule(pageModule);
+  initAllPaSelects();
+  initCollapseMotion();
+  bindGlobalPanelChrome();
+  if (page === "dashboard") void bindQuickAddButton(pageModule);
+  initAppChrome();
+  activePageModule = pageModule;
+  window.__paDebug = { pageModule, page };
+  if (bootstrapPending) {
+    void storage.waitForBootstrap().then(() => {
+      if (activePageModule === pageModule && typeof pageModule.render === "function") {
+        pageModule.render();
+        applyCapabilityGatedElements(getAccessCapabilities());
+      }
+    });
+  }
+}
+async function runBoot() {
+  bootstrapAppearanceFromCache();
+  initPasswordToggles();
+  const page = getCurrentPage();
+  const ModuleClass = await loadPageModuleClass(page);
+  if (!ModuleClass) {
+    console.warn(`[main] no module registered for page "${page}"`);
+    bodyLoader.reset();
+    return;
+  }
+  try {
+    if (AUTH_PAGES.has(page)) {
+      await bootAuthPage(ModuleClass, page);
+    } else {
+      await bootAppPage(ModuleClass, page);
+    }
+  } catch (err) {
+    if (!AUTH_PAGES.has(page)) {
+      bodyLoader.end();
+      bodyLoader.reset();
+    }
+    throw err;
+  }
+}
+function teardownPortfolioApp() {
+  if (activePageModule?.destroy) {
+    try {
+      activePageModule.destroy();
+    } catch (err) {
+      console.warn("[main] page teardown failed:", err);
+    }
+  }
+  activePageModule = null;
+  quickAddModule = null;
+  if (shellInstance) {
+    shellInstance.destroy();
+    shellInstance = null;
+    appChromeInitialized = false;
+  }
+  clearDomCache();
+  bodyLoader.reset();
+  closePanels();
+}
+function bootPortfolioApp() {
+  if (bootPromise) return bootPromise;
+  bootPromise = (async () => {
+    teardownPortfolioApp();
+    window.__paBooted = true;
+    if (typeof window.__paStartPrefetch === "function") {
+      window.__paStartPrefetch(window.location.pathname);
+    }
+    await runBoot();
+  })().catch((err) => {
+    window.__paBooted = false;
+    bodyLoader.reset();
+    console.error("[main] fatal error during boot:", err);
+    throw err;
+  }).finally(() => {
+    bootPromise = null;
+  });
+  return bootPromise;
+}
+window.__paBootPortfolioApp = bootPortfolioApp;
+window.__paTeardownPortfolioApp = teardownPortfolioApp;
+export {
+  bootPortfolioApp,
+  teardownPortfolioApp
+};
+//# sourceMappingURL=main.js.map

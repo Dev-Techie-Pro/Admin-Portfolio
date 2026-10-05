@@ -16,6 +16,7 @@
     "test:ci": "node scripts/test-api-guards.mjs && node scripts/test-prefetch-sync.mjs && node scripts/verify-deployment-env.mjs && node scripts/test-preview-token.mjs && node scripts/test-guard-smoke.mjs && node scripts/test-public-api-hardening.mjs",
     "db:push": "supabase db push",
     "db:status": "supabase migration list",
+    "db:baseline": "node scripts/build-migration-baseline.mjs",
     "db:types": "supabase gen types typescript --linked > lib/supabase/database.types.ts"
   },
   "dependencies": {

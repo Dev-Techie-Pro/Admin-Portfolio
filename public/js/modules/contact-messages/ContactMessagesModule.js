@@ -1,48 +1,928 @@
-import{Module as T}from"../../core/Module.js";import{storage as M}from"../../core/StorageService.js";import{$id as n,$all as R,escapeHtml as g}from"../../utils/dom.js";import{csvEscapeField as k}from"../../utils/format.js";import{debounce as C}from"../../utils/timing.js";import{requestDelete as $}from"../../modules/shell/confirm.js";import{closeAllCardMenus as E}from"../../modules/shell/cardMenu.js";import{BulkSelectController as x}from"../../core/BulkSelectController.js";import{canManageContent as y}from"../../core/cms-access.js";import{closePanels as P,openPanel as D,registerPanel as B}from"../../modules/shell/panels.js";import*as j from"../../utils/MediaPicker.js";const A=["#e5484d","#f0c040","#22c55e","#38bdf8","#a78bfa","#f472b6","#ff6600","#2dd4bf"],v=8;function L(u){return(u||"?").split(" ").map(e=>e[0]).slice(0,2).join("").toUpperCase()}function I(u){let e=0;const t=u||"";for(let s=0;s<t.length;s++)e=e*31+t.charCodeAt(s)>>>0;return A[e%A.length]}function S(u){return{new:"New",read:"Read",replied:"Replied",spam:"Spam"}[u]||u}function b(u){try{const e=new Date(u);return Number.isNaN(e.getTime())?{date:"Unknown",time:""}:{date:e.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),time:e.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:!0})}}catch{return{date:"Unknown",time:""}}}class V extends T{constructor(){super({name:"ContactMessages",storageKey:"pa_contact_messages",initialState:{messages:[],selectedId:null,statusFilter:"all",timeFilter:"all",searchQuery:"",page:1,replyMode:null,editingReplyId:null}}),this.msgNow=Date.now(),this._replyAttachment=null,this.bulkSelect=new x(this,{containerId:"paMsgTableBody",itemSelector:".pa-msg-row",idAttr:"data-msg-id",label:"message",skipRowClick:!0,getVisibleIds:()=>this.getFiltered().map(e=>e.id),onBulkDelete:e=>this.bulkDelete(e)})}async bulkDelete(e){const t=e.size;if(t===0)return;const s=this.store.get("messages"),a=s.filter(r=>!e.has(String(r.id)));this.store.set("messages",a),e.has(String(this.store.get("selectedId")))&&this.store.set("selectedId",null);try{await this.persist(),this.renderTable(),this.renderDetail(),this.statusToast(`${t} message${t>1?"s":""} deleted.`,"danger"),this.notify(`${t} message${t>1?"s":""} deleted in bulk.`,"ri-delete-bin-line")}catch{this.store.set("messages",s),this.renderTable(),this.renderDetail(),this.statusToast("Could not delete messages. Please try again.","danger")}}async load(){const e=await this.loadRecords(()=>({items:[],nextCursor:null,total:0}));let t=Array.isArray(e)?e:e?.items||[],s=Array.isArray(e)?null:e?.nextCursor;for(;s;)try{const a=await fetch(`/api/contact-messages?cursor=${encodeURIComponent(s)}&limit=50`,{method:"GET",headers:{Accept:"application/json"},credentials:"same-origin"});if(!a.ok)break;const r=await a.json();t=t.concat(r.items||[]),s=r.nextCursor}catch{break}this.store.set("messages",t),M._persist(this.storageKey,t).catch(()=>{}),this.computeNow()}patchMessage(e){if(!e)return;const t=this.store.get("messages").map(s=>this.sameId(s.id,e.id)||this.sameId(s.dbId,e.dbId)?{...s,...e,id:e.id??s.id}:s);this.store.set("messages",t),M._persist(this.storageKey,t).catch(()=>{})}async persist(){y()&&await this.saveRecords(this.store.get("messages"))}computeNow(){const e=this.store.get("messages");if(!e.length){this.msgNow=Date.now();return}const t=Math.max(...e.map(s=>new Date(s.createdAt).getTime()));this.msgNow=t+3600*1e3}sameId(e,t){return e!=null&&t!=null&&String(e)===String(t)}findById(e){return this.store.get("messages").find(t=>this.sameId(t.id,e))}parseMsgId(e){if(e==null||e==="")return null;const t=String(e);if(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(t))return t;const s=Number.parseInt(t,10);return Number.isFinite(s)&&String(s)===t?s:t}getFiltered(){const{messages:e,statusFilter:t,timeFilter:s,searchQuery:a}=this.store._raw;let r=e.slice().sort((l,o)=>new Date(o.createdAt)-new Date(l.createdAt));if(t!=="all"&&(r=t==="unread"?r.filter(l=>l.status==="new"):r.filter(l=>l.status===t)),s!=="all"){const o={today:864e5,week:6048e5,month:2592e6}[s];o&&(r=r.filter(d=>this.msgNow-new Date(d.createdAt).getTime()<=o))}if(a.trim()){const l=a.trim().toLowerCase();r=r.filter(o=>o.name.toLowerCase().includes(l)||o.email.toLowerCase().includes(l)||o.subject.toLowerCase().includes(l))}return r}render(){this.renderTable(),this.renderDetail()}renderRow(e){const t=L(e.name),s=I(e.name),{date:a,time:r}=b(e.createdAt),l=this.sameId(e.id,this.store.get("selectedId")),o=e.status==="new",d=this.bulkSelect.isSelectMode(),m=this.bulkSelect.isSelected(e.id);let p="";return d?p+=`<td style="width:36px;"><input type="checkbox" class="pa-msg-bulk-checkbox" data-select-id="${e.id}" ${m?"checked":""} aria-label="Select message from ${g(e.name)} for bulk actions" /></td>`:p+=`<td style="width:36px;"><input type="checkbox" class="pa-msg-checkbox" data-msg-id="${e.id}" ${l?"checked":""} aria-label="Select message from ${g(e.name)}" /></td>`,p+=`<td><div class="pa-msg-from"><div class="pa-msg-avatar" style="background:${s};">${g(t)}</div><div style="min-width:0;"><div class="pa-msg-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g(e.name)}</div><div class="pa-msg-email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g(e.email)}</div></div></div></td>`,p+=`<td class="pa-msg-subject-col"><div class="pa-msg-subject">${g(e.subject)}</div><div class="pa-msg-snippet">${g(e.snippet)}</div></td>`,p+=`<td><span class="pa-status-badge ${e.status}">${S(e.status)}</span></td>`,p+=`<td><div class="pa-msg-date">${a}</div><div class="pa-msg-time">${r}</div></td>`,p+=`<td><div class="pa-msg-actions pa-card-actions"><button class="pa-action-btn pa-action-more" data-action="menu" data-msg-id="${e.id}" title="More options" aria-label="More options"><i class="ri-more-2-fill"></i></button><div class="pa-card-menu" data-msg-id="${e.id}"><div class="pa-card-menu-item" data-action="${e.status==="new"?"mark-read":"mark-unread"}" data-msg-id="${e.id}"><i class="ri-mail-open-line"></i> ${e.status==="new"?"Mark as Read":"Mark as Unread"}</div><div class="pa-card-menu-item" data-action="toggle-spam" data-msg-id="${e.id}"><i class="ri-spam-2-line"></i> ${e.status==="spam"?"Not Spam":"Mark as Spam"}</div><div class="pa-card-menu-item danger" data-action="delete" data-msg-id="${e.id}"><i class="ri-delete-bin-line"></i> Delete</div></div></div></td>`,`<tr class="pa-msg-row ${l?"selected":""} ${o?"unread":""}${m?" pa-selected":""}" data-msg-id="${e.id}">${p}</tr>`}renderMailPreview(){const e=n("paMailPreviewList"),t=n("paMailPreviewBadge");if(!e)return;const s=this.store.get("messages").filter(r=>r.status==="new").sort((r,l)=>new Date(l.createdAt)-new Date(r.createdAt)),a=s.slice(0,5);if(t&&(t.textContent=s.length,t.classList.toggle("hidden",s.length===0)),a.length===0){e.innerHTML='<div class="pa-notif-empty">No new messages</div>';return}e.innerHTML=a.map(r=>`<div class="pa-notif-item" data-msg-id="${r.id}"><div class="pa-notif-item-icon"><i class="ri-mail-line"></i></div><div><div class="pa-notif-item-text"><strong>${g(r.name)}</strong> \u2014 ${g(r.subject)}</div><div class="pa-notif-item-time">${b(r.createdAt).date}</div></div></div>`).join(""),e.querySelectorAll(".pa-notif-item").forEach(r=>{r.addEventListener("click",()=>{this.selectMessage(this.parseMsgId(r.dataset.msgId)),n("paMailPreviewWrap")?.classList.remove("open"),n("paMsgListCard")?.scrollIntoView({behavior:"smooth",block:"start"})})})}renderTable(){const e=this.getFiltered(),t=e.length,s=Math.max(1,Math.ceil(t/v));let a=this.store.get("page");a>s&&(a=s),a<1&&(a=1),this.store.set("page",a);const r=(a-1)*v,l=e.slice(r,r+v),o=n("paMsgTableBody");if(o)if(l.length===0){const d=this.store.get("searchQuery").trim()||this.store.get("statusFilter")!=="all"||this.store.get("timeFilter")!=="all";o.innerHTML=`<tr class="pa-msg-table-empty"><td colspan="6"><div class="pa-empty-state"><i class="ri-mail-line"></i><div class="pa-empty-state-title">${d?"No messages match your filters":"No messages yet"}</div><div class="pa-empty-state-text">${d?"Try adjusting your search, status, or date filters.":"Messages submitted through your contact form will appear here."}</div>${d?'<button class="pa-empty-state-btn" id="paMsgEmptyResetBtn">Reset filters</button>':""}</div></td></tr>`,this.on(n("paMsgEmptyResetBtn"),"click",()=>this.resetFilters())}else o.innerHTML=l.map(d=>this.renderRow(d)).join("");this.renderPagination(t,s,a),this.attachRowListeners(),this.bulkSelect.onRender(),this.renderMailPreview()}renderPagination(e,t,s){const a=n("paMsgPaginationBtns"),r=n("paMsgPaginationInfo");if(!a||!r)return;if(e===0){a.innerHTML="",r.textContent="Showing 0 messages";return}if(t<=1){a.innerHTML="",r.textContent=`Showing ${e} of ${e} messages`;return}let l=`<div class="pa-page-nav ${s===1?"disabled":""}" id="paMsgPagePrev" role="button" aria-label="Previous page"><i class="ri-arrow-left-s-line"></i></div>`,o=0;for(let c=1;c<=t;c++)(c===1||c===t||Math.abs(c-s)<=1)&&(c-o>1&&(l+='<span style="color:var(--pa-text-faint);padding:0 4px;font-size:12px;">\u2026</span>'),l+=`<button class="pa-page-btn ${c===s?"active":""}" data-page="${c}">${c}</button>`,o=c);l+=`<div class="pa-page-nav ${s===t?"disabled":""}" id="paMsgPageNext" role="button" aria-label="Next page"><i class="ri-arrow-right-s-line"></i></div>`,a.innerHTML=l;const d=(s-1)*v+1,m=Math.min(s*v,e);r.textContent=`Showing ${d} to ${m} of ${e} messages`,a.querySelectorAll(".pa-page-btn").forEach(c=>{c.addEventListener("click",()=>{this.store.set("page",parseInt(c.dataset.page,10)),this.renderTable(),n("paMsgListCard")?.scrollIntoView({behavior:"smooth",block:"nearest"})})});const p=n("paMsgPagePrev"),i=n("paMsgPageNext");p&&!p.classList.contains("disabled")&&p.addEventListener("click",()=>{this.store.set("page",s-1),this.renderTable()}),i&&!i.classList.contains("disabled")&&i.addEventListener("click",()=>{this.store.set("page",s+1),this.renderTable()})}attachRowListeners(){const e=n("paMsgTableBody");e&&(e.querySelectorAll(".pa-msg-row").forEach(t=>{t.addEventListener("click",s=>{if(this.bulkSelect.isSelectMode()){if(s.target.closest(".pa-msg-actions")||s.target.closest("[data-select-id]"))return;this.bulkSelect.toggleSelect(t.dataset.msgId);return}s.target.closest(".pa-msg-actions")||s.target.classList.contains("pa-msg-checkbox")||this.selectMessage(this.parseMsgId(t.dataset.msgId))})}),e.querySelectorAll(".pa-msg-checkbox").forEach(t=>{t.addEventListener("click",s=>{s.stopPropagation(),this.selectMessage(this.parseMsgId(t.dataset.msgId))})}),e.querySelectorAll('[data-action="menu"]').forEach(t=>{t.addEventListener("click",s=>{s.stopPropagation();const a=t.dataset.msgId,r=e.querySelector(`.pa-card-menu[data-msg-id="${CSS.escape(a)}"]`);document.querySelectorAll(".pa-card-menu.open").forEach(l=>{l!==r&&l.classList.remove("open")}),r?.classList.toggle("open")})}),e.querySelectorAll(".pa-card-menu-item").forEach(t=>{t.addEventListener("click",s=>{s.stopPropagation();const a=t.dataset.action,r=this.parseMsgId(t.dataset.msgId);E();const l=this.findById(r);!l||!y()||(a==="mark-read"?(l.status="read",this.persist(),this.renderTable(),this.sameId(this.store.get("selectedId"),r)&&this.renderDetail(),this.toast(`Marked "${l.name}"'s message as read.`,"info",2e3)):a==="mark-unread"?(l.status="new",this.persist(),this.renderTable(),this.sameId(this.store.get("selectedId"),r)&&this.renderDetail(),this.toast(`Marked "${l.name}"'s message as unread.`,"info",2e3)):a==="toggle-spam"?(l.status=l.status==="spam"?"read":"spam",this.persist(),this.renderTable(),this.sameId(this.store.get("selectedId"),r)&&this.renderDetail(),this.toast(l.status==="spam"?`Marked "${l.name}"'s message as spam.`:`Removed "${l.name}"'s message from spam.`,l.status==="spam"?"danger":"success",2200)):a==="delete"&&$(r,"message",l.name,"Delete this message?"))})}))}resetFilters(){this.store.batch(()=>{this.store.set("searchQuery",""),this.store.set("statusFilter","all"),this.store.set("timeFilter","all"),this.store.set("page",1)});const e=n("paSearchInput");e&&(e.value="",n("paSearchWrap")?.classList.remove("has-value"));const t=n("paMsgSearchInput");t&&(t.value="");const s=n("paMsgStatusFilter");s&&(s.value="all");const a=n("paMsgTimeFilter");a&&(a.value="all"),R(".pa-status-tab").forEach(r=>r.classList.toggle("active",r.dataset.status==="all")),this.renderTable()}selectMessage(e){const t=this.findById(e);t&&(this.store.set("selectedId",e),t.status==="new"&&(t.status="read",this.persist().catch(()=>{})),this.renderTable(),this.renderDetail())}getMessageReplies(e){return Array.isArray(e?.replies)&&e.replies.length?e.replies:e?.reply?[{id:`legacy-${e.id}`,body:e.reply,subject:e.subject||"",cc:"",attachmentUrl:"",attachmentName:"",sentAt:e.repliedAt}]:[]}clearReplyAttachment(){this._replyAttachment=null;const e=n("paMsgReplyAttachPreview"),t=n("paMsgReplyFile");t&&(t.value=""),e&&(e.hidden=!0,e.innerHTML="")}renderReplyAttachmentPreview(e){const t=n("paMsgReplyAttachPreview");t&&(t.hidden=!1,t.innerHTML=`
-      <span><i class="ri-attachment-2"></i> ${g(e)}</span>
-      <button type="button" class="pa-btn-sm" id="paMsgReplyAttachClear">Remove</button>`,n("paMsgReplyAttachClear")?.addEventListener("click",()=>this.clearReplyAttachment()))}setReplyAttachment(e,t){this._replyAttachment={name:e.name,mime:e.type||"application/octet-stream",size:e.size,contentBase64:t},this.renderReplyAttachmentPreview(e.name)}setReplyAttachmentFromMedia(e){const t=e.type||"application/octet-stream";let s=null;if(e.url?.startsWith("data:")){const a=e.url.indexOf(",");s=a>=0?e.url.slice(a+1):null}this._replyAttachment={fromMedia:!0,url:e.url,name:e.name||"attachment",mime:t,size:e.size||0,contentBase64:s},this.renderReplyAttachmentPreview(`${e.name} (from Media Library)`)}buildReplyAttachmentPayload(){if(!(!this._replyAttachment||this._replyAttachment.clear))return this._replyAttachment.fromMedia?{fromMedia:!0,url:this._replyAttachment.url,name:this._replyAttachment.name,mime:this._replyAttachment.mime,size:this._replyAttachment.size}:{name:this._replyAttachment.name,mime:this._replyAttachment.mime,size:this._replyAttachment.size,contentBase64:this._replyAttachment.contentBase64}}async refreshLinkedMediaCache(){M.invalidate("pa_media_library"),await M.get("pa_media_library",[]).catch(()=>[])}async readFileAsBase64(e){const t=await e.arrayBuffer();let s="";const a=new Uint8Array(t),r=32768;for(let l=0;l<a.length;l+=r)s+=String.fromCharCode(...a.subarray(l,l+r));return btoa(s)}openReplyModal(e,t=null){if(!y())return;const s=this.findById(e);if(!s)return;const a=t?this.getMessageReplies(s).find(h=>String(h.id)===String(t)):null;this.store.set("replyMode",a?"edit":"create"),this.store.set("editingReplyId",a?a.id:null),this.store.set("selectedId",s.id),this.clearReplyAttachment();const r=n("paMsgReplyTo"),l=n("paMsgReplyCc"),o=n("paMsgReplySubject"),d=n("paMsgReplyText"),m=n("paMsgReplyPanelTitle"),p=n("paMsgReplySendLabel"),i=n("paMsgReplyResendWrap"),c=n("paMsgReplyResend");if(r&&(r.value=s.email||""),l&&(l.value=a?.cc||""),o){const h=a?.subject||s.subject||"";o.value=h.toLowerCase().startsWith("re:")?h:`Re: ${h}`}if(d&&(d.value=a?.body||""),m&&(m.textContent=a?"Edit Reply":"Reply to Message"),p&&(p.textContent=a?"Save Reply":"Send Reply"),i&&(i.hidden=!a),c&&(c.checked=!1),a?.attachmentName){const h=n("paMsgReplyAttachPreview");h&&(h.hidden=!1,h.innerHTML=`
-          <span><i class="ri-attachment-2"></i> ${g(a.attachmentName)} (kept)</span>
-          <button type="button" class="pa-btn-sm" id="paMsgReplyAttachClear">Remove</button>`,n("paMsgReplyAttachClear")?.addEventListener("click",()=>{this._replyAttachment={clear:!0},h.hidden=!0,h.innerHTML=""}))}D("paMsgReplyPanel"),setTimeout(()=>d?.focus(),50)}closeReplyModal(){P(),this.store.set("replyMode",null),this.store.set("editingReplyId",null),this.clearReplyAttachment();const e=n("paMsgReplySend");e&&(e.disabled=!1,e.classList.remove("loading"))}async submitReplyModal(){if(!y())return;const e=this.findById(this.store.get("selectedId"));if(!e)return;const t=(n("paMsgReplyText")?.value||"").trim(),s=(n("paMsgReplySubject")?.value||"").trim(),a=(n("paMsgReplyCc")?.value||"").trim();if(!t){this.toast("Please write a reply before sending.","danger"),n("paMsgReplyText")?.focus();return}const r=this.store.get("replyMode"),l=this.store.get("editingReplyId"),o=n("paMsgReplySend"),d=n("paMsgReplySendLabel");o&&(o.disabled=!0,o.classList.add("loading")),d&&(d.textContent=r==="edit"?"Saving\u2026":"Sending\u2026");try{const m=this.buildReplyAttachmentPayload();let p;r==="edit"&&l?p=await fetch("/api/contact-messages/reply",{method:"PUT",headers:{Accept:"application/json","Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({replyId:l,reply:t,subject:s,cc:a,resend:!!n("paMsgReplyResend")?.checked,clearAttachment:!!this._replyAttachment?.clear,attachment:m})}):p=await fetch("/api/contact-messages/reply",{method:"POST",headers:{Accept:"application/json","Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({id:e.id,reply:t,subject:s,cc:a,attachment:m})});const i=await p.json().catch(()=>({}));if(!p.ok)throw new Error(i.error||"Could not save reply.");i.message&&this.patchMessage(i.message),await this.refreshLinkedMediaCache(),this.closeReplyModal(),this.renderTable(),this.renderDetail(),this.toast(r==="edit"?"Reply updated.":`Reply sent to ${e.name}.`,"success"),this.notify(r==="edit"?`Updated reply to ${e.name}.`:`You replied to ${e.name}'s message.`,"ri-reply-line")}catch(m){this.toast(m?.message||"Could not send reply. Please try again.","danger"),o&&(o.disabled=!1,o.classList.remove("loading")),d&&(d.textContent=r==="edit"?"Save Reply":"Send Reply")}}async deleteReply(e){if(!y())return;if(!this.findById(this.store.get("selectedId"))||!e||String(e).startsWith("legacy-")){this.toast("This reply cannot be deleted.","danger");return}try{const s=await fetch("/api/contact-messages/reply",{method:"DELETE",headers:{Accept:"application/json","Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({replyId:e})}),a=await s.json().catch(()=>({}));if(!s.ok)throw new Error(a.error||"Could not delete reply.");a.message&&this.patchMessage(a.message),await this.refreshLinkedMediaCache(),this.renderTable(),this.renderDetail(),this.toast("Reply deleted.","danger")}catch(s){this.toast(s?.message||"Could not delete reply.","danger")}}renderDetail(){const e=n("paMsgDetailBody"),t=n("paMsgDetailFooter"),s=n("paMsgDetailPanel");if(!e)return;const a=this.findById(this.store.get("selectedId"));if(!a){s?.classList.remove("has-selection"),e.innerHTML='<div class="pa-msg-detail-empty"><i class="ri-mail-open-line"></i><div class="pa-msg-detail-empty-title">No message selected</div><div class="pa-msg-detail-empty-text">Select a message from the list to view its full content here.</div></div>',t&&(t.innerHTML="");const i=n("paMsgDetailStar");i&&(i.innerHTML='<i class="ri-star-line"></i>');return}s?.classList.add("has-selection");const r=L(a.name),l=I(a.name),o=b(a.createdAt),d=this.getMessageReplies(a);let m=`
+import { Module } from "../../core/Module.js";
+import { storage } from "../../core/StorageService.js";
+import { $id, $all, escapeHtml } from "../../utils/dom.js";
+import { csvEscapeField } from "../../utils/format.js";
+import { debounce } from "../../utils/timing.js";
+import { requestDelete } from "../../modules/shell/confirm.js";
+import { closeAllCardMenus } from "../../modules/shell/cardMenu.js";
+import { BulkSelectController } from "../../core/BulkSelectController.js";
+import { canManageContent } from "../../core/cms-access.js";
+import { closePanels, openPanel, registerPanel } from "../../modules/shell/panels.js";
+import * as mediaPicker from "../../utils/MediaPicker.js";
+const MSG_AVATAR_COLORS = ["#e5484d", "#f0c040", "#22c55e", "#38bdf8", "#a78bfa", "#f472b6", "#ff6600", "#2dd4bf"];
+const PAGE_SIZE = 8;
+function msgInitials(name) {
+  return (name || "?").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+}
+function msgAvatarColor(name) {
+  let hash = 0;
+  const str = name || "";
+  for (let i = 0; i < str.length; i++) hash = hash * 31 + str.charCodeAt(i) >>> 0;
+  return MSG_AVATAR_COLORS[hash % MSG_AVATAR_COLORS.length];
+}
+function statusLabel(status) {
+  return { new: "New", read: "Read", replied: "Replied", spam: "Spam" }[status] || status;
+}
+function formatMsgDateTime(iso) {
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return { date: "Unknown", time: "" };
+    return {
+      date: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
+    };
+  } catch {
+    return { date: "Unknown", time: "" };
+  }
+}
+class ContactMessagesModule extends Module {
+  constructor() {
+    super({
+      name: "ContactMessages",
+      storageKey: "pa_contact_messages",
+      initialState: {
+        messages: [],
+        selectedId: null,
+        statusFilter: "all",
+        timeFilter: "all",
+        searchQuery: "",
+        page: 1,
+        replyMode: null,
+        editingReplyId: null
+      }
+    });
+    this.msgNow = Date.now();
+    this._replyAttachment = null;
+    this.bulkSelect = new BulkSelectController(this, {
+      containerId: "paMsgTableBody",
+      itemSelector: ".pa-msg-row",
+      idAttr: "data-msg-id",
+      label: "message",
+      skipRowClick: true,
+      getVisibleIds: () => this.getFiltered().map((m) => m.id),
+      onBulkDelete: (ids) => this.bulkDelete(ids)
+    });
+  }
+  async bulkDelete(ids) {
+    const n = ids.size;
+    if (n === 0) return;
+    const prev = this.store.get("messages");
+    const filtered = prev.filter((m) => !ids.has(String(m.id)));
+    this.store.set("messages", filtered);
+    if (ids.has(String(this.store.get("selectedId")))) this.store.set("selectedId", null);
+    try {
+      await this.persist();
+      this.renderTable();
+      this.renderDetail();
+      this.statusToast(`${n} message${n > 1 ? "s" : ""} deleted.`, "danger");
+      this.notify(`${n} message${n > 1 ? "s" : ""} deleted in bulk.`, "ri-delete-bin-line");
+    } catch {
+      this.store.set("messages", prev);
+      this.renderTable();
+      this.renderDetail();
+      this.statusToast("Could not delete messages. Please try again.", "danger");
+    }
+  }
+  async load() {
+    const bootstrap = await this.loadRecords(() => ({ items: [], nextCursor: null, total: 0 }));
+    let messages = Array.isArray(bootstrap) ? bootstrap : bootstrap?.items || [];
+    let cursor = Array.isArray(bootstrap) ? null : bootstrap?.nextCursor;
+    while (cursor) {
+      try {
+        const res = await fetch(
+          `/api/contact-messages?cursor=${encodeURIComponent(cursor)}&limit=50`,
+          { method: "GET", headers: { Accept: "application/json" }, credentials: "same-origin" }
+        );
+        if (!res.ok) break;
+        const page = await res.json();
+        messages = messages.concat(page.items || []);
+        cursor = page.nextCursor;
+      } catch {
+        break;
+      }
+    }
+    this.store.set("messages", messages);
+    storage._persist(this.storageKey, messages).catch(() => {
+    });
+    this.computeNow();
+  }
+  patchMessage(updated) {
+    if (!updated) return;
+    const messages = this.store.get("messages").map((row) => this.sameId(row.id, updated.id) || this.sameId(row.dbId, updated.dbId) ? { ...row, ...updated, id: updated.id ?? row.id } : row);
+    this.store.set("messages", messages);
+    storage._persist(this.storageKey, messages).catch(() => {
+    });
+  }
+  async persist() {
+    if (!canManageContent()) return;
+    await this.saveRecords(this.store.get("messages"));
+  }
+  computeNow() {
+    const messages = this.store.get("messages");
+    if (!messages.length) {
+      this.msgNow = Date.now();
+      return;
+    }
+    const latest = Math.max(...messages.map((m) => new Date(m.createdAt).getTime()));
+    this.msgNow = latest + 60 * 60 * 1e3;
+  }
+  sameId(a, b) {
+    return a != null && b != null && String(a) === String(b);
+  }
+  findById(id) {
+    return this.store.get("messages").find((m) => this.sameId(m.id, id));
+  }
+  parseMsgId(raw) {
+    if (raw == null || raw === "") return null;
+    const value = String(raw);
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) return value;
+    const asInt = Number.parseInt(value, 10);
+    return Number.isFinite(asInt) && String(asInt) === value ? asInt : value;
+  }
+  getFiltered() {
+    const { messages, statusFilter, timeFilter, searchQuery } = this.store._raw;
+    let result = messages.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    if (statusFilter !== "all") {
+      result = statusFilter === "unread" ? result.filter((m) => m.status === "new") : result.filter((m) => m.status === statusFilter);
+    }
+    if (timeFilter !== "all") {
+      const spans = { today: 864e5, week: 864e5 * 7, month: 864e5 * 30 };
+      const span = spans[timeFilter];
+      if (span) result = result.filter((m) => this.msgNow - new Date(m.createdAt).getTime() <= span);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((m) => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q) || m.subject.toLowerCase().includes(q));
+    }
+    return result;
+  }
+  render() {
+    this.renderTable();
+    this.renderDetail();
+  }
+  renderRow(m) {
+    const initials = msgInitials(m.name);
+    const color = msgAvatarColor(m.name);
+    const { date, time } = formatMsgDateTime(m.createdAt);
+    const isSelected = this.sameId(m.id, this.store.get("selectedId"));
+    const isUnread = m.status === "new";
+    const bulkMode = this.bulkSelect.isSelectMode();
+    const bulkSelected = this.bulkSelect.isSelected(m.id);
+    let cells = "";
+    if (bulkMode) {
+      cells += `<td style="width:36px;"><input type="checkbox" class="pa-msg-bulk-checkbox" data-select-id="${m.id}" ${bulkSelected ? "checked" : ""} aria-label="Select message from ${escapeHtml(m.name)} for bulk actions" /></td>`;
+    } else {
+      cells += `<td style="width:36px;"><input type="checkbox" class="pa-msg-checkbox" data-msg-id="${m.id}" ${isSelected ? "checked" : ""} aria-label="Select message from ${escapeHtml(m.name)}" /></td>`;
+    }
+    cells += `<td><div class="pa-msg-from"><div class="pa-msg-avatar" style="background:${color};">${escapeHtml(initials)}</div><div style="min-width:0;"><div class="pa-msg-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(m.name)}</div><div class="pa-msg-email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(m.email)}</div></div></div></td>`;
+    cells += `<td class="pa-msg-subject-col"><div class="pa-msg-subject">${escapeHtml(m.subject)}</div><div class="pa-msg-snippet">${escapeHtml(m.snippet)}</div></td>`;
+    cells += `<td><span class="pa-status-badge ${m.status}">${statusLabel(m.status)}</span></td>`;
+    cells += `<td><div class="pa-msg-date">${date}</div><div class="pa-msg-time">${time}</div></td>`;
+    cells += `<td><div class="pa-msg-actions pa-card-actions"><button class="pa-action-btn pa-action-more" data-action="menu" data-msg-id="${m.id}" title="More options" aria-label="More options"><i class="ri-more-2-fill"></i></button><div class="pa-card-menu" data-msg-id="${m.id}"><div class="pa-card-menu-item" data-action="${m.status === "new" ? "mark-read" : "mark-unread"}" data-msg-id="${m.id}"><i class="ri-mail-open-line"></i> ${m.status === "new" ? "Mark as Read" : "Mark as Unread"}</div><div class="pa-card-menu-item" data-action="toggle-spam" data-msg-id="${m.id}"><i class="ri-spam-2-line"></i> ${m.status === "spam" ? "Not Spam" : "Mark as Spam"}</div><div class="pa-card-menu-item danger" data-action="delete" data-msg-id="${m.id}"><i class="ri-delete-bin-line"></i> Delete</div></div></div></td>`;
+    return `<tr class="pa-msg-row ${isSelected ? "selected" : ""} ${isUnread ? "unread" : ""}${bulkSelected ? " pa-selected" : ""}" data-msg-id="${m.id}">${cells}</tr>`;
+  }
+  renderMailPreview() {
+    const list = $id("paMailPreviewList");
+    const badge = $id("paMailPreviewBadge");
+    if (!list) return;
+    const allUnread = this.store.get("messages").filter((m) => m.status === "new").sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const unread = allUnread.slice(0, 5);
+    if (badge) {
+      badge.textContent = allUnread.length;
+      badge.classList.toggle("hidden", allUnread.length === 0);
+    }
+    if (unread.length === 0) {
+      list.innerHTML = `<div class="pa-notif-empty">No new messages</div>`;
+      return;
+    }
+    list.innerHTML = unread.map((m) => `<div class="pa-notif-item" data-msg-id="${m.id}"><div class="pa-notif-item-icon"><i class="ri-mail-line"></i></div><div><div class="pa-notif-item-text"><strong>${escapeHtml(m.name)}</strong> \u2014 ${escapeHtml(m.subject)}</div><div class="pa-notif-item-time">${formatMsgDateTime(m.createdAt).date}</div></div></div>`).join("");
+    list.querySelectorAll(".pa-notif-item").forEach((item) => {
+      item.addEventListener("click", () => {
+        this.selectMessage(this.parseMsgId(item.dataset.msgId));
+        $id("paMailPreviewWrap")?.classList.remove("open");
+        $id("paMsgListCard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  }
+  renderTable() {
+    const all = this.getFiltered();
+    const totalItems = all.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+    let page = this.store.get("page");
+    if (page > totalPages) page = totalPages;
+    if (page < 1) page = 1;
+    this.store.set("page", page);
+    const start = (page - 1) * PAGE_SIZE;
+    const pageItems = all.slice(start, start + PAGE_SIZE);
+    const tbody = $id("paMsgTableBody");
+    if (tbody) {
+      if (pageItems.length === 0) {
+        const hasFilters = this.store.get("searchQuery").trim() || this.store.get("statusFilter") !== "all" || this.store.get("timeFilter") !== "all";
+        tbody.innerHTML = `<tr class="pa-msg-table-empty"><td colspan="6"><div class="pa-empty-state"><i class="ri-mail-line"></i><div class="pa-empty-state-title">${hasFilters ? "No messages match your filters" : "No messages yet"}</div><div class="pa-empty-state-text">${hasFilters ? "Try adjusting your search, status, or date filters." : "Messages submitted through your contact form will appear here."}</div>${hasFilters ? `<button class="pa-empty-state-btn" id="paMsgEmptyResetBtn">Reset filters</button>` : ""}</div></td></tr>`;
+        this.on($id("paMsgEmptyResetBtn"), "click", () => this.resetFilters());
+      } else {
+        tbody.innerHTML = pageItems.map((m) => this.renderRow(m)).join("");
+      }
+    }
+    this.renderPagination(totalItems, totalPages, page);
+    this.attachRowListeners();
+    this.bulkSelect.onRender();
+    this.renderMailPreview();
+  }
+  renderPagination(totalItems, totalPages, page) {
+    const btnsWrap = $id("paMsgPaginationBtns");
+    const info = $id("paMsgPaginationInfo");
+    if (!btnsWrap || !info) return;
+    if (totalItems === 0) {
+      btnsWrap.innerHTML = "";
+      info.textContent = "Showing 0 messages";
+      return;
+    }
+    if (totalPages <= 1) {
+      btnsWrap.innerHTML = "";
+      info.textContent = `Showing ${totalItems} of ${totalItems} messages`;
+      return;
+    }
+    let html = `<div class="pa-page-nav ${page === 1 ? "disabled" : ""}" id="paMsgPagePrev" role="button" aria-label="Previous page"><i class="ri-arrow-left-s-line"></i></div>`;
+    let lastShown = 0;
+    for (let p = 1; p <= totalPages; p++) {
+      const show = p === 1 || p === totalPages || Math.abs(p - page) <= 1;
+      if (!show) continue;
+      if (p - lastShown > 1) html += `<span style="color:var(--pa-text-faint);padding:0 4px;font-size:12px;">\u2026</span>`;
+      html += `<button class="pa-page-btn ${p === page ? "active" : ""}" data-page="${p}">${p}</button>`;
+      lastShown = p;
+    }
+    html += `<div class="pa-page-nav ${page === totalPages ? "disabled" : ""}" id="paMsgPageNext" role="button" aria-label="Next page"><i class="ri-arrow-right-s-line"></i></div>`;
+    btnsWrap.innerHTML = html;
+    const startN = (page - 1) * PAGE_SIZE + 1;
+    const endN = Math.min(page * PAGE_SIZE, totalItems);
+    info.textContent = `Showing ${startN} to ${endN} of ${totalItems} messages`;
+    btnsWrap.querySelectorAll(".pa-page-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this.store.set("page", parseInt(btn.dataset.page, 10));
+        this.renderTable();
+        $id("paMsgListCard")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    });
+    const prev = $id("paMsgPagePrev");
+    const next = $id("paMsgPageNext");
+    if (prev && !prev.classList.contains("disabled")) prev.addEventListener("click", () => {
+      this.store.set("page", page - 1);
+      this.renderTable();
+    });
+    if (next && !next.classList.contains("disabled")) next.addEventListener("click", () => {
+      this.store.set("page", page + 1);
+      this.renderTable();
+    });
+  }
+  attachRowListeners() {
+    const tbody = $id("paMsgTableBody");
+    if (!tbody) return;
+    tbody.querySelectorAll(".pa-msg-row").forEach((row) => {
+      row.addEventListener("click", (e) => {
+        if (this.bulkSelect.isSelectMode()) {
+          if (e.target.closest(".pa-msg-actions") || e.target.closest("[data-select-id]")) return;
+          this.bulkSelect.toggleSelect(row.dataset.msgId);
+          return;
+        }
+        if (e.target.closest(".pa-msg-actions") || e.target.classList.contains("pa-msg-checkbox")) return;
+        this.selectMessage(this.parseMsgId(row.dataset.msgId));
+      });
+    });
+    tbody.querySelectorAll(".pa-msg-checkbox").forEach((cb) => {
+      cb.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.selectMessage(this.parseMsgId(cb.dataset.msgId));
+      });
+    });
+    tbody.querySelectorAll('[data-action="menu"]').forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.msgId;
+        const menu = tbody.querySelector(`.pa-card-menu[data-msg-id="${CSS.escape(id)}"]`);
+        document.querySelectorAll(".pa-card-menu.open").forEach((m) => {
+          if (m !== menu) m.classList.remove("open");
+        });
+        menu?.classList.toggle("open");
+      });
+    });
+    tbody.querySelectorAll(".pa-card-menu-item").forEach((item) => {
+      item.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const action = item.dataset.action;
+        const id = this.parseMsgId(item.dataset.msgId);
+        closeAllCardMenus();
+        const m = this.findById(id);
+        if (!m || !canManageContent()) return;
+        if (action === "mark-read") {
+          m.status = "read";
+          this.persist();
+          this.renderTable();
+          if (this.sameId(this.store.get("selectedId"), id)) this.renderDetail();
+          this.toast(`Marked "${m.name}"'s message as read.`, "info", 2e3);
+        } else if (action === "mark-unread") {
+          m.status = "new";
+          this.persist();
+          this.renderTable();
+          if (this.sameId(this.store.get("selectedId"), id)) this.renderDetail();
+          this.toast(`Marked "${m.name}"'s message as unread.`, "info", 2e3);
+        } else if (action === "toggle-spam") {
+          m.status = m.status === "spam" ? "read" : "spam";
+          this.persist();
+          this.renderTable();
+          if (this.sameId(this.store.get("selectedId"), id)) this.renderDetail();
+          this.toast(m.status === "spam" ? `Marked "${m.name}"'s message as spam.` : `Removed "${m.name}"'s message from spam.`, m.status === "spam" ? "danger" : "success", 2200);
+        } else if (action === "delete") {
+          requestDelete(id, "message", m.name, "Delete this message?");
+        }
+      });
+    });
+  }
+  resetFilters() {
+    this.store.batch(() => {
+      this.store.set("searchQuery", "");
+      this.store.set("statusFilter", "all");
+      this.store.set("timeFilter", "all");
+      this.store.set("page", 1);
+    });
+    const searchInput = $id("paSearchInput");
+    if (searchInput) {
+      searchInput.value = "";
+      $id("paSearchWrap")?.classList.remove("has-value");
+    }
+    const toolbarSearch = $id("paMsgSearchInput");
+    if (toolbarSearch) toolbarSearch.value = "";
+    const statusSelect = $id("paMsgStatusFilter");
+    if (statusSelect) statusSelect.value = "all";
+    const timeSelect = $id("paMsgTimeFilter");
+    if (timeSelect) timeSelect.value = "all";
+    $all(".pa-status-tab").forEach((t) => t.classList.toggle("active", t.dataset.status === "all"));
+    this.renderTable();
+  }
+  selectMessage(id) {
+    const m = this.findById(id);
+    if (!m) return;
+    this.store.set("selectedId", id);
+    if (m.status === "new") {
+      m.status = "read";
+      this.persist().catch(() => {
+      });
+    }
+    this.renderTable();
+    this.renderDetail();
+  }
+  getMessageReplies(m) {
+    if (Array.isArray(m?.replies) && m.replies.length) return m.replies;
+    if (m?.reply) {
+      return [{
+        id: `legacy-${m.id}`,
+        body: m.reply,
+        subject: m.subject || "",
+        cc: "",
+        attachmentUrl: "",
+        attachmentName: "",
+        sentAt: m.repliedAt
+      }];
+    }
+    return [];
+  }
+  clearReplyAttachment() {
+    this._replyAttachment = null;
+    const preview = $id("paMsgReplyAttachPreview");
+    const fileInput = $id("paMsgReplyFile");
+    if (fileInput) fileInput.value = "";
+    if (preview) {
+      preview.hidden = true;
+      preview.innerHTML = "";
+    }
+  }
+  renderReplyAttachmentPreview(label) {
+    const preview = $id("paMsgReplyAttachPreview");
+    if (!preview) return;
+    preview.hidden = false;
+    preview.innerHTML = `
+      <span><i class="ri-attachment-2"></i> ${escapeHtml(label)}</span>
+      <button type="button" class="pa-btn-sm" id="paMsgReplyAttachClear">Remove</button>`;
+    $id("paMsgReplyAttachClear")?.addEventListener("click", () => this.clearReplyAttachment());
+  }
+  setReplyAttachment(file, contentBase64) {
+    this._replyAttachment = {
+      name: file.name,
+      mime: file.type || "application/octet-stream",
+      size: file.size,
+      contentBase64
+    };
+    this.renderReplyAttachmentPreview(file.name);
+  }
+  setReplyAttachmentFromMedia(item) {
+    const mime = item.type || "application/octet-stream";
+    let contentBase64 = null;
+    if (item.url?.startsWith("data:")) {
+      const comma = item.url.indexOf(",");
+      contentBase64 = comma >= 0 ? item.url.slice(comma + 1) : null;
+    }
+    this._replyAttachment = {
+      fromMedia: true,
+      url: item.url,
+      name: item.name || "attachment",
+      mime,
+      size: item.size || 0,
+      contentBase64
+    };
+    this.renderReplyAttachmentPreview(`${item.name} (from Media Library)`);
+  }
+  buildReplyAttachmentPayload() {
+    if (!this._replyAttachment || this._replyAttachment.clear) return void 0;
+    if (this._replyAttachment.fromMedia) {
+      return {
+        fromMedia: true,
+        url: this._replyAttachment.url,
+        name: this._replyAttachment.name,
+        mime: this._replyAttachment.mime,
+        size: this._replyAttachment.size
+      };
+    }
+    return {
+      name: this._replyAttachment.name,
+      mime: this._replyAttachment.mime,
+      size: this._replyAttachment.size,
+      contentBase64: this._replyAttachment.contentBase64
+    };
+  }
+  async refreshLinkedMediaCache() {
+    storage.invalidate("pa_media_library");
+    await storage.get("pa_media_library", []).catch(() => []);
+  }
+  async readFileAsBase64(file) {
+    const buffer = await file.arrayBuffer();
+    let binary = "";
+    const bytes = new Uint8Array(buffer);
+    const chunk = 32768;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+  openReplyModal(messageId, replyId = null) {
+    if (!canManageContent()) return;
+    const m = this.findById(messageId);
+    if (!m) return;
+    const editing = replyId ? this.getMessageReplies(m).find((r) => String(r.id) === String(replyId)) : null;
+    this.store.set("replyMode", editing ? "edit" : "create");
+    this.store.set("editingReplyId", editing ? editing.id : null);
+    this.store.set("selectedId", m.id);
+    this.clearReplyAttachment();
+    const toInput = $id("paMsgReplyTo");
+    const ccInput = $id("paMsgReplyCc");
+    const subjectInput = $id("paMsgReplySubject");
+    const textInput = $id("paMsgReplyText");
+    const title = $id("paMsgReplyPanelTitle");
+    const sendLabel = $id("paMsgReplySendLabel");
+    const resendWrap = $id("paMsgReplyResendWrap");
+    const resend = $id("paMsgReplyResend");
+    if (toInput) toInput.value = m.email || "";
+    if (ccInput) ccInput.value = editing?.cc || "";
+    if (subjectInput) {
+      const base = editing?.subject || m.subject || "";
+      subjectInput.value = base.toLowerCase().startsWith("re:") ? base : `Re: ${base}`;
+    }
+    if (textInput) textInput.value = editing?.body || "";
+    if (title) title.textContent = editing ? "Edit Reply" : "Reply to Message";
+    if (sendLabel) sendLabel.textContent = editing ? "Save Reply" : "Send Reply";
+    if (resendWrap) resendWrap.hidden = !editing;
+    if (resend) resend.checked = false;
+    if (editing?.attachmentName) {
+      const preview = $id("paMsgReplyAttachPreview");
+      if (preview) {
+        preview.hidden = false;
+        preview.innerHTML = `
+          <span><i class="ri-attachment-2"></i> ${escapeHtml(editing.attachmentName)} (kept)</span>
+          <button type="button" class="pa-btn-sm" id="paMsgReplyAttachClear">Remove</button>`;
+        $id("paMsgReplyAttachClear")?.addEventListener("click", () => {
+          this._replyAttachment = { clear: true };
+          preview.hidden = true;
+          preview.innerHTML = "";
+        });
+      }
+    }
+    openPanel("paMsgReplyPanel");
+    setTimeout(() => textInput?.focus(), 50);
+  }
+  closeReplyModal() {
+    closePanels();
+    this.store.set("replyMode", null);
+    this.store.set("editingReplyId", null);
+    this.clearReplyAttachment();
+    const sendBtn = $id("paMsgReplySend");
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.classList.remove("loading");
+    }
+  }
+  async submitReplyModal() {
+    if (!canManageContent()) return;
+    const m = this.findById(this.store.get("selectedId"));
+    if (!m) return;
+    const text = ($id("paMsgReplyText")?.value || "").trim();
+    const subject = ($id("paMsgReplySubject")?.value || "").trim();
+    const cc = ($id("paMsgReplyCc")?.value || "").trim();
+    if (!text) {
+      this.toast("Please write a reply before sending.", "danger");
+      $id("paMsgReplyText")?.focus();
+      return;
+    }
+    const mode = this.store.get("replyMode");
+    const editingReplyId = this.store.get("editingReplyId");
+    const sendBtn = $id("paMsgReplySend");
+    const sendLabel = $id("paMsgReplySendLabel");
+    if (sendBtn) {
+      sendBtn.disabled = true;
+      sendBtn.classList.add("loading");
+    }
+    if (sendLabel) sendLabel.textContent = mode === "edit" ? "Saving\u2026" : "Sending\u2026";
+    try {
+      const attachmentPayload = this.buildReplyAttachmentPayload();
+      let res;
+      if (mode === "edit" && editingReplyId) {
+        res = await fetch("/api/contact-messages/reply", {
+          method: "PUT",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            replyId: editingReplyId,
+            reply: text,
+            subject,
+            cc,
+            resend: !!$id("paMsgReplyResend")?.checked,
+            clearAttachment: !!this._replyAttachment?.clear,
+            attachment: attachmentPayload
+          })
+        });
+      } else {
+        res = await fetch("/api/contact-messages/reply", {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            id: m.id,
+            reply: text,
+            subject,
+            cc,
+            attachment: attachmentPayload
+          })
+        });
+      }
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || "Could not save reply.");
+      if (payload.message) this.patchMessage(payload.message);
+      await this.refreshLinkedMediaCache();
+      this.closeReplyModal();
+      this.renderTable();
+      this.renderDetail();
+      this.toast(mode === "edit" ? "Reply updated." : `Reply sent to ${m.name}.`, "success");
+      this.notify(mode === "edit" ? `Updated reply to ${m.name}.` : `You replied to ${m.name}'s message.`, "ri-reply-line");
+    } catch (err) {
+      this.toast(err?.message || "Could not send reply. Please try again.", "danger");
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.classList.remove("loading");
+      }
+      if (sendLabel) sendLabel.textContent = mode === "edit" ? "Save Reply" : "Send Reply";
+    }
+  }
+  async deleteReply(replyId) {
+    if (!canManageContent()) return;
+    const m = this.findById(this.store.get("selectedId"));
+    if (!m || !replyId || String(replyId).startsWith("legacy-")) {
+      this.toast("This reply cannot be deleted.", "danger");
+      return;
+    }
+    try {
+      const res = await fetch("/api/contact-messages/reply", {
+        method: "DELETE",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ replyId })
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || "Could not delete reply.");
+      if (payload.message) this.patchMessage(payload.message);
+      await this.refreshLinkedMediaCache();
+      this.renderTable();
+      this.renderDetail();
+      this.toast("Reply deleted.", "danger");
+    } catch (err) {
+      this.toast(err?.message || "Could not delete reply.", "danger");
+    }
+  }
+  renderDetail() {
+    const body = $id("paMsgDetailBody");
+    const footer = $id("paMsgDetailFooter");
+    const detailPanel = $id("paMsgDetailPanel");
+    if (!body) return;
+    const m = this.findById(this.store.get("selectedId"));
+    if (!m) {
+      detailPanel?.classList.remove("has-selection");
+      body.innerHTML = `<div class="pa-msg-detail-empty"><i class="ri-mail-open-line"></i><div class="pa-msg-detail-empty-title">No message selected</div><div class="pa-msg-detail-empty-text">Select a message from the list to view its full content here.</div></div>`;
+      if (footer) footer.innerHTML = "";
+      const starBtn2 = $id("paMsgDetailStar");
+      if (starBtn2) starBtn2.innerHTML = '<i class="ri-star-line"></i>';
+      return;
+    }
+    detailPanel?.classList.add("has-selection");
+    const initials = msgInitials(m.name);
+    const color = msgAvatarColor(m.name);
+    const received = formatMsgDateTime(m.createdAt);
+    const replies = this.getMessageReplies(m);
+    let html = `
       <div class="pa-msg-detail-sender">
-        <div class="pa-msg-detail-avatar" style="background:${l};">${g(r)}</div>
+        <div class="pa-msg-detail-avatar" style="background:${color};">${escapeHtml(initials)}</div>
         <div style="min-width:0;">
-          <div class="pa-msg-detail-sender-name">${g(a.name)}</div>
-          <div class="pa-msg-detail-sender-email">${g(a.email)} <i class="ri-file-copy-line pa-msg-detail-copy" id="paMsgCopyEmail" title="Copy email"></i></div>
+          <div class="pa-msg-detail-sender-name">${escapeHtml(m.name)}</div>
+          <div class="pa-msg-detail-sender-email">${escapeHtml(m.email)} <i class="ri-file-copy-line pa-msg-detail-copy" id="paMsgCopyEmail" title="Copy email"></i></div>
         </div>
-        <div class="pa-msg-detail-sender-status"><span class="pa-status-badge ${a.status}">${S(a.status)}</span></div>
+        <div class="pa-msg-detail-sender-status"><span class="pa-status-badge ${m.status}">${statusLabel(m.status)}</span></div>
       </div>
       <div class="pa-msg-detail-meta">
-        <span><i class="ri-calendar-line"></i> ${o.date} at ${o.time}</span>
-        <span><i class="ri-map-pin-line"></i> IP: ${g(a.ip||"\u2014")}</span>
+        <span><i class="ri-calendar-line"></i> ${received.date} at ${received.time}</span>
+        <span><i class="ri-map-pin-line"></i> IP: ${escapeHtml(m.ip || "\u2014")}</span>
       </div>
       <div class="pa-msg-detail-label">Subject</div>
-      <div class="pa-msg-detail-subject">${g(a.subject)}</div>
+      <div class="pa-msg-detail-subject">${escapeHtml(m.subject)}</div>
       <div class="pa-msg-detail-label">Message</div>
-      <div class="pa-msg-detail-box">${g(a.message)}</div>
-    `;d.length&&(m+=`
+      <div class="pa-msg-detail-box">${escapeHtml(m.message)}</div>
+    `;
+    if (replies.length) {
+      html += `
         <div class="pa-msg-detail-reply-section">
-          <div class="pa-msg-detail-label">Your Replies (${d.length})</div>
+          <div class="pa-msg-detail-label">Your Replies (${replies.length})</div>
           <div class="pa-msg-reply-thread">
-            ${d.map((i,c)=>{const h=b(i.sentAt||i.createdAt),w=i.id&&!String(i.id).startsWith("legacy-"),f=c===0;return`
-                <div class="pa-msg-reply-card${f?" is-open":""}" data-reply-id="${g(String(i.id))}">
+            ${replies.map((r, index) => {
+        const when = formatMsgDateTime(r.sentAt || r.createdAt);
+        const canEdit = r.id && !String(r.id).startsWith("legacy-");
+        const isOpen = index === 0;
+        return `
+                <div class="pa-msg-reply-card${isOpen ? " is-open" : ""}" data-reply-id="${escapeHtml(String(r.id))}">
                   <div class="pa-msg-reply-card-head">
-                    <button type="button" class="pa-msg-reply-card-toggle" aria-expanded="${f?"true":"false"}" aria-controls="paMsgReplyContent-${g(String(i.id))}">
+                    <button type="button" class="pa-msg-reply-card-toggle" aria-expanded="${isOpen ? "true" : "false"}" aria-controls="paMsgReplyContent-${escapeHtml(String(r.id))}">
                       <div class="pa-msg-reply-card-head-text">
-                        <div class="pa-msg-reply-card-title">${g(i.subject||`Re: ${a.subject}`)}</div>
-                        <div class="pa-msg-reply-card-meta">Sent ${h.date}${h.time?` at ${h.time}`:""}${i.cc?` \xB7 Cc ${g(i.cc)}`:""}</div>
+                        <div class="pa-msg-reply-card-title">${escapeHtml(r.subject || `Re: ${m.subject}`)}</div>
+                        <div class="pa-msg-reply-card-meta">Sent ${when.date}${when.time ? ` at ${when.time}` : ""}${r.cc ? ` \xB7 Cc ${escapeHtml(r.cc)}` : ""}</div>
                       </div>
                     </button>
                     <div class="pa-msg-reply-card-actions">
-                      <button type="button" class="pa-msg-detail-icon-btn" data-reply-toggle aria-expanded="${f?"true":"false"}" title="Toggle reply" aria-label="Toggle reply"><i class="ri-arrow-down-s-line pa-msg-reply-card-chevron"></i></button>
-                      ${w?`<button type="button" class="pa-msg-detail-icon-btn" data-reply-edit="${g(String(i.id))}" title="Edit reply" aria-label="Edit reply"><i class="ri-pencil-line"></i></button>
-                      <button type="button" class="pa-msg-detail-icon-btn danger" data-reply-delete="${g(String(i.id))}" title="Delete reply" aria-label="Delete reply"><i class="ri-delete-bin-line"></i></button>`:""}
+                      <button type="button" class="pa-msg-detail-icon-btn" data-reply-toggle aria-expanded="${isOpen ? "true" : "false"}" title="Toggle reply" aria-label="Toggle reply"><i class="ri-arrow-down-s-line pa-msg-reply-card-chevron"></i></button>
+                      ${canEdit ? `<button type="button" class="pa-msg-detail-icon-btn" data-reply-edit="${escapeHtml(String(r.id))}" title="Edit reply" aria-label="Edit reply"><i class="ri-pencil-line"></i></button>
+                      <button type="button" class="pa-msg-detail-icon-btn danger" data-reply-delete="${escapeHtml(String(r.id))}" title="Delete reply" aria-label="Delete reply"><i class="ri-delete-bin-line"></i></button>` : ""}
                     </div>
                   </div>
-                  <div class="pa-msg-reply-card-content" id="paMsgReplyContent-${g(String(i.id))}">
-                    <div class="pa-msg-reply-card-body">${g(i.body)}</div>
-                    ${i.attachmentName?`<a class="pa-msg-reply-card-attach" href="${g(i.attachmentUrl||"#")}" ${i.attachmentUrl?"download":'onclick="return false;"'}><i class="ri-attachment-2"></i> ${g(i.attachmentName)}</a>`:""}
+                  <div class="pa-msg-reply-card-content" id="paMsgReplyContent-${escapeHtml(String(r.id))}">
+                    <div class="pa-msg-reply-card-body">${escapeHtml(r.body)}</div>
+                    ${r.attachmentName ? `<a class="pa-msg-reply-card-attach" href="${escapeHtml(r.attachmentUrl || "#")}" ${r.attachmentUrl ? "download" : 'onclick="return false;"'}><i class="ri-attachment-2"></i> ${escapeHtml(r.attachmentName)}</a>` : ""}
                   </div>
-                </div>`}).join("")}
+                </div>`;
+      }).join("")}
           </div>
-        </div>`),e.innerHTML=m,t&&(t.innerHTML=`<button class="pa-btn pa-btn-primary pa-msg-reply-again-btn" id="paMsgReplyBtn"><i class="ri-reply-line"></i> ${d.length?"Reply Again":"Reply to Message"}</button>`,n("paMsgReplyBtn")?.addEventListener("click",()=>this.openReplyModal(a.id))),e.querySelectorAll("[data-reply-edit]").forEach(i=>{i.addEventListener("click",()=>this.openReplyModal(a.id,i.getAttribute("data-reply-edit")))}),e.querySelectorAll("[data-reply-delete]").forEach(i=>{i.addEventListener("click",()=>{const c=i.getAttribute("data-reply-delete");$(c,"message-reply","this reply","Delete this reply from the thread?")})}),this.attachReplyCardCollapseListeners(e),n("paMsgCopyEmail")?.addEventListener("click",()=>{navigator.clipboard?.writeText(a.email).then(()=>this.toast("Email copied to clipboard.","success",1800),()=>this.toast("Clipboard not available.","danger"))});const p=n("paMsgDetailStar");p&&(p.innerHTML=a.starred?'<i class="ri-star-fill"></i>':'<i class="ri-star-line"></i>',p.classList.toggle("starred",!!a.starred))}attachReplyCardCollapseListeners(e){e?.querySelectorAll(".pa-msg-reply-card").forEach(t=>{const s=t.querySelectorAll(".pa-msg-reply-card-toggle, [data-reply-toggle]");if(!s.length)return;const a=r=>{t.classList.toggle("is-open",r),s.forEach(l=>l.setAttribute("aria-expanded",r?"true":"false"))};s.forEach(r=>{r.addEventListener("click",()=>a(!t.classList.contains("is-open")))})})}async deleteById(e){if(!y())return;const t=this.findById(e);if(!t)return;const s=this.store.get("messages");this.store.set("messages",s.filter(a=>!this.sameId(a.id,e))),this.sameId(this.store.get("selectedId"),e)&&this.store.set("selectedId",null);try{await this.persist(),this.renderTable(),this.renderDetail(),this.statusToast(`Message from "${t.name}" deleted.`,"danger"),this.notify(`Deleted message from "${t.name}".`,"ri-delete-bin-line")}catch{this.store.set("messages",s),this.statusToast("Could not delete message. Please try again.","danger")}}exportCsv(){if(!y())return;const e=this.getFiltered(),s=[["Name","Email","Subject","Status","Date","Message"].map(k).join(",")];e.forEach(o=>{const{date:d,time:m}=b(o.createdAt);s.push([o.name,o.email,o.subject,S(o.status),`${d} ${m}`,o.message].map(k).join(","))});const a=new Blob([s.join(`\r
-`)],{type:"text/csv;charset=utf-8;"}),r=URL.createObjectURL(a),l=document.createElement("a");l.href=r,l.download=`contact-messages-${new Date().toISOString().slice(0,10)}.csv`,document.body.appendChild(l),l.click(),l.remove(),URL.revokeObjectURL(r),this.toast(`Exported ${e.length} message${e.length===1?"":"s"} to CSV.`,"success"),this.notify(`Exported ${e.length} contact messages.`,"ri-download-2-line")}bindEvents(){R(".pa-status-tab").forEach(i=>{this.on(i,"click",()=>{this.store.set("statusFilter",i.dataset.status),this.store.set("page",1),R(".pa-status-tab").forEach(h=>h.classList.toggle("active",h===i));const c=n("paMsgStatusFilter");c&&(c.value=["all","unread","replied","spam"].includes(this.store.get("statusFilter"))?this.store.get("statusFilter"):"all"),this.renderTable()})}),this.on(n("paMsgStatusFilter"),"change",i=>{this.store.set("statusFilter",i.target.value),this.store.set("page",1),R(".pa-status-tab").forEach(c=>c.classList.toggle("active",c.dataset.status===this.store.get("statusFilter"))),this.renderTable()}),this.on(n("paMsgTimeFilter"),"change",i=>{this.store.set("timeFilter",i.target.value),this.store.set("page",1),this.renderTable()});const e=n("paSearchInput"),t=n("paSearchWrap"),s=n("paMsgSearchInput"),a=C(()=>{this.store.set("page",1),this.renderTable()},180);e&&this.on(e,"input",i=>{this.store.set("searchQuery",i.target.value),t?.classList.toggle("has-value",i.target.value.length>0),s&&(s.value=i.target.value),a()}),this.on(n("paSearchClear"),"click",()=>{this.store.set("searchQuery",""),e&&(e.value=""),t?.classList.remove("has-value"),s&&(s.value=""),this.store.set("page",1),this.renderTable(),e?.focus()}),s&&this.on(s,"input",i=>{this.store.set("searchQuery",i.target.value),e&&(e.value=i.target.value),t?.classList.toggle("has-value",i.target.value.length>0),a()}),this.on(n("paMsgExportBtn"),"click",()=>this.exportCsv()),this.on(n("paMsgDetailStar"),"click",()=>{const i=this.store.get("selectedId");if(i==null)return;const c=this.findById(i);c&&(c.starred=!c.starred,this.persist(),this.renderDetail(),this.toast(c.starred?"Message starred.":"Message unstarred.","info",1500))}),this.on(n("paMsgDetailDelete"),"click",()=>{const i=this.store.get("selectedId");if(i==null)return;const c=this.findById(i);c&&$(c.id,"message",c.name,"Delete this message?")}),this.on(n("paMsgDetailClose"),"click",()=>{this.store.set("selectedId",null),this.renderTable(),this.renderDetail()}),B("paMsgReplyPanel"),this.on(n("paMsgReplyPanelClose"),"click",()=>this.closeReplyModal()),this.on(n("paMsgReplyCancel"),"click",()=>this.closeReplyModal()),this.on(n("paMsgReplySend"),"click",()=>this.submitReplyModal()),this.on(n("paPanelOverlay"),"click",i=>{i.target.id==="paPanelOverlay"&&n("paMsgReplyPanel")?.classList.contains("visible")&&this.closeReplyModal()});const r=n("paMsgReplyPickBtn");r&&this.on(r,"click",()=>{j.open({mode:"attachment",folder:"contact",mediaFilter:"all",returnFocus:r,onSelect:i=>{this.setReplyAttachmentFromMedia(i),this.toast("Attachment selected from media library","success")}})});const l=n("paMsgReplyUpload"),o=n("paMsgReplyFile");l&&o&&(this.on(l,"click",i=>{i.target!==o&&o.click()}),this.on(o,"change",async()=>{const i=o.files?.[0];if(i){try{const{uploadContactAttachment:c}=await import("../../utils/media-upload.js"),h=await c(i);this.setReplyAttachmentFromMedia({url:h.url,name:h.fileName||i.name,type:h.mimeType||i.type,size:h.size||i.size}),this.toast("Attachment uploaded","success")}catch{this.toast("Could not upload attachment.","danger")}o.value=""}}));const d=n("paMailPreviewWrap"),m=n("paMailPreviewBtn");m&&d&&this.on(m,"click",i=>{i.stopPropagation(),d.classList.toggle("open")}),this.on(n("paHelpBtn"),"click",()=>this.toast("Need a hand? Reach us at support@portfolioadmin.dev","info",3e3));const p=n("paHeaderAvatarWrap");p&&(this.on(p,"click",i=>{i.stopPropagation(),p.classList.toggle("open")}),p.querySelectorAll(".pa-user-dropdown-item").forEach(i=>{this.on(i,"click",c=>{c.stopPropagation(),p.classList.remove("open");const h=i.dataset.toast;if(h){const[w,f]=h.split(":");this.toast(f,w)}else i.id==="paHeaderLogoutBtn"&&this.toast("Logging out\u2026","info")})})),this.on(document,"click",i=>{d&&!d.contains(i.target)&&d.classList.remove("open"),p&&!p.contains(i.target)&&p.classList.remove("open")}),this.onBus("confirm:confirmed",({id:i,type:c})=>{c==="message"&&this.deleteById(this.parseMsgId(i)),c==="message-reply"&&this.deleteReply(i)})}}export{V as ContactMessagesModule};
+        </div>`;
+    }
+    body.innerHTML = html;
+    if (footer) {
+      footer.innerHTML = `<button class="pa-btn pa-btn-primary pa-msg-reply-again-btn" id="paMsgReplyBtn"><i class="ri-reply-line"></i> ${replies.length ? "Reply Again" : "Reply to Message"}</button>`;
+      $id("paMsgReplyBtn")?.addEventListener("click", () => this.openReplyModal(m.id));
+    }
+    body.querySelectorAll("[data-reply-edit]").forEach((btn) => {
+      btn.addEventListener("click", () => this.openReplyModal(m.id, btn.getAttribute("data-reply-edit")));
+    });
+    body.querySelectorAll("[data-reply-delete]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const replyId = btn.getAttribute("data-reply-delete");
+        requestDelete(replyId, "message-reply", "this reply", "Delete this reply from the thread?");
+      });
+    });
+    this.attachReplyCardCollapseListeners(body);
+    $id("paMsgCopyEmail")?.addEventListener("click", () => {
+      navigator.clipboard?.writeText(m.email).then(() => this.toast("Email copied to clipboard.", "success", 1800), () => this.toast("Clipboard not available.", "danger"));
+    });
+    const starBtn = $id("paMsgDetailStar");
+    if (starBtn) {
+      starBtn.innerHTML = m.starred ? '<i class="ri-star-fill"></i>' : '<i class="ri-star-line"></i>';
+      starBtn.classList.toggle("starred", !!m.starred);
+    }
+  }
+  attachReplyCardCollapseListeners(root) {
+    root?.querySelectorAll(".pa-msg-reply-card").forEach((card) => {
+      const toggles = card.querySelectorAll(".pa-msg-reply-card-toggle, [data-reply-toggle]");
+      if (!toggles.length) return;
+      const setOpen = (open) => {
+        card.classList.toggle("is-open", open);
+        toggles.forEach((el) => el.setAttribute("aria-expanded", open ? "true" : "false"));
+      };
+      toggles.forEach((toggle) => {
+        toggle.addEventListener("click", () => setOpen(!card.classList.contains("is-open")));
+      });
+    });
+  }
+  async deleteById(id) {
+    if (!canManageContent()) return;
+    const m = this.findById(id);
+    if (!m) return;
+    const prev = this.store.get("messages");
+    this.store.set("messages", prev.filter((x) => !this.sameId(x.id, id)));
+    if (this.sameId(this.store.get("selectedId"), id)) this.store.set("selectedId", null);
+    try {
+      await this.persist();
+      this.renderTable();
+      this.renderDetail();
+      this.statusToast(`Message from "${m.name}" deleted.`, "danger");
+      this.notify(`Deleted message from "${m.name}".`, "ri-delete-bin-line");
+    } catch {
+      this.store.set("messages", prev);
+      this.statusToast("Could not delete message. Please try again.", "danger");
+    }
+  }
+  exportCsv() {
+    if (!canManageContent()) return;
+    const rows = this.getFiltered();
+    const header = ["Name", "Email", "Subject", "Status", "Date", "Message"];
+    const csvRows = [header.map(csvEscapeField).join(",")];
+    rows.forEach((m) => {
+      const { date, time } = formatMsgDateTime(m.createdAt);
+      csvRows.push([m.name, m.email, m.subject, statusLabel(m.status), `${date} ${time}`, m.message].map(csvEscapeField).join(","));
+    });
+    const blob = new Blob([csvRows.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `contact-messages-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    this.toast(`Exported ${rows.length} message${rows.length === 1 ? "" : "s"} to CSV.`, "success");
+    this.notify(`Exported ${rows.length} contact messages.`, "ri-download-2-line");
+  }
+  bindEvents() {
+    $all(".pa-status-tab").forEach((tab) => {
+      this.on(tab, "click", () => {
+        this.store.set("statusFilter", tab.dataset.status);
+        this.store.set("page", 1);
+        $all(".pa-status-tab").forEach((t) => t.classList.toggle("active", t === tab));
+        const statusSelect = $id("paMsgStatusFilter");
+        if (statusSelect) statusSelect.value = ["all", "unread", "replied", "spam"].includes(this.store.get("statusFilter")) ? this.store.get("statusFilter") : "all";
+        this.renderTable();
+      });
+    });
+    this.on($id("paMsgStatusFilter"), "change", (e) => {
+      this.store.set("statusFilter", e.target.value);
+      this.store.set("page", 1);
+      $all(".pa-status-tab").forEach((t) => t.classList.toggle("active", t.dataset.status === this.store.get("statusFilter")));
+      this.renderTable();
+    });
+    this.on($id("paMsgTimeFilter"), "change", (e) => {
+      this.store.set("timeFilter", e.target.value);
+      this.store.set("page", 1);
+      this.renderTable();
+    });
+    const searchInput = $id("paSearchInput");
+    const searchWrap = $id("paSearchWrap");
+    const toolbarSearch = $id("paMsgSearchInput");
+    const debouncedRender = debounce(() => {
+      this.store.set("page", 1);
+      this.renderTable();
+    }, 180);
+    if (searchInput) {
+      this.on(searchInput, "input", (e) => {
+        this.store.set("searchQuery", e.target.value);
+        searchWrap?.classList.toggle("has-value", e.target.value.length > 0);
+        if (toolbarSearch) toolbarSearch.value = e.target.value;
+        debouncedRender();
+      });
+    }
+    this.on($id("paSearchClear"), "click", () => {
+      this.store.set("searchQuery", "");
+      if (searchInput) searchInput.value = "";
+      searchWrap?.classList.remove("has-value");
+      if (toolbarSearch) toolbarSearch.value = "";
+      this.store.set("page", 1);
+      this.renderTable();
+      searchInput?.focus();
+    });
+    if (toolbarSearch) {
+      this.on(toolbarSearch, "input", (e) => {
+        this.store.set("searchQuery", e.target.value);
+        if (searchInput) searchInput.value = e.target.value;
+        searchWrap?.classList.toggle("has-value", e.target.value.length > 0);
+        debouncedRender();
+      });
+    }
+    this.on($id("paMsgExportBtn"), "click", () => this.exportCsv());
+    this.on($id("paMsgDetailStar"), "click", () => {
+      const id = this.store.get("selectedId");
+      if (id == null) return;
+      const m = this.findById(id);
+      if (!m) return;
+      m.starred = !m.starred;
+      this.persist();
+      this.renderDetail();
+      this.toast(m.starred ? "Message starred." : "Message unstarred.", "info", 1500);
+    });
+    this.on($id("paMsgDetailDelete"), "click", () => {
+      const id = this.store.get("selectedId");
+      if (id == null) return;
+      const m = this.findById(id);
+      if (m) requestDelete(m.id, "message", m.name, "Delete this message?");
+    });
+    this.on($id("paMsgDetailClose"), "click", () => {
+      this.store.set("selectedId", null);
+      this.renderTable();
+      this.renderDetail();
+    });
+    registerPanel("paMsgReplyPanel");
+    this.on($id("paMsgReplyPanelClose"), "click", () => this.closeReplyModal());
+    this.on($id("paMsgReplyCancel"), "click", () => this.closeReplyModal());
+    this.on($id("paMsgReplySend"), "click", () => this.submitReplyModal());
+    this.on($id("paPanelOverlay"), "click", (e) => {
+      if (e.target.id !== "paPanelOverlay") return;
+      if (!$id("paMsgReplyPanel")?.classList.contains("visible")) return;
+      this.closeReplyModal();
+    });
+    const pickBtn = $id("paMsgReplyPickBtn");
+    if (pickBtn) {
+      this.on(pickBtn, "click", () => {
+        mediaPicker.open({
+          mode: "attachment",
+          folder: "contact",
+          mediaFilter: "all",
+          returnFocus: pickBtn,
+          onSelect: (item) => {
+            this.setReplyAttachmentFromMedia(item);
+            this.toast("Attachment selected from media library", "success");
+          }
+        });
+      });
+    }
+    const upload = $id("paMsgReplyUpload");
+    const fileInput = $id("paMsgReplyFile");
+    if (upload && fileInput) {
+      this.on(upload, "click", (e) => {
+        if (e.target === fileInput) return;
+        fileInput.click();
+      });
+      this.on(fileInput, "change", async () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+        try {
+          const { uploadContactAttachment } = await import("../../utils/media-upload.js");
+          const uploaded = await uploadContactAttachment(file);
+          this.setReplyAttachmentFromMedia({
+            url: uploaded.url,
+            name: uploaded.fileName || file.name,
+            type: uploaded.mimeType || file.type,
+            size: uploaded.size || file.size
+          });
+          this.toast("Attachment uploaded", "success");
+        } catch {
+          this.toast("Could not upload attachment.", "danger");
+        }
+        fileInput.value = "";
+      });
+    }
+    const mailWrap = $id("paMailPreviewWrap");
+    const mailBtn = $id("paMailPreviewBtn");
+    if (mailBtn && mailWrap) this.on(mailBtn, "click", (e) => {
+      e.stopPropagation();
+      mailWrap.classList.toggle("open");
+    });
+    this.on($id("paHelpBtn"), "click", () => this.toast("Need a hand? Reach us at support@portfolioadmin.dev", "info", 3e3));
+    const avatarWrap = $id("paHeaderAvatarWrap");
+    if (avatarWrap) {
+      this.on(avatarWrap, "click", (e) => {
+        e.stopPropagation();
+        avatarWrap.classList.toggle("open");
+      });
+      avatarWrap.querySelectorAll(".pa-user-dropdown-item").forEach((item) => {
+        this.on(item, "click", (e) => {
+          e.stopPropagation();
+          avatarWrap.classList.remove("open");
+          const spec = item.dataset.toast;
+          if (spec) {
+            const [type, msg] = spec.split(":");
+            this.toast(msg, type);
+          } else if (item.id === "paHeaderLogoutBtn") this.toast("Logging out\u2026", "info");
+        });
+      });
+    }
+    this.on(document, "click", (e) => {
+      if (mailWrap && !mailWrap.contains(e.target)) mailWrap.classList.remove("open");
+      if (avatarWrap && !avatarWrap.contains(e.target)) avatarWrap.classList.remove("open");
+    });
+    this.onBus("confirm:confirmed", ({ id, type }) => {
+      if (type === "message") this.deleteById(this.parseMsgId(id));
+      if (type === "message-reply") this.deleteReply(id);
+    });
+  }
+}
+export {
+  ContactMessagesModule
+};
+//# sourceMappingURL=ContactMessagesModule.js.map

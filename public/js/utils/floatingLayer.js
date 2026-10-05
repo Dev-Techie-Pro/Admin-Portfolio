@@ -1,1 +1,147 @@
-const I=300,R=96,D=4,z=10050,d=new WeakMap;function A(e){let o=e.parentElement;for(;o&&o!==document.documentElement;){if(o.classList.contains("pa-panel-body")||o.classList.contains("pa-panel")||o.classList.contains("pa-main")||o.classList.contains("pa-body"))return o.getBoundingClientRect();const i=getComputedStyle(o).overflowY;if((i==="auto"||i==="scroll"||i==="hidden")&&(i==="hidden"||o.scrollHeight>o.clientHeight+1))return o.getBoundingClientRect();o=o.parentElement}const n=document.documentElement.clientWidth,s=document.documentElement.clientHeight;return new DOMRect(0,0,n,s)}function P(e){e.style.removeProperty("position"),e.style.removeProperty("top"),e.style.removeProperty("bottom"),e.style.removeProperty("left"),e.style.removeProperty("right"),e.style.removeProperty("width"),e.style.removeProperty("min-width"),e.style.removeProperty("max-width"),e.style.removeProperty("max-height"),e.style.removeProperty("z-index"),e.style.removeProperty("--pa-select-panel-max"),e.classList.remove("pa-floating-layer","pa-floating-layer--above","pa-floating-layer--below")}function _(e,o){const n={visibility:e.style.visibility,pointerEvents:e.style.pointerEvents,maxHeight:e.style.maxHeight,position:e.style.position};e.style.visibility="hidden",e.style.pointerEvents="none",e.style.position="fixed",e.style.left="0",e.style.top="0",e.style.maxHeight=`${o}px`;const s=e.scrollHeight;return e.style.visibility=n.visibility,e.style.pointerEvents=n.pointerEvents,e.style.maxHeight=n.maxHeight,e.style.position=n.position,e.style.removeProperty("left"),e.style.removeProperty("top"),s}function W(e,o,n={}){const s=n.maxHeight??300,c=n.gap??4,i=n.align??"match-width",H=n.zIndex??10050;let h=d.get(e);if(!h){const t=e.parentElement;if(!t)return{reposition:()=>{},release:()=>{}};const r=document.createComment("pa-floating-layer");t.insertBefore(r,e),document.body.appendChild(e),e.classList.add("pa-floating-layer");const l=()=>m(),p=()=>m();window.addEventListener("scroll",l,!0),window.addEventListener("resize",p),h={placeholder:r,parent:t,onScroll:l,onResize:p},d.set(e,h)}function m(){if(e.hidden)return;const t=o.getBoundingClientRect();if(t.width===0&&t.height===0)return;const r=A(o),l=r.bottom-t.bottom-c,p=t.top-r.top-c,E=_(e,s),L=Math.min(E,s),a=l>=L||l>=p&&l>=96,u=Math.max(96,Math.min(s,a?l:p));e.style.position="fixed",e.style.zIndex=String(H),e.style.setProperty("--pa-select-panel-max",`${Math.floor(u)}px`),e.style.maxHeight=`${Math.floor(u)}px`;const M=Math.min(E,u);let v=a?t.bottom+c:t.top-c-M;v=Math.max(r.top,Math.min(v,r.bottom-96));let y=t.left;const b=o.closest(".pa-select-wrap.pa-chart-dropdown-btn");if(i==="end"||b){e.style.minWidth=`${t.width}px`,e.style.width="max-content";const x=e.offsetWidth||t.width;y=t.right-x}else if(i==="match-width"){e.style.minWidth=`${t.width}px`,e.style.width="max-content";const x=Math.max(t.width,r.right-r.left-8);e.style.maxWidth=`${Math.min(320,x)}px`}else e.style.removeProperty("min-width"),e.style.removeProperty("width"),e.style.removeProperty("max-width");const T=e.offsetWidth||t.width;y=Math.max(r.left+4,Math.min(y,r.right-T-4)),e.style.top=`${v}px`,e.style.bottom="auto",e.style.left=`${y}px`,e.style.right="auto",e.classList.toggle("pa-floating-layer--above",!a),e.classList.toggle("pa-floating-layer--below",a)}function w(){const t=d.get(e);t&&(window.removeEventListener("scroll",t.onScroll,!0),window.removeEventListener("resize",t.onResize),P(e),t.parent.insertBefore(e,t.placeholder),t.placeholder.remove(),d.delete(e))}return requestAnimationFrame(()=>m()),{reposition:m,release:w}}export{A as getFloatingBoundaryRect,W as mountFloatingLayer};
+const DEFAULT_MAX_HEIGHT = 300;
+const MIN_LAYER_HEIGHT = 96;
+const DEFAULT_GAP = 4;
+const DEFAULT_Z_INDEX = 10050;
+const mounts = /* @__PURE__ */ new WeakMap();
+function getFloatingBoundaryRect(anchor) {
+  let el = anchor.parentElement;
+  while (el && el !== document.documentElement) {
+    if (el.classList.contains("pa-panel-body") || el.classList.contains("pa-panel") || el.classList.contains("pa-main") || el.classList.contains("pa-body")) {
+      return el.getBoundingClientRect();
+    }
+    const cs = getComputedStyle(el);
+    const oy = cs.overflowY;
+    if (oy === "auto" || oy === "scroll" || oy === "hidden") {
+      if (oy === "hidden" || el.scrollHeight > el.clientHeight + 1) {
+        return el.getBoundingClientRect();
+      }
+    }
+    el = el.parentElement;
+  }
+  const w = document.documentElement.clientWidth;
+  const h = document.documentElement.clientHeight;
+  return new DOMRect(0, 0, w, h);
+}
+function clearFloatingStyles(floating) {
+  floating.style.removeProperty("position");
+  floating.style.removeProperty("top");
+  floating.style.removeProperty("bottom");
+  floating.style.removeProperty("left");
+  floating.style.removeProperty("right");
+  floating.style.removeProperty("width");
+  floating.style.removeProperty("min-width");
+  floating.style.removeProperty("max-width");
+  floating.style.removeProperty("max-height");
+  floating.style.removeProperty("z-index");
+  floating.style.removeProperty("--pa-select-panel-max");
+  floating.classList.remove("pa-floating-layer", "pa-floating-layer--above", "pa-floating-layer--below");
+}
+function measureFloatingHeight(floating, maxHeight) {
+  const prev = {
+    visibility: floating.style.visibility,
+    pointerEvents: floating.style.pointerEvents,
+    maxHeight: floating.style.maxHeight,
+    position: floating.style.position
+  };
+  floating.style.visibility = "hidden";
+  floating.style.pointerEvents = "none";
+  floating.style.position = "fixed";
+  floating.style.left = "0";
+  floating.style.top = "0";
+  floating.style.maxHeight = `${maxHeight}px`;
+  const h = floating.scrollHeight;
+  floating.style.visibility = prev.visibility;
+  floating.style.pointerEvents = prev.pointerEvents;
+  floating.style.maxHeight = prev.maxHeight;
+  floating.style.position = prev.position;
+  floating.style.removeProperty("left");
+  floating.style.removeProperty("top");
+  return h;
+}
+function mountFloatingLayer(floating, anchor, options = {}) {
+  const maxHeightDefault = options.maxHeight ?? DEFAULT_MAX_HEIGHT;
+  const gap = options.gap ?? DEFAULT_GAP;
+  const align = options.align ?? "match-width";
+  const zIndex = options.zIndex ?? DEFAULT_Z_INDEX;
+  let record = mounts.get(floating);
+  if (!record) {
+    const parent = floating.parentElement;
+    if (!parent) {
+      return { reposition: () => {
+      }, release: () => {
+      } };
+    }
+    const placeholder = document.createComment("pa-floating-layer");
+    parent.insertBefore(placeholder, floating);
+    document.body.appendChild(floating);
+    floating.classList.add("pa-floating-layer");
+    const onScroll = () => reposition();
+    const onResize = () => reposition();
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize);
+    record = { placeholder, parent, onScroll, onResize };
+    mounts.set(floating, record);
+  }
+  function reposition() {
+    if (floating.hidden) return;
+    const anchorRect = anchor.getBoundingClientRect();
+    if (anchorRect.width === 0 && anchorRect.height === 0) return;
+    const boundary = getFloatingBoundaryRect(anchor);
+    const spaceBelow = boundary.bottom - anchorRect.bottom - gap;
+    const spaceAbove = anchorRect.top - boundary.top - gap;
+    const naturalHeight = measureFloatingHeight(floating, maxHeightDefault);
+    const needed = Math.min(naturalHeight, maxHeightDefault);
+    const openBelow = spaceBelow >= needed || spaceBelow >= spaceAbove && spaceBelow >= MIN_LAYER_HEIGHT;
+    const available = openBelow ? spaceBelow : spaceAbove;
+    const cappedMax = Math.max(MIN_LAYER_HEIGHT, Math.min(maxHeightDefault, available));
+    floating.style.position = "fixed";
+    floating.style.zIndex = String(zIndex);
+    floating.style.setProperty("--pa-select-panel-max", `${Math.floor(cappedMax)}px`);
+    floating.style.maxHeight = `${Math.floor(cappedMax)}px`;
+    const layerHeight = Math.min(naturalHeight, cappedMax);
+    let top = openBelow ? anchorRect.bottom + gap : anchorRect.top - gap - layerHeight;
+    top = Math.max(boundary.top, Math.min(top, boundary.bottom - MIN_LAYER_HEIGHT));
+    let left = anchorRect.left;
+    const chartAlign = anchor.closest(".pa-select-wrap.pa-chart-dropdown-btn");
+    if (align === "end" || chartAlign) {
+      floating.style.minWidth = `${anchorRect.width}px`;
+      floating.style.width = "max-content";
+      const panelW = floating.offsetWidth || anchorRect.width;
+      left = anchorRect.right - panelW;
+    } else if (align === "match-width") {
+      floating.style.minWidth = `${anchorRect.width}px`;
+      floating.style.width = "max-content";
+      const maxW = Math.max(anchorRect.width, boundary.right - boundary.left - 8);
+      floating.style.maxWidth = `${Math.min(320, maxW)}px`;
+    } else {
+      floating.style.removeProperty("min-width");
+      floating.style.removeProperty("width");
+      floating.style.removeProperty("max-width");
+    }
+    const floatW = floating.offsetWidth || anchorRect.width;
+    left = Math.max(boundary.left + 4, Math.min(left, boundary.right - floatW - 4));
+    floating.style.top = `${top}px`;
+    floating.style.bottom = "auto";
+    floating.style.left = `${left}px`;
+    floating.style.right = "auto";
+    floating.classList.toggle("pa-floating-layer--above", !openBelow);
+    floating.classList.toggle("pa-floating-layer--below", openBelow);
+  }
+  function release() {
+    const rec = mounts.get(floating);
+    if (!rec) return;
+    window.removeEventListener("scroll", rec.onScroll, true);
+    window.removeEventListener("resize", rec.onResize);
+    clearFloatingStyles(floating);
+    rec.parent.insertBefore(floating, rec.placeholder);
+    rec.placeholder.remove();
+    mounts.delete(floating);
+  }
+  requestAnimationFrame(() => reposition());
+  return { reposition, release };
+}
+export {
+  getFloatingBoundaryRect,
+  mountFloatingLayer
+};
+//# sourceMappingURL=floatingLayer.js.map

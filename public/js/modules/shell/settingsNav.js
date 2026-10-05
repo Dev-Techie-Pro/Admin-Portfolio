@@ -1,1 +1,33 @@
-import{getSettingsTabFromPath as i}from"../../core/router.js";import{openGroupsForActiveRoute as n}from"./sidebarGroupNav.js";function s(){return document.querySelector('[data-nav-group="settings"]')}function g(){const e=s();if(!e)return;window.location.pathname.includes("/settings")?(e.classList.add("open"),r(i())):n()}function r(e){const t=s();t&&(t.classList.add("open"),t.querySelector(".pa-nav-toggle")?.setAttribute("aria-expanded","true"),t.querySelector(".pa-nav-toggle")?.classList.add("active"),t.querySelectorAll(".pa-nav-subitem").forEach(o=>{const a=o.dataset.settingsTab===e;o.classList.toggle("active",a)}),n())}export{g as initSettingsNav,r as syncSettingsNavTab};
+import { getSettingsTabFromPath } from "../../core/router.js";
+import { openGroupsForActiveRoute } from "./sidebarGroupNav.js";
+function getSettingsGroup() {
+  return document.querySelector('[data-nav-group="settings"]');
+}
+function initSettingsNav() {
+  const group = getSettingsGroup();
+  if (!group) return;
+  const onSettingsRoute = window.location.pathname.includes("/settings");
+  if (onSettingsRoute) {
+    group.classList.add("open");
+    syncSettingsNavTab(getSettingsTabFromPath());
+  } else {
+    openGroupsForActiveRoute();
+  }
+}
+function syncSettingsNavTab(tab) {
+  const group = getSettingsGroup();
+  if (!group) return;
+  group.classList.add("open");
+  group.querySelector(".pa-nav-toggle")?.setAttribute("aria-expanded", "true");
+  group.querySelector(".pa-nav-toggle")?.classList.add("active");
+  group.querySelectorAll(".pa-nav-subitem").forEach((item) => {
+    const isActive = item.dataset.settingsTab === tab;
+    item.classList.toggle("active", isActive);
+  });
+  openGroupsForActiveRoute();
+}
+export {
+  initSettingsNav,
+  syncSettingsNavTab
+};
+//# sourceMappingURL=settingsNav.js.map

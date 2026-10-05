@@ -1,1 +1,153 @@
-async function r(e,t={}){const o=await fetch(`/api/auth${e}`,{credentials:"same-origin",headers:{Accept:"application/json","Content-Type":"application/json",...t.headers||{}},...t}),n=await o.json().catch(()=>({}));if(!o.ok)throw new Error(n.error||o.statusText||"Request failed");return n}const i={login(e,t){return r("/login",{method:"POST",body:JSON.stringify({email:e,password:t})})},logout(){return r("/logout",{method:"POST"})},session(){if(typeof window<"u"&&window.__paBootstrapSession){const t=window.__paBootstrapSession;if(delete window.__paBootstrapSession,!t)throw new Error("No session");return Promise.resolve(t)}const e=typeof window<"u"?window.__paPrefetch:null;if(e?.__session){const t=e.__session;return delete e.__session,t.then(o=>{if(!o)throw new Error("No session");return o})}return r("/session",{method:"GET"})},forgotPassword(e){return r("/forgot-password",{method:"POST",body:JSON.stringify({email:e})})},resetPassword(e){return r("/reset-password",{method:"POST",body:JSON.stringify({password:e})})},changePassword(e,t){return r("/change-password",{method:"POST",body:JSON.stringify({currentPassword:e,newPassword:t})})},getLoginActivity(e=25){return r(`/login-activity?limit=${e}`,{method:"GET"})},logoutAllDevices(){return r("/logout-all",{method:"POST"})},requestTemporaryAccess({contactEmail:e,message:t}){return r("/role-request",{method:"POST",body:JSON.stringify({contactEmail:e,message:t})})},getAccessElevationStatus(){return r("/access-elevation",{method:"GET"})},getSecuritySettings(){return r("/security-settings",{method:"GET"})},enrollMfa(){return r("/mfa/enroll",{method:"POST"})},verifyMfaEnrollment(e,t){return r("/mfa/verify-enroll",{method:"POST",body:JSON.stringify({factorId:e,code:t})})},unenrollMfa({currentPassword:e,code:t}){return r("/mfa/unenroll",{method:"POST",body:JSON.stringify({currentPassword:e,code:t})})},verifyMfaLogin({code:e,factorId:t,useBackupCode:o=!1}){return r("/mfa/verify-login",{method:"POST",body:JSON.stringify({code:e,factorId:t,useBackupCode:o})})},regenerateBackupCodes(e){return r("/backup-codes/regenerate",{method:"POST",body:JSON.stringify({currentPassword:e})})},deleteAccount({currentPassword:e,confirmText:t}){return r("/delete-account",{method:"POST",body:JSON.stringify({currentPassword:e,confirmText:t})})},getProfile(){const e=()=>fetch("/api/profile",{method:"GET",credentials:"same-origin",headers:{Accept:"application/json"}}).then(async o=>{const n=await o.json().catch(()=>({}));if(!o.ok)throw new Error(n.error||o.statusText||"Request failed");return n});if(typeof window<"u"&&window.__paBootstrapProfile){const o=window.__paBootstrapProfile;return delete window.__paBootstrapProfile,Promise.resolve(o)}const t=typeof window<"u"?window.__paPrefetch:null;if(t?.__profile){const o=t.__profile;return delete t.__profile,o.then(n=>n||e())}return e()},updateProfile(e){return fetch("/api/profile",{method:"PUT",credentials:"same-origin",headers:{Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify(e)}).then(async t=>{const o=await t.json().catch(()=>({}));if(!t.ok)throw new Error(o.error||t.statusText||"Request failed");return o})}};export{i as authService};
+async function authRequest(path, options = {}) {
+  const res = await fetch(`/api/auth${path}`, {
+    credentials: "same-origin",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      ...options.headers || {}
+    },
+    ...options
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || res.statusText || "Request failed");
+  }
+  return data;
+}
+const authService = {
+  login(email, password) {
+    return authRequest("/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password })
+    });
+  },
+  logout() {
+    return authRequest("/logout", { method: "POST" });
+  },
+  session() {
+    if (typeof window !== "undefined" && window.__paBootstrapSession) {
+      const data = window.__paBootstrapSession;
+      delete window.__paBootstrapSession;
+      if (!data) throw new Error("No session");
+      return Promise.resolve(data);
+    }
+    const bag = typeof window !== "undefined" ? window.__paPrefetch : null;
+    if (bag?.__session) {
+      const pending = bag.__session;
+      delete bag.__session;
+      return pending.then((data) => {
+        if (!data) throw new Error("No session");
+        return data;
+      });
+    }
+    return authRequest("/session", { method: "GET" });
+  },
+  forgotPassword(email) {
+    return authRequest("/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email })
+    });
+  },
+  resetPassword(password) {
+    return authRequest("/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ password })
+    });
+  },
+  changePassword(currentPassword, newPassword) {
+    return authRequest("/change-password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+  },
+  getLoginActivity(limit = 25) {
+    return authRequest(`/login-activity?limit=${limit}`, { method: "GET" });
+  },
+  logoutAllDevices() {
+    return authRequest("/logout-all", { method: "POST" });
+  },
+  requestTemporaryAccess({ contactEmail, message }) {
+    return authRequest("/role-request", {
+      method: "POST",
+      body: JSON.stringify({ contactEmail, message })
+    });
+  },
+  getAccessElevationStatus() {
+    return authRequest("/access-elevation", { method: "GET" });
+  },
+  getSecuritySettings() {
+    return authRequest("/security-settings", { method: "GET" });
+  },
+  enrollMfa() {
+    return authRequest("/mfa/enroll", { method: "POST" });
+  },
+  verifyMfaEnrollment(factorId, code) {
+    return authRequest("/mfa/verify-enroll", {
+      method: "POST",
+      body: JSON.stringify({ factorId, code })
+    });
+  },
+  unenrollMfa({ currentPassword, code }) {
+    return authRequest("/mfa/unenroll", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, code })
+    });
+  },
+  verifyMfaLogin({ code, factorId, useBackupCode = false }) {
+    return authRequest("/mfa/verify-login", {
+      method: "POST",
+      body: JSON.stringify({ code, factorId, useBackupCode })
+    });
+  },
+  regenerateBackupCodes(currentPassword) {
+    return authRequest("/backup-codes/regenerate", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword })
+    });
+  },
+  deleteAccount({ currentPassword, confirmText }) {
+    return authRequest("/delete-account", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, confirmText })
+    });
+  },
+  getProfile() {
+    const fetchProfile = () => fetch("/api/profile", {
+      method: "GET",
+      credentials: "same-origin",
+      headers: { Accept: "application/json" }
+    }).then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || res.statusText || "Request failed");
+      return data;
+    });
+    if (typeof window !== "undefined" && window.__paBootstrapProfile) {
+      const data = window.__paBootstrapProfile;
+      delete window.__paBootstrapProfile;
+      return Promise.resolve(data);
+    }
+    const bag = typeof window !== "undefined" ? window.__paPrefetch : null;
+    if (bag?.__profile) {
+      const pending = bag.__profile;
+      delete bag.__profile;
+      return pending.then((data) => data ? data : fetchProfile());
+    }
+    return fetchProfile();
+  },
+  updateProfile(payload) {
+    return fetch("/api/profile", {
+      method: "PUT",
+      credentials: "same-origin",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || res.statusText || "Request failed");
+      return data;
+    });
+  }
+};
+export {
+  authService
+};
+//# sourceMappingURL=AuthService.js.map

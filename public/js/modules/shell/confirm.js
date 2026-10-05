@@ -1,1 +1,215 @@
-import{$id as t}from"../../utils/dom.js";import{eventBus as b}from"../../core/EventBus.js";import{closePanels as T}from"./panels.js";let u=null,m=null,s=null,a=null,r=null,E=!1;function g(){return document.querySelector("#paConfirmOverlay .pa-confirm-icon i")}function v(){return document.querySelector("#paConfirmOverlay .pa-confirm-icon")}function w(){if(r)return;const n=t("paConfirmTitle"),e=t("paConfirmOk"),i=g(),o=v();r={title:n?.textContent||"",okText:e?.textContent||"",okDanger:e?.classList.contains("--pa-red"),iconClass:i?.className||"ri-delete-bin-line",iconWrapClass:o?.className||"pa-confirm-icon"}}function l(){if(!r)return;const n=t("paConfirmTitle"),e=t("paConfirmOk"),i=g(),o=v();n&&(n.textContent=r.title),e&&(e.textContent=r.okText,e.classList.toggle("--pa-red",r.okDanger)),i&&(i.className=r.iconClass),o&&(o.className=r.iconWrapClass),r=null}function k({title:n,message:e,confirmLabel:i="Delete",iconClass:o="ri-delete-bin-line",danger:c=!0,iconTone:f="danger"}){w();const p=t("paConfirmTitle"),L=t("paConfirmText"),C=t("paConfirmOk"),x=g(),d=v();p&&n&&(p.textContent=n),L&&e&&(L.innerHTML=e),C&&(C.textContent=i,C.classList.toggle("--pa-red",c)),x&&(x.className=o),d&&(d.className="pa-confirm-icon",f==="warning"&&d.classList.add("pa-confirm-icon--warning"))}function P(n,e,i,o=""){a=null,l(),s=null,u=n,m=e;let c=`This will permanently remove <strong>${i}</strong>.`;o&&(c+=` ${o}`),c+=" This action cannot be undone.";const f=t("paConfirmText");f&&(f.innerHTML=c),t("paConfirmOverlay")?.classList.add("visible")}function D({title:n,message:e,onConfirm:i,confirmLabel:o="Delete",iconClass:c="ri-delete-bin-line",danger:f=!0,iconTone:p="danger"}){a=null,l(),u=null,m=null,s=i,k({title:n,message:e,confirmLabel:o,iconClass:c,danger:f,iconTone:p}),t("paConfirmOverlay")?.classList.add("visible")}function W(n){return D(n)}function M(){l()}function y(){t("paConfirmOverlay")?.classList.remove("visible"),u=null,m=null,s&&(s=null,l()),a&&(a=null,l())}function $(n){a=n,u=null,m=null,s=null,l(),k({title:"Logout?",message:"Are you sure you want to logout? You will need to sign in again to access the admin panel.",confirmLabel:"Logout",iconClass:"ri-logout-circle-line",danger:!1,iconTone:"warning"}),t("paConfirmOverlay")?.classList.add("visible")}function A(){l()}function O(n,e){return n?n.id===e?!0:typeof n.closest=="function"&&!!n.closest(`#${e}`):!1}async function h(){if(a){const i=a;a=null,t("paConfirmOverlay")?.classList.remove("visible"),l(),await Promise.resolve(i());return}if(s){const i=s;s=null,t("paConfirmOverlay")?.classList.remove("visible"),l(),await Promise.resolve(i());return}if(u==null||m==null)return;const{id:n,type:e}={id:u,type:m};y(),T(),b.emit("confirm:confirmed",{id:n,type:e})}function B(n){if(document.getElementById("paConfirmOverlay")?.classList.contains("visible")){if(O(n.target,"paConfirmCancel")){n.preventDefault(),y();return}if(O(n.target,"paConfirmOk")){n.preventDefault(),h();return}n.target.id==="paConfirmOverlay"&&y()}}function H(){E||(E=!0,document.addEventListener("click",B))}function Y(){return!!document.getElementById("paConfirmOverlay")?.classList.contains("visible")}const N=`You don't have permission to do that. <a href="/settings/security">Contact admin for access</a> from Settings \u2192 Security.`;function _(){D({title:"Permission required",message:N,confirmLabel:"OK",iconClass:"ri-lock-line",danger:!1,iconTone:"warning",onConfirm:()=>{}})}export{y as closeConfirm,H as initConfirmDialog,Y as isConfirmOpen,D as requestBulkAction,W as requestConfirm,P as requestDelete,$ as requestLogout,_ as showPermissionDeniedDialog};
+import { $id } from "../../utils/dom.js";
+import { eventBus } from "../../core/EventBus.js";
+import { closePanels } from "./panels.js";
+let pendingId = null;
+let pendingType = null;
+let pendingBulkConfirm = null;
+let pendingLogoutConfirm = null;
+let confirmDefaultsBackup = null;
+let dialogBound = false;
+function getConfirmIconEl() {
+  return document.querySelector("#paConfirmOverlay .pa-confirm-icon i");
+}
+function getConfirmIconWrap() {
+  return document.querySelector("#paConfirmOverlay .pa-confirm-icon");
+}
+function captureConfirmDefaults() {
+  if (confirmDefaultsBackup) return;
+  const titleEl = $id("paConfirmTitle");
+  const okEl = $id("paConfirmOk");
+  const iconEl = getConfirmIconEl();
+  const iconWrap = getConfirmIconWrap();
+  confirmDefaultsBackup = {
+    title: titleEl?.textContent || "",
+    okText: okEl?.textContent || "",
+    okDanger: okEl?.classList.contains("--pa-red"),
+    iconClass: iconEl?.className || "ri-delete-bin-line",
+    iconWrapClass: iconWrap?.className || "pa-confirm-icon"
+  };
+}
+function restoreConfirmDefaults() {
+  if (!confirmDefaultsBackup) return;
+  const titleEl = $id("paConfirmTitle");
+  const okEl = $id("paConfirmOk");
+  const iconEl = getConfirmIconEl();
+  const iconWrap = getConfirmIconWrap();
+  if (titleEl) titleEl.textContent = confirmDefaultsBackup.title;
+  if (okEl) {
+    okEl.textContent = confirmDefaultsBackup.okText;
+    okEl.classList.toggle("--pa-red", confirmDefaultsBackup.okDanger);
+  }
+  if (iconEl) iconEl.className = confirmDefaultsBackup.iconClass;
+  if (iconWrap) iconWrap.className = confirmDefaultsBackup.iconWrapClass;
+  confirmDefaultsBackup = null;
+}
+function applyConfirmDialog({
+  title,
+  message,
+  confirmLabel = "Delete",
+  iconClass = "ri-delete-bin-line",
+  danger = true,
+  iconTone = "danger"
+}) {
+  captureConfirmDefaults();
+  const titleEl = $id("paConfirmTitle");
+  const textEl = $id("paConfirmText");
+  const okEl = $id("paConfirmOk");
+  const iconEl = getConfirmIconEl();
+  const iconWrap = getConfirmIconWrap();
+  if (titleEl && title) titleEl.textContent = title;
+  if (textEl && message) textEl.innerHTML = message;
+  if (okEl) {
+    okEl.textContent = confirmLabel;
+    okEl.classList.toggle("--pa-red", danger);
+  }
+  if (iconEl) iconEl.className = iconClass;
+  if (iconWrap) {
+    iconWrap.className = "pa-confirm-icon";
+    if (iconTone === "warning") iconWrap.classList.add("pa-confirm-icon--warning");
+  }
+}
+function requestDelete(id, type, name, extraInfo = "") {
+  pendingLogoutConfirm = null;
+  restoreConfirmDefaults();
+  pendingBulkConfirm = null;
+  pendingId = id;
+  pendingType = type;
+  let text = `This will permanently remove <strong>${name}</strong>.`;
+  if (extraInfo) text += ` ${extraInfo}`;
+  text += " This action cannot be undone.";
+  const textEl = $id("paConfirmText");
+  if (textEl) textEl.innerHTML = text;
+  $id("paConfirmOverlay")?.classList.add("visible");
+}
+function requestBulkAction({
+  title,
+  message,
+  onConfirm,
+  confirmLabel = "Delete",
+  iconClass = "ri-delete-bin-line",
+  danger = true,
+  iconTone = "danger"
+}) {
+  pendingLogoutConfirm = null;
+  restoreConfirmDefaults();
+  pendingId = null;
+  pendingType = null;
+  pendingBulkConfirm = onConfirm;
+  applyConfirmDialog({ title, message, confirmLabel, iconClass, danger, iconTone });
+  $id("paConfirmOverlay")?.classList.add("visible");
+}
+function requestConfirm(opts) {
+  return requestBulkAction(opts);
+}
+function restoreBulkTitle() {
+  restoreConfirmDefaults();
+}
+function closeConfirm() {
+  $id("paConfirmOverlay")?.classList.remove("visible");
+  pendingId = null;
+  pendingType = null;
+  if (pendingBulkConfirm) {
+    pendingBulkConfirm = null;
+    restoreConfirmDefaults();
+  }
+  if (pendingLogoutConfirm) {
+    pendingLogoutConfirm = null;
+    restoreConfirmDefaults();
+  }
+}
+function requestLogout(onConfirm) {
+  pendingLogoutConfirm = onConfirm;
+  pendingId = null;
+  pendingType = null;
+  pendingBulkConfirm = null;
+  restoreConfirmDefaults();
+  applyConfirmDialog({
+    title: "Logout?",
+    message: "Are you sure you want to logout? You will need to sign in again to access the admin panel.",
+    confirmLabel: "Logout",
+    iconClass: "ri-logout-circle-line",
+    danger: false,
+    iconTone: "warning"
+  });
+  $id("paConfirmOverlay")?.classList.add("visible");
+}
+function restoreLogoutCopy() {
+  restoreConfirmDefaults();
+}
+function hitConfirmControl(target, id) {
+  if (!target) return false;
+  if (target.id === id) return true;
+  return typeof target.closest === "function" && !!target.closest(`#${id}`);
+}
+async function performDelete() {
+  if (pendingLogoutConfirm) {
+    const cb = pendingLogoutConfirm;
+    pendingLogoutConfirm = null;
+    $id("paConfirmOverlay")?.classList.remove("visible");
+    restoreConfirmDefaults();
+    await Promise.resolve(cb());
+    return;
+  }
+  if (pendingBulkConfirm) {
+    const cb = pendingBulkConfirm;
+    pendingBulkConfirm = null;
+    $id("paConfirmOverlay")?.classList.remove("visible");
+    restoreConfirmDefaults();
+    await Promise.resolve(cb());
+    return;
+  }
+  if (pendingId == null || pendingType == null) return;
+  const { id, type } = { id: pendingId, type: pendingType };
+  closeConfirm();
+  closePanels();
+  eventBus.emit("confirm:confirmed", { id, type });
+}
+function onConfirmDocumentClick(e) {
+  const overlay = document.getElementById("paConfirmOverlay");
+  if (!overlay?.classList.contains("visible")) return;
+  if (hitConfirmControl(e.target, "paConfirmCancel")) {
+    e.preventDefault();
+    closeConfirm();
+    return;
+  }
+  if (hitConfirmControl(e.target, "paConfirmOk")) {
+    e.preventDefault();
+    void performDelete();
+    return;
+  }
+  if (e.target.id === "paConfirmOverlay") {
+    closeConfirm();
+  }
+}
+function initConfirmDialog() {
+  if (dialogBound) return;
+  dialogBound = true;
+  document.addEventListener("click", onConfirmDocumentClick);
+}
+function isConfirmOpen() {
+  return !!document.getElementById("paConfirmOverlay")?.classList.contains("visible");
+}
+const PERMISSION_DENIED_MESSAGE = `You don't have permission to do that. <a href="/settings/security">Contact admin for access</a> from Settings \u2192 Security.`;
+function showPermissionDeniedDialog() {
+  requestBulkAction({
+    title: "Permission required",
+    message: PERMISSION_DENIED_MESSAGE,
+    confirmLabel: "OK",
+    iconClass: "ri-lock-line",
+    danger: false,
+    iconTone: "warning",
+    onConfirm: () => {
+    }
+  });
+}
+export {
+  closeConfirm,
+  initConfirmDialog,
+  isConfirmOpen,
+  requestBulkAction,
+  requestConfirm,
+  requestDelete,
+  requestLogout,
+  showPermissionDeniedDialog
+};
+//# sourceMappingURL=confirm.js.map

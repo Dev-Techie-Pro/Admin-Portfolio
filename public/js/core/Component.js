@@ -1,1 +1,87 @@
-import{eventBus as h}from"./EventBus.js";let r=0;class d{constructor(t,e={}){if(!t)throw new Error("Component requires a mount element");this.el=t,this.props=e,this.state={},this.uid=`c${++r}`,this._mounted=!1,this._delegatedEvents=new Map,this._busUnsubs=[]}template(){return""}beforeMount(){}afterMount(){}beforeUpdate(){}afterUpdate(){}beforeUnmount(){}setState(t){this.state={...this.state,...t},this._mounted?(this.beforeUpdate(),this._paint(),this.afterUpdate()):this.mount()}mount(){this._mounted||(this.beforeMount(),this._paint(),this._mounted=!0,this.afterMount())}_paint(){this.el.innerHTML=this.template(this.state)}on(t,e,s){const i=o=>{const n=o.target.closest(e);n&&this.el.contains(n)&&s(o,n)};this.el.addEventListener(t,i),this._delegatedEvents.has(t)||this._delegatedEvents.set(t,[]),this._delegatedEvents.get(t).push(i)}onBus(t,e){this._busUnsubs.push(h.on(t,e))}unmount(){this._mounted&&(this.beforeUnmount(),this._delegatedEvents.forEach((t,e)=>{t.forEach(s=>this.el.removeEventListener(e,s))}),this._delegatedEvents.clear(),this._busUnsubs.forEach(t=>t()),this._busUnsubs=[],this.el.innerHTML="",this._mounted=!1)}}export{d as Component};
+import { eventBus } from "./EventBus.js";
+let __componentUid = 0;
+class Component {
+  /**
+   * @param {HTMLElement} el Mount point. Its innerHTML is fully owned by this component.
+   * @param {object} [props]
+   */
+  constructor(el, props = {}) {
+    if (!el) throw new Error("Component requires a mount element");
+    this.el = el;
+    this.props = props;
+    this.state = {};
+    this.uid = `c${++__componentUid}`;
+    this._mounted = false;
+    this._delegatedEvents = /* @__PURE__ */ new Map();
+    this._busUnsubs = [];
+  }
+  template() {
+    return "";
+  }
+  beforeMount() {
+  }
+  afterMount() {
+  }
+  beforeUpdate() {
+  }
+  afterUpdate() {
+  }
+  beforeUnmount() {
+  }
+  setState(patch) {
+    this.state = { ...this.state, ...patch };
+    if (!this._mounted) {
+      this.mount();
+    } else {
+      this.beforeUpdate();
+      this._paint();
+      this.afterUpdate();
+    }
+  }
+  mount() {
+    if (this._mounted) return;
+    this.beforeMount();
+    this._paint();
+    this._mounted = true;
+    this.afterMount();
+  }
+  _paint() {
+    this.el.innerHTML = this.template(this.state);
+  }
+  /**
+   * Attach a single delegated listener on the container for `type`, filtered
+   * by `selector`. Re-renders don't require re-binding since the listener
+   * lives on `this.el`, not on the (replaced) children.
+   * @param {string} type
+   * @param {string} selector
+   * @param {(e: Event, target: HTMLElement) => void} handler
+   */
+  on(type, selector, handler) {
+    const listener = (e) => {
+      const target = e.target.closest(selector);
+      if (target && this.el.contains(target)) handler(e, target);
+    };
+    this.el.addEventListener(type, listener);
+    if (!this._delegatedEvents.has(type)) this._delegatedEvents.set(type, []);
+    this._delegatedEvents.get(type).push(listener);
+  }
+  onBus(event, handler) {
+    this._busUnsubs.push(eventBus.on(event, handler));
+  }
+  unmount() {
+    if (!this._mounted) return;
+    this.beforeUnmount();
+    this._delegatedEvents.forEach((listeners, type) => {
+      listeners.forEach((l) => this.el.removeEventListener(type, l));
+    });
+    this._delegatedEvents.clear();
+    this._busUnsubs.forEach((unsub) => unsub());
+    this._busUnsubs = [];
+    this.el.innerHTML = "";
+    this._mounted = false;
+  }
+}
+export {
+  Component
+};
+//# sourceMappingURL=Component.js.map

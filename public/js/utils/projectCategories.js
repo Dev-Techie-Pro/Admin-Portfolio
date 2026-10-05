@@ -1,1 +1,43 @@
-const n={enterprise:{label:"Enterprise Platform",cls:"pa-cat-enterprise"},educational:{label:"Educational Platform",cls:"pa-cat-educational"},desktop:{label:"Desktop Application",cls:"pa-cat-desktop"},medical:{label:"Medical System",cls:"pa-cat-medical"},ecommerce:{label:"E-Commerce",cls:"pa-cat-ecommerce"},travel:{label:"Travel Platform",cls:"pa-cat-travel"},web:{label:"Web Application",cls:"pa-cat-web"},nonprofit:{label:"Non Profit Organization",cls:"pa-cat-nonprofit"}};function r(t){if(!t)return[];if(Array.isArray(t.catKeys)&&t.catKeys.length)return t.catKeys.map(a=>String(a).trim()).filter(Boolean);const e=t.catKey?String(t.catKey).trim():"";return e?[e]:[]}function s(t){return r(t)[0]||""}function i(t){const e=r(t),a=e[0]||String(t.catKey||"");return{...t,catKeys:e,catKey:a}}function c(t,e){return!e||e==="all"?!0:r(t).includes(e)}function l(t,e){return r(t).map(a=>e[a]?.label||a).filter(Boolean).join(" \xB7 ")}export{n as CATEGORY_META_PROJECTS,s as primaryProjectCatKey,r as projectCatKeys,l as projectCategoryLabels,c as projectMatchesCategoryFilter,i as withNormalizedProjectCategories};
+const CATEGORY_META_PROJECTS = {
+  enterprise: { label: "Enterprise Platform", cls: "pa-cat-enterprise" },
+  educational: { label: "Educational Platform", cls: "pa-cat-educational" },
+  desktop: { label: "Desktop Application", cls: "pa-cat-desktop" },
+  medical: { label: "Medical System", cls: "pa-cat-medical" },
+  ecommerce: { label: "E-Commerce", cls: "pa-cat-ecommerce" },
+  travel: { label: "Travel Platform", cls: "pa-cat-travel" },
+  web: { label: "Web Application", cls: "pa-cat-web" },
+  nonprofit: { label: "Non Profit Organization", cls: "pa-cat-nonprofit" }
+};
+function projectCatKeys(project) {
+  if (!project) return [];
+  if (Array.isArray(project.catKeys) && project.catKeys.length) {
+    return project.catKeys.map((k) => String(k).trim()).filter(Boolean);
+  }
+  const single = project.catKey ? String(project.catKey).trim() : "";
+  return single ? [single] : [];
+}
+function primaryProjectCatKey(project) {
+  const keys = projectCatKeys(project);
+  return keys[0] || "";
+}
+function withNormalizedProjectCategories(project) {
+  const catKeys = projectCatKeys(project);
+  const catKey = catKeys[0] || String(project.catKey || "");
+  return { ...project, catKeys, catKey };
+}
+function projectMatchesCategoryFilter(project, filter) {
+  if (!filter || filter === "all") return true;
+  return projectCatKeys(project).includes(filter);
+}
+function projectCategoryLabels(project, meta) {
+  return projectCatKeys(project).map((k) => meta[k]?.label || k).filter(Boolean).join(" \xB7 ");
+}
+export {
+  CATEGORY_META_PROJECTS,
+  primaryProjectCatKey,
+  projectCatKeys,
+  projectCategoryLabels,
+  projectMatchesCategoryFilter,
+  withNormalizedProjectCategories
+};
+//# sourceMappingURL=projectCategories.js.map

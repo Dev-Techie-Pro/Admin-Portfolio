@@ -1,1 +1,70 @@
-import{$id as s}from"../../utils/dom.js";import{canManageContent as l}from"../../core/cms-access.js";const n=new Set(["paCustomPanel"]),r=new Set;function u(t){r.add(t)}function f(){return Array.from(r).some(t=>s(t)?.classList.contains("visible"))}function m(){s("paPanelOverlay")?.classList.remove("visible"),r.forEach(t=>s(t)?.classList.remove("visible")),s("paCustomToggle")?.classList.remove("active"),document.querySelector(".pa-custom-toggle")?.classList.remove("active"),document.body.style.overflow=""}function v(t,o=[]){!l()&&!n.has(t)||(o.forEach(a=>s(a)?.classList.remove("visible")),s("paPanelOverlay")?.classList.add("visible"),s(t)?.classList.add("visible"))}function g(t,o){const a=s(t);a&&(a.classList.toggle("loading",o),a.disabled=o)}function y(t,o){document.querySelectorAll(`.pa-panel-tab[data-panel="${t}"], .pa-view-btn[data-panel="${t}"]`).forEach(e=>{const i=e.dataset.tab===o;e.classList.toggle("active",i),e.getAttribute("role")==="tab"&&e.setAttribute("aria-selected",i?"true":"false")}),document.querySelectorAll(`.pa-qa-top-tab[data-panel="${t}"], .pa-qa-bottom-tab[data-panel="${t}"]`).forEach(e=>{e.classList.toggle("active",e.dataset.tab===o)}),document.querySelectorAll(`.pa-tab-panel[data-panel="${t}"]`).forEach(e=>{e.classList.toggle("active",e.dataset.content===o)});const a=document.querySelector(`.pa-panel[data-panel="${t}"]`)?.id||document.querySelector(`#${t}`)?.id||t,c=document.querySelector(`#${a} .pa-qa-content`)||document.querySelector(`#${a} .pa-panel-body`);c&&(c.scrollTop=0)}function q(t,o){const a=document.querySelector(`.pa-qa-wizard[data-qa-entity="${t}"]`);if(!a)return;a.querySelectorAll("[data-wizard-step]").forEach(e=>{const i=e.dataset.wizardStep===o;e.classList.contains("pa-qa-step")&&e.classList.toggle("active",i),e.classList.contains("pa-qa-step-panel")&&e.classList.toggle("active",i)});const c=a.querySelector(".pa-qa-wizard-body");c&&(c.scrollTop=0)}export{y as activateTab,q as activateWizardStep,f as anyPanelOpen,m as closePanels,v as openPanel,u as registerPanel,g as setButtonLoading};
+import { $id } from "../../utils/dom.js";
+import { canManageContent } from "../../core/cms-access.js";
+const VIEWER_PANEL_IDS = /* @__PURE__ */ new Set(["paCustomPanel"]);
+const registeredPanelIds = /* @__PURE__ */ new Set();
+function registerPanel(id) {
+  registeredPanelIds.add(id);
+}
+function anyPanelOpen() {
+  return Array.from(registeredPanelIds).some((id) => $id(id)?.classList.contains("visible"));
+}
+function closePanels() {
+  $id("paPanelOverlay")?.classList.remove("visible");
+  registeredPanelIds.forEach((id) => $id(id)?.classList.remove("visible"));
+  $id("paCustomToggle")?.classList.remove("active");
+  document.querySelector(".pa-custom-toggle")?.classList.remove("active");
+  document.body.style.overflow = "";
+}
+function openPanel(panelId, hidePanelIds = []) {
+  if (!canManageContent() && !VIEWER_PANEL_IDS.has(panelId)) return;
+  hidePanelIds.forEach((id) => $id(id)?.classList.remove("visible"));
+  $id("paPanelOverlay")?.classList.add("visible");
+  $id(panelId)?.classList.add("visible");
+}
+function setButtonLoading(btnId, loading) {
+  const btn = $id(btnId);
+  if (!btn) return;
+  btn.classList.toggle("loading", loading);
+  btn.disabled = loading;
+}
+function activateTab(panel, tab) {
+  document.querySelectorAll(
+    `.pa-panel-tab[data-panel="${panel}"], .pa-view-btn[data-panel="${panel}"]`
+  ).forEach((btn) => {
+    const isActive = btn.dataset.tab === tab;
+    btn.classList.toggle("active", isActive);
+    if (btn.getAttribute("role") === "tab") {
+      btn.setAttribute("aria-selected", isActive ? "true" : "false");
+    }
+  });
+  document.querySelectorAll(`.pa-qa-top-tab[data-panel="${panel}"], .pa-qa-bottom-tab[data-panel="${panel}"]`).forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.tab === tab);
+  });
+  document.querySelectorAll(`.pa-tab-panel[data-panel="${panel}"]`).forEach((pane) => {
+    pane.classList.toggle("active", pane.dataset.content === tab);
+  });
+  const panelId = document.querySelector(`.pa-panel[data-panel="${panel}"]`)?.id || document.querySelector(`#${panel}`)?.id || panel;
+  const scrollRoot = document.querySelector(`#${panelId} .pa-qa-content`) || document.querySelector(`#${panelId} .pa-panel-body`);
+  if (scrollRoot) scrollRoot.scrollTop = 0;
+}
+function activateWizardStep(entity, step) {
+  const root = document.querySelector(`.pa-qa-wizard[data-qa-entity="${entity}"]`);
+  if (!root) return;
+  root.querySelectorAll("[data-wizard-step]").forEach((el) => {
+    const isStep = el.dataset.wizardStep === step;
+    if (el.classList.contains("pa-qa-step")) el.classList.toggle("active", isStep);
+    if (el.classList.contains("pa-qa-step-panel")) el.classList.toggle("active", isStep);
+  });
+  const body = root.querySelector(".pa-qa-wizard-body");
+  if (body) body.scrollTop = 0;
+}
+export {
+  activateTab,
+  activateWizardStep,
+  anyPanelOpen,
+  closePanels,
+  openPanel,
+  registerPanel,
+  setButtonLoading
+};
+//# sourceMappingURL=panels.js.map

@@ -1,1 +1,182 @@
-import{handleFileValidation as g,isSupportedImageType as w,MAX_CONTACT_ATTACHMENT_BYTES as c,MAX_UPLOAD_IMAGE_BYTES as y,readOptimizedImageBlob as F}from"./files.js";import{compressPresetForUploadFolder as x,extensionForMime as U}from"./image-compress.js";import{showToast as O}from"../modules/shell/toast.js";import{buildUploadFileName as b,extensionForUploadMime as C}from"./upload-file-name.js";class s extends Error{constructor(t){super(t),this.name="MediaUploadError"}}function B(e,t,a,o,r){if(t.fileName)return t.fileName;if(t.page&&t.purpose){const n=r?U(o):C(o)||void 0;return b(t.page,t.purpose,e.name,{mediaFolder:a,sequence:t.sequence,extension:n})}if(!r)return e.name;const l=U(o);return e.name.replace(/\.[^.]+$/,"")+l}function N(e,t,a){if(a===!1||t==="font")return!1;const o=x(e);return a&&typeof a=="object"?{preset:o,...a}:{preset:o}}async function z(e,t,a){if(a===!1){if(e.size>y)throw new s("Image exceeds the 10MB limit. Try a smaller file.");return{blob:e,mimeType:e.type}}const o=t==="contact"?c:y,{blob:r,mimeType:l}=await F(e,{...a,maxBytes:a.maxBytes??o});if(r.size>o)throw new s(t==="contact"?"Attachment is still too large after compression (5MB max).":"Image is still too large after compression (10MB max).");return{blob:r,mimeType:l}}async function T(e){const t=await fetch("/api/media/upload",{method:"POST",body:e,credentials:"same-origin"});if(t.status===401)throw window.location.href="/login",new s("Session expired. Please sign in again.");const a=await t.text();let o={};try{o=a?JSON.parse(a):{}}catch{o={}}if(!t.ok)throw new s(o.error||a||"Upload failed.");return o}async function p(e,t={}){if(!e)throw new s("No file selected.");const a=t.mode||"image",o=t.folder||"general",r=a==="image"||a==="contact"&&w(e),l=r&&t.optimize!==!1?N(o,a,t.optimize):!1;if(r&&!g(e))throw new s("Invalid image file.");const n=new FormData;n.append("folder",o),n.append("mode",a),t.page&&n.append("page",t.page),t.purpose&&n.append("purpose",t.purpose),t.sequence!=null&&t.sequence>0&&n.append("sequence",String(t.sequence)),n.append("originalFileName",e.name);let m=e,d=e.type;const h=r&&l!==!1;if(r){const f=await z(e,o,l);m=f.blob,d=f.mimeType}const u=B(e,t,o,d,h);n.append("file",m,u);const i=await T(n);if(!i.url)throw new s("Upload did not return a URL.");return{url:i.url,storagePath:i.storagePath||"",fileName:i.fileName||u,size:Number(i.size)||m.size,mimeType:i.mimeType||d,folder:i.folder||o}}async function A(e,t={}){const a=URL.createObjectURL(e);t.onPreview?.(a);try{return await p(e,t)}finally{URL.revokeObjectURL(a)}}async function q(e){if(!e)throw new s("No file selected.");if(w(e)){if(!g(e))throw new s("Invalid image file.");return p(e,{folder:"contact",mode:"contact",page:"contact-messages",purpose:"contact-reply-attachment",optimize:{preset:"general",maxBytes:c}})}if(e.size>c)throw O("Attachment exceeds the 5MB limit.","danger"),new s("Attachment exceeds the 5MB limit.");return p(e,{folder:"contact",mode:"contact",page:"contact-messages",purpose:"contact-reply-attachment",optimize:!1})}async function E(e){return p(e,{folder:"general",mode:"font",optimize:!1,page:"customization",purpose:"custom-font"})}export{s as MediaUploadError,p as uploadCmsFile,A as uploadCmsFileWithPreview,q as uploadContactAttachment,E as uploadCustomFontFile};
+import {
+  handleFileValidation,
+  isSupportedImageType,
+  MAX_CONTACT_ATTACHMENT_BYTES,
+  MAX_UPLOAD_IMAGE_BYTES,
+  readOptimizedImageBlob
+} from "./files.js";
+import {
+  compressPresetForUploadFolder,
+  extensionForMime
+} from "./image-compress.js";
+import { showToast } from "../modules/shell/toast.js";
+import {
+  buildUploadFileName,
+  extensionForUploadMime
+} from "./upload-file-name.js";
+class MediaUploadError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "MediaUploadError";
+  }
+}
+function resolveContextualUploadName(file, options, folder, mimeType, reencoded) {
+  if (options.fileName) return options.fileName;
+  if (options.page && options.purpose) {
+    const ext2 = reencoded ? extensionForMime(mimeType) : extensionForUploadMime(mimeType) || void 0;
+    return buildUploadFileName(options.page, options.purpose, file.name, {
+      mediaFolder: folder,
+      sequence: options.sequence,
+      extension: ext2
+    });
+  }
+  if (!reencoded) return file.name;
+  const ext = extensionForMime(mimeType);
+  return file.name.replace(/\.[^.]+$/, "") + ext;
+}
+function resolveOptimizeForUpload(folder, mode, optimize) {
+  if (optimize === false || mode === "font") return false;
+  const preset = compressPresetForUploadFolder(folder);
+  if (optimize && typeof optimize === "object") {
+    return { preset, ...optimize };
+  }
+  return { preset };
+}
+async function prepareImageBlob(file, folder, optimize) {
+  if (optimize === false) {
+    if (file.size > MAX_UPLOAD_IMAGE_BYTES) {
+      throw new MediaUploadError("Image exceeds the 10MB limit. Try a smaller file.");
+    }
+    return { blob: file, mimeType: file.type };
+  }
+  const maxBytes = folder === "contact" ? MAX_CONTACT_ATTACHMENT_BYTES : MAX_UPLOAD_IMAGE_BYTES;
+  const { blob, mimeType } = await readOptimizedImageBlob(file, {
+    ...optimize,
+    maxBytes: optimize.maxBytes ?? maxBytes
+  });
+  if (blob.size > maxBytes) {
+    throw new MediaUploadError(
+      folder === "contact" ? "Attachment is still too large after compression (5MB max)." : "Image is still too large after compression (10MB max)."
+    );
+  }
+  return { blob, mimeType };
+}
+async function postUploadForm(form) {
+  const res = await fetch("/api/media/upload", {
+    method: "POST",
+    body: form,
+    credentials: "same-origin"
+  });
+  if (res.status === 401) {
+    window.location.href = "/login";
+    throw new MediaUploadError("Session expired. Please sign in again.");
+  }
+  const raw = await res.text();
+  let payload = {};
+  try {
+    payload = raw ? JSON.parse(raw) : {};
+  } catch {
+    payload = {};
+  }
+  if (!res.ok) {
+    throw new MediaUploadError(payload.error || raw || "Upload failed.");
+  }
+  return payload;
+}
+async function uploadCmsFile(file, options = {}) {
+  if (!file) throw new MediaUploadError("No file selected.");
+  const mode = options.mode || "image";
+  const folder = options.folder || "general";
+  const isRasterUpload = mode === "image" || mode === "contact" && isSupportedImageType(file);
+  const optimize = isRasterUpload && options.optimize !== false ? resolveOptimizeForUpload(folder, mode, options.optimize) : false;
+  if (isRasterUpload && !handleFileValidation(file)) {
+    throw new MediaUploadError("Invalid image file.");
+  }
+  const form = new FormData();
+  form.append("folder", folder);
+  form.append("mode", mode);
+  if (options.page) form.append("page", options.page);
+  if (options.purpose) form.append("purpose", options.purpose);
+  if (options.sequence != null && options.sequence > 0) {
+    form.append("sequence", String(options.sequence));
+  }
+  form.append("originalFileName", file.name);
+  let uploadBlob = file;
+  let uploadMime = file.type;
+  const willReencode = isRasterUpload && optimize !== false;
+  if (isRasterUpload) {
+    const prepared = await prepareImageBlob(file, folder, optimize);
+    uploadBlob = prepared.blob;
+    uploadMime = prepared.mimeType;
+  }
+  const uploadName = resolveContextualUploadName(
+    file,
+    options,
+    folder,
+    uploadMime,
+    willReencode
+  );
+  form.append("file", uploadBlob, uploadName);
+  const payload = await postUploadForm(form);
+  if (!payload.url) throw new MediaUploadError("Upload did not return a URL.");
+  return {
+    url: payload.url,
+    storagePath: payload.storagePath || "",
+    fileName: payload.fileName || uploadName,
+    size: Number(payload.size) || uploadBlob.size,
+    mimeType: payload.mimeType || uploadMime,
+    folder: payload.folder || folder
+  };
+}
+async function uploadCmsFileWithPreview(file, options = {}) {
+  const previewUrl = URL.createObjectURL(file);
+  options.onPreview?.(previewUrl);
+  try {
+    return await uploadCmsFile(file, options);
+  } finally {
+    URL.revokeObjectURL(previewUrl);
+  }
+}
+async function uploadContactAttachment(file) {
+  if (!file) throw new MediaUploadError("No file selected.");
+  if (isSupportedImageType(file)) {
+    if (!handleFileValidation(file)) {
+      throw new MediaUploadError("Invalid image file.");
+    }
+    return uploadCmsFile(file, {
+      folder: "contact",
+      mode: "contact",
+      page: "contact-messages",
+      purpose: "contact-reply-attachment",
+      optimize: { preset: "general", maxBytes: MAX_CONTACT_ATTACHMENT_BYTES }
+    });
+  }
+  if (file.size > MAX_CONTACT_ATTACHMENT_BYTES) {
+    showToast("Attachment exceeds the 5MB limit.", "danger");
+    throw new MediaUploadError("Attachment exceeds the 5MB limit.");
+  }
+  return uploadCmsFile(file, {
+    folder: "contact",
+    mode: "contact",
+    page: "contact-messages",
+    purpose: "contact-reply-attachment",
+    optimize: false
+  });
+}
+async function uploadCustomFontFile(file) {
+  return uploadCmsFile(file, {
+    folder: "general",
+    mode: "font",
+    optimize: false,
+    page: "customization",
+    purpose: "custom-font"
+  });
+}
+export {
+  MediaUploadError,
+  uploadCmsFile,
+  uploadCmsFileWithPreview,
+  uploadContactAttachment,
+  uploadCustomFontFile
+};
+//# sourceMappingURL=media-upload.js.map

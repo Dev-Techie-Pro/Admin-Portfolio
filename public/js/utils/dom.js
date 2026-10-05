@@ -1,1 +1,78 @@
-const l=new Map;function r(e,n=document){return n===document&&e.startsWith("#")&&!e.includes(" ")?document.getElementById(e.slice(1)):n.querySelector(e)}function i(e,n=document){return Array.from(n.querySelectorAll(e))}function u(e){if(l.has(e)){const t=l.get(e);if(t&&t.isConnected)return t;l.delete(e)}const n=document.getElementById(e);return n&&l.set(e,n),n}function o(e){return e instanceof HTMLInputElement||e instanceof HTMLSelectElement||e instanceof HTMLTextAreaElement?e:null}function c(e){return e instanceof HTMLInputElement?e:null}function m(e){return e instanceof HTMLButtonElement?e:null}function s(e){return o(u(e))}function f(e){const n=u(e);return n instanceof HTMLInputElement?n:null}function a(e){const n=u(e);return n instanceof HTMLSelectElement?n:null}function E(e){const n=u(e);return n instanceof HTMLImageElement?n:null}function p(){l.clear()}function d(e){const n=document.createElement("div");return n.textContent=e==null?"":String(e),n.innerHTML}function H(e,n,t){e?.classList.toggle(n,t)}function L(e,n){e?.classList.toggle("visible",n)}export{r as $,i as $all,s as $field,u as $id,E as $img,f as $input,a as $select,o as asFormField,m as asHtmlButton,c as asHtmlInput,p as clearDomCache,d as escapeHtml,L as setVisible,H as toggleClass};
+const _queryCache = /* @__PURE__ */ new Map();
+function $(selector, scope = document) {
+  if (scope === document && selector.startsWith("#") && !selector.includes(" ")) {
+    return document.getElementById(selector.slice(1));
+  }
+  return scope.querySelector(selector);
+}
+function $all(selector, scope = document) {
+  return Array.from(scope.querySelectorAll(selector));
+}
+function $id(id) {
+  if (_queryCache.has(id)) {
+    const cached = _queryCache.get(id);
+    if (cached && cached.isConnected) return cached;
+    _queryCache.delete(id);
+  }
+  const el = document.getElementById(id);
+  if (el) _queryCache.set(id, el);
+  return el;
+}
+function asFormField(el) {
+  if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) {
+    return el;
+  }
+  return null;
+}
+function asHtmlInput(el) {
+  return el instanceof HTMLInputElement ? el : null;
+}
+function asHtmlButton(el) {
+  return el instanceof HTMLButtonElement ? el : null;
+}
+function $field(id) {
+  return asFormField($id(id));
+}
+function $input(id) {
+  const el = $id(id);
+  return el instanceof HTMLInputElement ? el : null;
+}
+function $select(id) {
+  const el = $id(id);
+  return el instanceof HTMLSelectElement ? el : null;
+}
+function $img(id) {
+  const el = $id(id);
+  return el instanceof HTMLImageElement ? el : null;
+}
+function clearDomCache() {
+  _queryCache.clear();
+}
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str == null ? "" : String(str);
+  return div.innerHTML;
+}
+function toggleClass(el, className, force) {
+  el?.classList.toggle(className, force);
+}
+function setVisible(el, visible) {
+  el?.classList.toggle("visible", visible);
+}
+export {
+  $,
+  $all,
+  $field,
+  $id,
+  $img,
+  $input,
+  $select,
+  asFormField,
+  asHtmlButton,
+  asHtmlInput,
+  clearDomCache,
+  escapeHtml,
+  setVisible,
+  toggleClass
+};
+//# sourceMappingURL=dom.js.map

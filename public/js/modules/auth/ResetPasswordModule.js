@@ -1,1 +1,96 @@
-import{AuthModule as p}from"./AuthModule.js";import{$id as e}from"../../utils/dom.js";import{authService as n}from"../../core/AuthService.js";class h extends p{constructor(){super({name:"ResetPassword",storageKey:null}),this.passwordValid=!1}async load(){try{await n.session()}catch{this.showError("Invalid or expired reset link. Please request a new one.")}}render(){}bindEvents(){if(this._boundEvents)return;this._boundEvents=!0;const i=e("paResetForm"),o=e("paNewPassword"),r=e("paConfirmPassword"),a=e("paResetSubmit");this.setupPasswordToggle("paNewPassword","paPassToggle"),this.setupPasswordToggle("paConfirmPassword","paConfirmPassToggle"),this.setupPasswordStrength("paNewPassword","paPasswordRequirements","paPasswordStrength","paStrengthLabel"),this.on(o,"input",()=>{const s=o.value;this.passwordValid=this.isPasswordValid(s),this.clearFieldError("paNewPassword","paNewPasswordError"),r.value&&s!==r.value?this.setFieldError("paConfirmPassword","paConfirmPasswordError",!0):r.value&&this.clearFieldError("paConfirmPassword","paConfirmPasswordError")}),this.on(r,"input",()=>{r.value&&r.value!==o.value?this.setFieldError("paConfirmPassword","paConfirmPasswordError",!0):this.clearFieldError("paConfirmPassword","paConfirmPasswordError")}),this.on(i,"submit",s=>{s.preventDefault(),this.handleResetSubmit()})}async handleResetSubmit(){const i=e("paNewPassword"),o=e("paConfirmPassword"),r=e("paResetSubmit");let a=!0;const s=i.value,d=o.value;if(!s||!this.isPasswordValid(s)?(this.setFieldError("paNewPassword","paNewPasswordError",!0),a=!1):this.clearFieldError("paNewPassword","paNewPasswordError"),!d||d!==s?(this.setFieldError("paConfirmPassword","paConfirmPasswordError",!0),a=!1):this.clearFieldError("paConfirmPassword","paConfirmPasswordError"),!a){const t=document.querySelector("#paResetForm .pa-form-input.error");t&&t.focus();return}this.setButtonLoading("paResetSubmit",!0);try{await n.resetPassword(s),this.showSuccess("paSuccessBox","paResetForm"),this.showSuccessToast("Password reset successfully!")}catch(t){this.showError(t.message||"Could not reset password."),this.setButtonLoading("paResetSubmit",!1)}}}export{h as ResetPasswordModule};
+import { AuthModule } from "./AuthModule.js";
+import { $id } from "../../utils/dom.js";
+import { authService } from "../../core/AuthService.js";
+class ResetPasswordModule extends AuthModule {
+  constructor() {
+    super({
+      name: "ResetPassword",
+      storageKey: null
+    });
+    this.passwordValid = false;
+  }
+  async load() {
+    try {
+      await authService.session();
+    } catch {
+      this.showError("Invalid or expired reset link. Please request a new one.");
+    }
+  }
+  render() {
+  }
+  bindEvents() {
+    if (this._boundEvents) return;
+    this._boundEvents = true;
+    const form = $id("paResetForm");
+    const passwordInput = $id("paNewPassword");
+    const confirmInput = $id("paConfirmPassword");
+    const submitBtn = $id("paResetSubmit");
+    this.setupPasswordToggle("paNewPassword", "paPassToggle");
+    this.setupPasswordToggle("paConfirmPassword", "paConfirmPassToggle");
+    this.setupPasswordStrength(
+      "paNewPassword",
+      "paPasswordRequirements",
+      "paPasswordStrength",
+      "paStrengthLabel"
+    );
+    this.on(passwordInput, "input", () => {
+      const password = passwordInput.value;
+      this.passwordValid = this.isPasswordValid(password);
+      this.clearFieldError("paNewPassword", "paNewPasswordError");
+      if (confirmInput.value && password !== confirmInput.value) {
+        this.setFieldError("paConfirmPassword", "paConfirmPasswordError", true);
+      } else if (confirmInput.value) {
+        this.clearFieldError("paConfirmPassword", "paConfirmPasswordError");
+      }
+    });
+    this.on(confirmInput, "input", () => {
+      if (confirmInput.value && confirmInput.value !== passwordInput.value) {
+        this.setFieldError("paConfirmPassword", "paConfirmPasswordError", true);
+      } else {
+        this.clearFieldError("paConfirmPassword", "paConfirmPasswordError");
+      }
+    });
+    this.on(form, "submit", (e) => {
+      e.preventDefault();
+      void this.handleResetSubmit();
+    });
+  }
+  async handleResetSubmit() {
+    const passwordInput = $id("paNewPassword");
+    const confirmInput = $id("paConfirmPassword");
+    const submitBtn = $id("paResetSubmit");
+    let valid = true;
+    const password = passwordInput.value;
+    const confirm = confirmInput.value;
+    if (!password || !this.isPasswordValid(password)) {
+      this.setFieldError("paNewPassword", "paNewPasswordError", true);
+      valid = false;
+    } else {
+      this.clearFieldError("paNewPassword", "paNewPasswordError");
+    }
+    if (!confirm || confirm !== password) {
+      this.setFieldError("paConfirmPassword", "paConfirmPasswordError", true);
+      valid = false;
+    } else {
+      this.clearFieldError("paConfirmPassword", "paConfirmPasswordError");
+    }
+    if (!valid) {
+      const firstInvalid = document.querySelector("#paResetForm .pa-form-input.error");
+      if (firstInvalid) firstInvalid.focus();
+      return;
+    }
+    this.setButtonLoading("paResetSubmit", true);
+    try {
+      await authService.resetPassword(password);
+      this.showSuccess("paSuccessBox", "paResetForm");
+      this.showSuccessToast("Password reset successfully!");
+    } catch (err) {
+      this.showError(err.message || "Could not reset password.");
+      this.setButtonLoading("paResetSubmit", false);
+    }
+  }
+}
+export {
+  ResetPasswordModule
+};
+//# sourceMappingURL=ResetPasswordModule.js.map

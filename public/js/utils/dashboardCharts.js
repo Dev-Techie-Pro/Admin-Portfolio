@@ -1,4 +1,434 @@
-const y=new WeakMap;let x=null;function T(){return typeof window<"u"&&typeof ApexCharts<"u"?Promise.resolve():x||(x=new Promise((e,t)=>{const r=document.querySelector('script[src="/js/vendor/apexcharts.min.js"]');if(r){r.addEventListener("load",()=>e(),{once:!0}),r.addEventListener("error",()=>t(new Error("ApexCharts failed to load")),{once:!0});return}const n=document.createElement("script");n.src="/js/vendor/apexcharts.min.js",n.async=!0,n.addEventListener("load",()=>e(),{once:!0}),n.addEventListener("error",()=>t(new Error("ApexCharts failed to load")),{once:!0}),document.head.appendChild(n)}),x)}const k=[1,.82,.64,.46,.32,.22];function l(e){if(typeof e!="string")return e;const t=e.match(/^var\((--[\w-]+)\)$/);return t&&getComputedStyle(document.body).getPropertyValue(t[1]).trim()||e}function f(){return"var(--pa-orange)"}function A(){const e=getComputedStyle(document.documentElement).getPropertyValue("--pa-orange-rgb").trim();if(e)return e;const t=l(f()),r=/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(t);return r?`${parseInt(r[1],16)}, ${parseInt(r[2],16)}, ${parseInt(r[3],16)}`:"255, 102, 0"}function P(){return l(f())}const p=["var(--pa-web)","var(--pa-edu)","var(--pa-pink)","var(--pa-purple)","var(--pa-teal)","var(--pa-red)"];function N(e){if(!e?.length)return[];const t=Math.max(...e.map(o=>Number(o.value)||0));let r=!1,n=0;return e.map(o=>{const a=Number(o.value)||0;if(!r&&a===t&&t>0)return r=!0,{...o,color:f()};const s=p[n%p.length];return n+=1,{...o,color:s}})}function z(e){return typeof e.weight=="number"?e.weight:Array.isArray(e.values)?e.values.reduce((t,r)=>t+(Number(r)||0),0):Array.isArray(e.points)?e.points.reduce((t,r)=>t+(Number(r.y)||0),0):0}function V(e){if(!e?.length)return[];const t=e.map(a=>z(a)),r=Math.max(...t,0);let n=!1,o=0;return e.map((a,s)=>{if(!n&&t[s]===r&&r>0)return n=!0,f();const i=p[o%p.length];return o+=1,i})}function j(e=5,{accentFirst:t=!0}={}){const r=[];for(let n=0;n<e;n+=1)if(t&&n===0)r.push(f());else{const o=t?n-1:n;r.push(p[o%p.length])}return r}function D(e=5){const t=A(),r=P();return e<=1?[r]:Array.from({length:e},(n,o)=>{const a=k[o%k.length];return a>=.999?r:`rgba(${t}, ${a})`})}function g(){const e=getComputedStyle(document.body);return{text:e.getPropertyValue("--pa-text").trim()||"#e8e8ea",textFaint:e.getPropertyValue("--pa-text-faint").trim()||"#9a9aa0",textDim:e.getPropertyValue("--pa-text-dim").trim()||"#b4b4bc",borderSoft:e.getPropertyValue("--pa-border-soft").trim()||"#2a2a30",bgCard:e.getPropertyValue("--pa-bg-card").trim()||"#141418"}}function h(e){const t=g();return{chart:{type:e,background:"transparent",fontFamily:"inherit",toolbar:{show:!1},zoom:{enabled:!1},animations:{enabled:!0,easing:"easeinout",speed:650,animateGradually:{enabled:!0,delay:80}},dropShadow:{enabled:e==="area"||e==="line",top:2,left:0,blur:6,opacity:.12}},grid:{borderColor:t.borderSoft,strokeDashArray:4,padding:{left:8,right:8,top:0,bottom:0}},xaxis:{labels:{style:{colors:t.textFaint,fontSize:"11px",fontWeight:500}},axisBorder:{show:!0,color:t.borderSoft},axisTicks:{show:!0,color:t.borderSoft},crosshairs:{show:e==="area"||e==="line"}},yaxis:{labels:{style:{colors:t.textFaint,fontSize:"11px",fontWeight:500}}},tooltip:{theme:document.body.classList.contains("light")?"light":"dark",style:{fontSize:"12px"}},legend:{show:!1},dataLabels:{enabled:!1}}}function W(e,t=230){if(!e)return t;const r=e.clientHeight||parseFloat(getComputedStyle(e).height)||0;return r>0?Math.round(r):t}function F(e){if(!e)return"100%";const t=e.clientWidth;return t>0?t:"100%"}function I(e){return(e||[]).map(t=>{const r=Number(t);return Number.isFinite(r)?r:0})}function v(e){if(!e)return;const t=y.get(e);t&&(t.destroy(),y.delete(e)),e.innerHTML=""}function C(e,t){if(!e||typeof ApexCharts>"u")return null;v(e);const r=W(e,t?.chart?.height||230),n=F(e),o=(t.series||[]).map(s=>({...s,data:I(s.data)})),a=new ApexCharts(e,{...t,series:o,chart:{...t.chart,height:r,width:n}});return a.render(),y.set(e,a),a}function L(e,t,r){const n=e.reduce((u,d)=>u+d.value,0);if(!n)return"";const o=(t-r)/2-1,a=t/2,s=t/2,i=2*Math.PI*o;let c=0;return e.map(u=>{const d=u.value/n*i,m=l(u.color),b=`<circle cx="${a}" cy="${s}" r="${o}" fill="none" stroke="${m}" stroke-width="${r}" stroke-linecap="butt" stroke-dasharray="${d} ${Math.max(i-d,0)}" stroke-dashoffset="${-c}" transform="rotate(-90 ${a} ${s})"></circle>`;return c+=d,b}).join("")}function H(e,t){if(!e)return null;v(e);const r=e.closest(".pa-donut-svg-wrap"),n=r?Math.round(Math.min(r.clientWidth,r.clientHeight)||0):0,o=Math.max(136,Math.min(n||160,188)),a=Math.round(o*.138),i=t.length>0&&t.some(c=>c.value>0)?L(t,o,a):`<circle cx="${o/2}" cy="${o/2}" r="${(o-a)/2-1}" fill="none" stroke="${l("var(--pa-border-soft)")}" stroke-width="${a}" opacity="0.55"></circle>`;return e.innerHTML=`<svg class="pa-donut-svg" viewBox="0 0 ${o} ${o}" width="${o}" height="${o}" role="presentation" aria-hidden="true">${i}</svg>`,null}function w(e,t,r,n){const o=n*Math.PI/180;return{x:e+r*Math.cos(o),y:t+r*Math.sin(o)}}function M(e,t,r,n,o){if(o<=n)return"";const a=w(e,t,r,n),s=w(e,t,r,o),i=o-n>180?1:0;return`M ${a.x.toFixed(2)} ${a.y.toFixed(2)} A ${r} ${r} 0 ${i} 1 ${s.x.toFixed(2)} ${s.y.toFixed(2)}`}function O(e,t,r="var(--pa-green)"){if(!e)return null;v(e);const n=Math.max(0,Math.min(100,t)),o=220,a=118,s=20,i=88,c=o/2,u=a-6,d=l("var(--pa-border-soft)"),m=l(r),b=M(c,u,i,180,360),S=180+n/100*180,$=n>0?M(c,u,i,180,Math.max(S,181.5)):"";return e.innerHTML=`<svg class="pa-proj-gauge-svg" viewBox="0 0 ${o} ${a}" width="${o}" height="${a}" preserveAspectRatio="xMidYMid meet" role="presentation" aria-hidden="true">
-    <path class="pa-proj-gauge-track" d="${b}" fill="none" stroke="${d}" stroke-width="${s}" stroke-linecap="round" opacity="0.5"/>
-    ${$?`<path class="pa-proj-gauge-fill" d="${$}" fill="none" stroke="${m}" stroke-width="${s}" stroke-linecap="round"/>`:""}
-  </svg>`,null}function B(e,t,r="var(--pa-green)",n={}){if(!e)return null;const o=Math.max(0,Math.min(100,t)),a=g(),{height:s=236,hollowSize:i="74%",trackColor:c=a.borderSoft}=n;return C(e,{chart:{type:"radialBar",height:s,background:"transparent",fontFamily:"inherit",toolbar:{show:!1},animations:{enabled:!0,easing:"easeinout",speed:700},sparkline:{enabled:!1}},series:[o],colors:[l(r)],plotOptions:{radialBar:{startAngle:-90,endAngle:90,hollow:{size:i,background:"transparent"},track:{background:c,strokeWidth:"100%",margin:0},dataLabels:{show:!1}}},stroke:{lineCap:"round"},tooltip:{enabled:!1}})}function R(e,t,r="var(--pa-green)"){if(!e)return null;const n=l(r),o=(t||[]).length?t:[{label:"-",y:0}],a=o.map(i=>i.label),s=o.map(i=>i.y);return C(e,{...h("area"),series:[{name:"Count",data:s}],colors:[n],xaxis:{...h("area").xaxis,categories:a},yaxis:{...h("area").yaxis,min:0,forceNiceScale:!0},fill:{type:"gradient",gradient:{shadeIntensity:.35,opacityFrom:.42,opacityTo:.04,stops:[0,92,100]}},stroke:{curve:"smooth",width:2.75},markers:{size:4,strokeWidth:2,strokeColors:g().bgCard,hover:{size:6}}})}function _(e,t){if(!e)return null;const r=(t||[]).length?t:[{name:"Count",color:"var(--pa-green)",points:[{label:"-",y:0}]}],n=r[0]?.points?.map(o=>o.label)||["-"];return C(e,{...h("line"),series:r.map(o=>({name:o.name,data:(o.points||[]).map(a=>a.y)})),colors:r.map(o=>l(o.color)),xaxis:{...h("line").xaxis,categories:n},yaxis:{...h("line").yaxis,min:0,forceNiceScale:!0},stroke:{curve:"smooth",width:2.5},markers:{size:4,strokeWidth:2,strokeColors:g().bgCard,hover:{size:6}},tooltip:{...h("line").tooltip,shared:!0,intersect:!1},legend:{show:!0,position:"top",horizontalAlign:"right",fontSize:"11px",fontWeight:600,labels:{colors:g().textDim},markers:{width:8,height:8,radius:12},itemMargin:{horizontal:10}}})}export{p as CHART_SUPPORT_COLORS,N as assignSegmentColors,V as assignSeriesColors,v as destroyChart,T as ensureApexChartsLoaded,P as getAccentColor,f as getAccentCssVar,D as getAccentPalette,A as getAccentRgb,j as getChartColorPalette,R as renderAreaChart,H as renderDonutChart,B as renderGaugeChart,_ as renderMultiLineChart,O as renderProjGaugeChart,l as resolveChartColor};
+const chartInstances = /* @__PURE__ */ new WeakMap();
+let apexChartsLoadPromise = null;
+function ensureApexChartsLoaded() {
+  if (typeof window !== "undefined" && typeof ApexCharts !== "undefined") {
+    return Promise.resolve();
+  }
+  if (apexChartsLoadPromise) return apexChartsLoadPromise;
+  apexChartsLoadPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[src="/js/vendor/apexcharts.min.js"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error("ApexCharts failed to load")), { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "/js/vendor/apexcharts.min.js";
+    script.async = true;
+    script.addEventListener("load", () => resolve(), { once: true });
+    script.addEventListener("error", () => reject(new Error("ApexCharts failed to load")), { once: true });
+    document.head.appendChild(script);
+  });
+  return apexChartsLoadPromise;
+}
+const ACCENT_OPACITIES = [1, 0.82, 0.64, 0.46, 0.32, 0.22];
+function resolveChartColor(value) {
+  if (typeof value !== "string") return value;
+  const match = value.match(/^var\((--[\w-]+)\)$/);
+  if (!match) return value;
+  const resolved = getComputedStyle(document.body).getPropertyValue(match[1]).trim();
+  return resolved || value;
+}
+function getAccentCssVar() {
+  return "var(--pa-orange)";
+}
+function getAccentRgb() {
+  const rgb = getComputedStyle(document.documentElement).getPropertyValue("--pa-orange-rgb").trim();
+  if (rgb) return rgb;
+  const resolved = resolveChartColor(getAccentCssVar());
+  const match = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(resolved);
+  if (!match) return "255, 102, 0";
+  return `${parseInt(match[1], 16)}, ${parseInt(match[2], 16)}, ${parseInt(match[3], 16)}`;
+}
+function getAccentColor() {
+  return resolveChartColor(getAccentCssVar());
+}
+const CHART_SUPPORT_COLORS = [
+  "var(--pa-web)",
+  "var(--pa-edu)",
+  "var(--pa-pink)",
+  "var(--pa-purple)",
+  "var(--pa-teal)",
+  "var(--pa-red)"
+];
+function assignSegmentColors(segments) {
+  if (!segments?.length) return [];
+  const maxValue = Math.max(...segments.map((seg) => Number(seg.value) || 0));
+  let accentUsed = false;
+  let supportIndex = 0;
+  return segments.map((seg) => {
+    const value = Number(seg.value) || 0;
+    if (!accentUsed && value === maxValue && maxValue > 0) {
+      accentUsed = true;
+      return { ...seg, color: getAccentCssVar() };
+    }
+    const color = CHART_SUPPORT_COLORS[supportIndex % CHART_SUPPORT_COLORS.length];
+    supportIndex += 1;
+    return { ...seg, color };
+  });
+}
+function seriesWeight(series) {
+  if (typeof series.weight === "number") return series.weight;
+  if (Array.isArray(series.values)) {
+    return series.values.reduce((sum, value) => sum + (Number(value) || 0), 0);
+  }
+  if (Array.isArray(series.points)) {
+    return series.points.reduce((sum, point) => sum + (Number(point.y) || 0), 0);
+  }
+  return 0;
+}
+function assignSeriesColors(seriesList) {
+  if (!seriesList?.length) return [];
+  const weights = seriesList.map((series) => seriesWeight(series));
+  const maxWeight = Math.max(...weights, 0);
+  let accentUsed = false;
+  let supportIndex = 0;
+  return seriesList.map((series, index) => {
+    if (!accentUsed && weights[index] === maxWeight && maxWeight > 0) {
+      accentUsed = true;
+      return getAccentCssVar();
+    }
+    const color = CHART_SUPPORT_COLORS[supportIndex % CHART_SUPPORT_COLORS.length];
+    supportIndex += 1;
+    return color;
+  });
+}
+function getChartColorPalette(count = 5, { accentFirst = true } = {}) {
+  const colors = [];
+  for (let i = 0; i < count; i += 1) {
+    if (accentFirst && i === 0) {
+      colors.push(getAccentCssVar());
+    } else {
+      const supportIndex = accentFirst ? i - 1 : i;
+      colors.push(CHART_SUPPORT_COLORS[supportIndex % CHART_SUPPORT_COLORS.length]);
+    }
+  }
+  return colors;
+}
+function getAccentPalette(count = 5) {
+  const rgb = getAccentRgb();
+  const base = getAccentColor();
+  if (count <= 1) return [base];
+  return Array.from({ length: count }, (_, index) => {
+    const alpha = ACCENT_OPACITIES[index % ACCENT_OPACITIES.length];
+    return alpha >= 0.999 ? base : `rgba(${rgb}, ${alpha})`;
+  });
+}
+function themeColors() {
+  const style = getComputedStyle(document.body);
+  return {
+    text: style.getPropertyValue("--pa-text").trim() || "#e8e8ea",
+    textFaint: style.getPropertyValue("--pa-text-faint").trim() || "#9a9aa0",
+    textDim: style.getPropertyValue("--pa-text-dim").trim() || "#b4b4bc",
+    borderSoft: style.getPropertyValue("--pa-border-soft").trim() || "#2a2a30",
+    bgCard: style.getPropertyValue("--pa-bg-card").trim() || "#141418"
+  };
+}
+function baseChartOptions(type) {
+  const colors = themeColors();
+  return {
+    chart: {
+      type,
+      background: "transparent",
+      fontFamily: "inherit",
+      toolbar: { show: false },
+      zoom: { enabled: false },
+      animations: {
+        enabled: true,
+        easing: "easeinout",
+        speed: 650,
+        animateGradually: { enabled: true, delay: 80 }
+      },
+      dropShadow: {
+        enabled: type === "area" || type === "line",
+        top: 2,
+        left: 0,
+        blur: 6,
+        opacity: 0.12
+      }
+    },
+    grid: {
+      borderColor: colors.borderSoft,
+      strokeDashArray: 4,
+      padding: { left: 8, right: 8, top: 0, bottom: 0 }
+    },
+    xaxis: {
+      labels: {
+        style: { colors: colors.textFaint, fontSize: "11px", fontWeight: 500 }
+      },
+      axisBorder: { show: true, color: colors.borderSoft },
+      axisTicks: { show: true, color: colors.borderSoft },
+      crosshairs: { show: type === "area" || type === "line" }
+    },
+    yaxis: {
+      labels: {
+        style: { colors: colors.textFaint, fontSize: "11px", fontWeight: 500 }
+      }
+    },
+    tooltip: {
+      theme: document.body.classList.contains("light") ? "light" : "dark",
+      style: { fontSize: "12px" }
+    },
+    legend: { show: false },
+    dataLabels: { enabled: false }
+  };
+}
+function resolveChartHeight(mountEl, fallback = 230) {
+  if (!mountEl) return fallback;
+  const measured = mountEl.clientHeight || parseFloat(getComputedStyle(mountEl).height) || 0;
+  return measured > 0 ? Math.round(measured) : fallback;
+}
+function resolveChartWidth(mountEl) {
+  if (!mountEl) return "100%";
+  const measured = mountEl.clientWidth;
+  return measured > 0 ? measured : "100%";
+}
+function sanitizeSeriesData(values) {
+  return (values || []).map((value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  });
+}
+function destroyChart(mountEl) {
+  if (!mountEl) return;
+  const instance = chartInstances.get(mountEl);
+  if (instance) {
+    instance.destroy();
+    chartInstances.delete(mountEl);
+  }
+  mountEl.innerHTML = "";
+}
+function mountChart(mountEl, options) {
+  if (!mountEl || typeof ApexCharts === "undefined") return null;
+  destroyChart(mountEl);
+  const height = resolveChartHeight(mountEl, options?.chart?.height || 230);
+  const width = resolveChartWidth(mountEl);
+  const series = (options.series || []).map((entry) => ({
+    ...entry,
+    data: sanitizeSeriesData(entry.data)
+  }));
+  const chart = new ApexCharts(mountEl, {
+    ...options,
+    series,
+    chart: {
+      ...options.chart,
+      height,
+      width
+    }
+  });
+  chart.render();
+  chartInstances.set(mountEl, chart);
+  return chart;
+}
+function donutSegmentCircles(segments, size, strokeWidth) {
+  const total = segments.reduce((sum, seg) => sum + seg.value, 0);
+  if (!total) return "";
+  const radius = (size - strokeWidth) / 2 - 1;
+  const cx = size / 2;
+  const cy = size / 2;
+  const circumference = 2 * Math.PI * radius;
+  let cumulative = 0;
+  return segments.map((seg) => {
+    const length = seg.value / total * circumference;
+    const color = resolveChartColor(seg.color);
+    const circle = `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="butt" stroke-dasharray="${length} ${Math.max(circumference - length, 0)}" stroke-dashoffset="${-cumulative}" transform="rotate(-90 ${cx} ${cy})"></circle>`;
+    cumulative += length;
+    return circle;
+  }).join("");
+}
+function renderDonutChart(mountEl, segments) {
+  if (!mountEl) return null;
+  destroyChart(mountEl);
+  const wrap = mountEl.closest(".pa-donut-svg-wrap");
+  const measured = wrap ? Math.round(Math.min(wrap.clientWidth, wrap.clientHeight) || 0) : 0;
+  const size = Math.max(136, Math.min(measured || 160, 188));
+  const strokeWidth = Math.round(size * 0.138);
+  const hasData = segments.length > 0 && segments.some((seg) => seg.value > 0);
+  const rings = hasData ? donutSegmentCircles(segments, size, strokeWidth) : `<circle cx="${size / 2}" cy="${size / 2}" r="${(size - strokeWidth) / 2 - 1}" fill="none" stroke="${resolveChartColor("var(--pa-border-soft)")}" stroke-width="${strokeWidth}" opacity="0.55"></circle>`;
+  mountEl.innerHTML = `<svg class="pa-donut-svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="presentation" aria-hidden="true">${rings}</svg>`;
+  return null;
+}
+function polarToCartesian(cx, cy, r, angleDeg) {
+  const rad = angleDeg * Math.PI / 180;
+  return {
+    x: cx + r * Math.cos(rad),
+    y: cy + r * Math.sin(rad)
+  };
+}
+function describeArc(cx, cy, r, startAngle, endAngle) {
+  if (endAngle <= startAngle) return "";
+  const start = polarToCartesian(cx, cy, r, startAngle);
+  const end = polarToCartesian(cx, cy, r, endAngle);
+  const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
+  return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${r} ${r} 0 ${largeArcFlag} 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
+}
+function renderProjGaugeChart(mountEl, pct, fillColor = "var(--pa-green)") {
+  if (!mountEl) return null;
+  destroyChart(mountEl);
+  const value = Math.max(0, Math.min(100, pct));
+  const width = 220;
+  const height = 118;
+  const strokeWidth = 20;
+  const r = 88;
+  const cx = width / 2;
+  const cy = height - 6;
+  const trackColor = resolveChartColor("var(--pa-border-soft)");
+  const color = resolveChartColor(fillColor);
+  const trackPath = describeArc(cx, cy, r, 180, 360);
+  const endAngle = 180 + value / 100 * 180;
+  const fillPath = value > 0 ? describeArc(cx, cy, r, 180, Math.max(endAngle, 181.5)) : "";
+  mountEl.innerHTML = `<svg class="pa-proj-gauge-svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid meet" role="presentation" aria-hidden="true">
+    <path class="pa-proj-gauge-track" d="${trackPath}" fill="none" stroke="${trackColor}" stroke-width="${strokeWidth}" stroke-linecap="round" opacity="0.5"/>
+    ${fillPath ? `<path class="pa-proj-gauge-fill" d="${fillPath}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round"/>` : ""}
+  </svg>`;
+  return null;
+}
+function renderGaugeChart(mountEl, pct, fillColor = "var(--pa-green)", options = {}) {
+  if (!mountEl) return null;
+  const value = Math.max(0, Math.min(100, pct));
+  const colors = themeColors();
+  const {
+    height = 236,
+    hollowSize = "74%",
+    trackColor = colors.borderSoft
+  } = options;
+  return mountChart(mountEl, {
+    chart: {
+      type: "radialBar",
+      height,
+      background: "transparent",
+      fontFamily: "inherit",
+      toolbar: { show: false },
+      animations: { enabled: true, easing: "easeinout", speed: 700 },
+      sparkline: { enabled: false }
+    },
+    series: [value],
+    colors: [resolveChartColor(fillColor)],
+    plotOptions: {
+      radialBar: {
+        startAngle: -90,
+        endAngle: 90,
+        hollow: {
+          size: hollowSize,
+          background: "transparent"
+        },
+        track: {
+          background: trackColor,
+          strokeWidth: "100%",
+          margin: 0
+        },
+        dataLabels: {
+          show: false
+        }
+      }
+    },
+    stroke: { lineCap: "round" },
+    tooltip: { enabled: false }
+  });
+}
+function renderAreaChart(mountEl, points, color = "var(--pa-green)") {
+  if (!mountEl) return null;
+  const resolved = resolveChartColor(color);
+  const safePoints = (points || []).length ? points : [{ label: "-", y: 0 }];
+  const categories = safePoints.map((p) => p.label);
+  const data = safePoints.map((p) => p.y);
+  return mountChart(mountEl, {
+    ...baseChartOptions("area"),
+    series: [{ name: "Count", data }],
+    colors: [resolved],
+    xaxis: {
+      ...baseChartOptions("area").xaxis,
+      categories
+    },
+    yaxis: {
+      ...baseChartOptions("area").yaxis,
+      min: 0,
+      forceNiceScale: true
+    },
+    fill: {
+      type: "gradient",
+      gradient: {
+        shadeIntensity: 0.35,
+        opacityFrom: 0.42,
+        opacityTo: 0.04,
+        stops: [0, 92, 100]
+      }
+    },
+    stroke: {
+      curve: "smooth",
+      width: 2.75
+    },
+    markers: {
+      size: 4,
+      strokeWidth: 2,
+      strokeColors: themeColors().bgCard,
+      hover: { size: 6 }
+    }
+  });
+}
+function renderMultiLineChart(mountEl, seriesDefs) {
+  if (!mountEl) return null;
+  const safeDefs = (seriesDefs || []).length ? seriesDefs : [{ name: "Count", color: "var(--pa-green)", points: [{ label: "-", y: 0 }] }];
+  const categories = safeDefs[0]?.points?.map((p) => p.label) || ["-"];
+  return mountChart(mountEl, {
+    ...baseChartOptions("line"),
+    series: safeDefs.map((def) => ({
+      name: def.name,
+      data: (def.points || []).map((p) => p.y)
+    })),
+    colors: safeDefs.map((def) => resolveChartColor(def.color)),
+    xaxis: {
+      ...baseChartOptions("line").xaxis,
+      categories
+    },
+    yaxis: {
+      ...baseChartOptions("line").yaxis,
+      min: 0,
+      forceNiceScale: true
+    },
+    stroke: {
+      curve: "smooth",
+      width: 2.5
+    },
+    markers: {
+      size: 4,
+      strokeWidth: 2,
+      strokeColors: themeColors().bgCard,
+      hover: { size: 6 }
+    },
+    tooltip: {
+      ...baseChartOptions("line").tooltip,
+      shared: true,
+      intersect: false
+    },
+    legend: {
+      show: true,
+      position: "top",
+      horizontalAlign: "right",
+      fontSize: "11px",
+      fontWeight: 600,
+      labels: { colors: themeColors().textDim },
+      markers: { width: 8, height: 8, radius: 12 },
+      itemMargin: { horizontal: 10 }
+    }
+  });
+}
+export {
+  CHART_SUPPORT_COLORS,
+  assignSegmentColors,
+  assignSeriesColors,
+  destroyChart,
+  ensureApexChartsLoaded,
+  getAccentColor,
+  getAccentCssVar,
+  getAccentPalette,
+  getAccentRgb,
+  getChartColorPalette,
+  renderAreaChart,
+  renderDonutChart,
+  renderGaugeChart,
+  renderMultiLineChart,
+  renderProjGaugeChart,
+  resolveChartColor
+};
+//# sourceMappingURL=dashboardCharts.js.map

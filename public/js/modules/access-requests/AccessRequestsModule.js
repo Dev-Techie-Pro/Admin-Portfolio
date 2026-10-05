@@ -1,7 +1,89 @@
-import{Module as f}from"../../core/Module.js";import{$id as n,escapeHtml as c}from"../../utils/dom.js";import{showToast as l}from"../shell/toast.js";import{requestBulkAction as p}from"../shell/confirm.js";function d(i){if(!i)return"\u2014";try{const e=new Date(i);return Number.isNaN(e.getTime())?"\u2014":e.toLocaleString(void 0,{dateStyle:"medium",timeStyle:"short"})}catch{return"\u2014"}}function h(i){const s={pending:{cls:"warning",label:"Pending"},approved:{cls:"success",label:"Approved"},rejected:{cls:"danger",label:"Rejected"}}[i]||{cls:"info",label:i};return`<span class="pa-badge pa-badge--${s.cls}">${c(s.label)}</span>`}class A extends f{constructor(){super({name:"AccessRequests",storageKey:null,initialState:{items:[],filter:"all",loading:!1}})}async load(){await this.fetchList()}async fetchList(){this.store.set("loading",!0);try{const e=await fetch("/api/admin/access-requests",{credentials:"include"}),s=await e.json();if(!e.ok)throw new Error(s.error||"Could not load requests.");this.store.set("items",Array.isArray(s.items)?s.items:[])}catch(e){l(e?.message||"Could not load requests.","danger"),this.store.set("items",[])}finally{this.store.set("loading",!1),this.render()}}filteredItems(){const e=this.store.get("filter"),s=this.store.get("items")||[];return e==="all"?s:s.filter(t=>t.status===e)}render(){const e=n("paAccessRequestsList"),s=n("paAccessRequestsEmpty"),t=n("paAccessRequestsCount");if(!e)return;const a=this.filteredItems();if(t&&(t.textContent=`${a.length} request${a.length===1?"":"s"}`),!a.length){e.innerHTML="",s?.removeAttribute("hidden");return}s?.setAttribute("hidden",""),e.innerHTML=a.map(r=>this.renderCard(r)).join("")}renderCard(e){const s=c(e.requesterName||e.requesterEmail||"Staff"),t=c(String(e.requesterRole||"").replace(/_/g," ")),a=c(e.message||""),r=c(e.contactEmail||""),o=e.status==="pending",u=o?`<div class="pa-access-request-duration">
-          <label class="pa-form-label" for="paAccessDuration-${e.id}">Editor role duration</label>
+import { Module } from "../../core/Module.js";
+import { $id, escapeHtml } from "../../utils/dom.js";
+import { showToast } from "../shell/toast.js";
+import { requestBulkAction } from "../shell/confirm.js";
+function formatDateTime(iso) {
+  if (!iso) return "\u2014";
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "\u2014";
+    return d.toLocaleString(void 0, { dateStyle: "medium", timeStyle: "short" });
+  } catch {
+    return "\u2014";
+  }
+}
+function statusBadge(status) {
+  const map = {
+    pending: { cls: "warning", label: "Pending" },
+    approved: { cls: "success", label: "Approved" },
+    rejected: { cls: "danger", label: "Rejected" }
+  };
+  const meta = map[status] || { cls: "info", label: status };
+  return `<span class="pa-badge pa-badge--${meta.cls}">${escapeHtml(meta.label)}</span>`;
+}
+class AccessRequestsModule extends Module {
+  constructor() {
+    super({
+      name: "AccessRequests",
+      storageKey: null,
+      initialState: {
+        items: [],
+        filter: "all",
+        loading: false
+      }
+    });
+  }
+  async load() {
+    await this.fetchList();
+  }
+  async fetchList() {
+    this.store.set("loading", true);
+    try {
+      const res = await fetch("/api/admin/access-requests", { credentials: "include" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not load requests.");
+      this.store.set("items", Array.isArray(data.items) ? data.items : []);
+    } catch (err) {
+      showToast(err?.message || "Could not load requests.", "danger");
+      this.store.set("items", []);
+    } finally {
+      this.store.set("loading", false);
+      this.render();
+    }
+  }
+  filteredItems() {
+    const filter = this.store.get("filter");
+    const items = this.store.get("items") || [];
+    if (filter === "all") return items;
+    return items.filter((item) => item.status === filter);
+  }
+  render() {
+    const list = $id("paAccessRequestsList");
+    const empty = $id("paAccessRequestsEmpty");
+    const countEl = $id("paAccessRequestsCount");
+    if (!list) return;
+    const items = this.filteredItems();
+    if (countEl) {
+      countEl.textContent = `${items.length} request${items.length === 1 ? "" : "s"}`;
+    }
+    if (!items.length) {
+      list.innerHTML = "";
+      empty?.removeAttribute("hidden");
+      return;
+    }
+    empty?.setAttribute("hidden", "");
+    list.innerHTML = items.map((item) => this.renderCard(item)).join("");
+  }
+  renderCard(item) {
+    const name = escapeHtml(item.requesterName || item.requesterEmail || "Staff");
+    const role = escapeHtml(String(item.requesterRole || "").replace(/_/g, " "));
+    const message = escapeHtml(item.message || "");
+    const contact = escapeHtml(item.contactEmail || "");
+    const pending = item.status === "pending";
+    const durationBlock = pending ? `<div class="pa-access-request-duration">
+          <label class="pa-form-label" for="paAccessDuration-${item.id}">Editor role duration</label>
           <div class="pa-access-request-duration-row">
-            <select class="pa-form-select" id="paAccessDuration-${e.id}" data-duration-select="${e.id}">
+            <select class="pa-form-select" id="paAccessDuration-${item.id}" data-duration-select="${item.id}">
               <option value="1">1 hour</option>
               <option value="3" selected>3 hours</option>
               <option value="6">6 hours</option>
@@ -10,28 +92,142 @@ import{Module as f}from"../../core/Module.js";import{$id as n,escapeHtml as c}fr
               <option value="custom">Custom\u2026</option>
             </select>
             <input class="pa-form-input pa-access-duration-custom" type="number" min="1" max="72" step="1"
-              placeholder="Hours (1\u201372)" data-duration-custom="${e.id}" hidden>
+              placeholder="Hours (1\u201372)" data-duration-custom="${item.id}" hidden>
           </div>
-        </div>`:"",m=o?`${u}<div class="pa-access-request-actions">
-          <button type="button" class="pa-btn pa-btn-primary pa-btn-sm" data-access-approve="${e.id}">
+        </div>` : "";
+    const actions = pending ? `${durationBlock}<div class="pa-access-request-actions">
+          <button type="button" class="pa-btn pa-btn-primary pa-btn-sm" data-access-approve="${item.id}">
             <i class="ri-check-line"></i> Approve
           </button>
-          <button type="button" class="pa-btn pa-btn-cancel pa-btn-sm" data-access-reject="${e.id}">
+          <button type="button" class="pa-btn pa-btn-cancel pa-btn-sm" data-access-reject="${item.id}">
             <i class="ri-close-line"></i> Reject
           </button>
-        </div>`:`<div class="pa-text-mute fs-sm">Reviewed ${d(e.reviewedAt)}</div>`;return`<article class="pa-access-request-card" data-request-id="${e.id}">
+        </div>` : `<div class="pa-text-mute fs-sm">Reviewed ${formatDateTime(item.reviewedAt)}</div>`;
+    return `<article class="pa-access-request-card" data-request-id="${item.id}">
       <div class="pa-access-request-head">
         <div>
-          <div class="pa-access-request-title">${s}</div>
-          <div class="pa-text-mute fs-sm">${t} \xB7 ${r}</div>
+          <div class="pa-access-request-title">${name}</div>
+          <div class="pa-text-mute fs-sm">${role} \xB7 ${contact}</div>
         </div>
-        ${h(e.status)}
+        ${statusBadge(item.status)}
       </div>
-      <p class="pa-access-request-message">${a}</p>
+      <p class="pa-access-request-message">${message}</p>
       <div class="pa-access-request-meta">
-        <span>Submitted ${d(e.createdAt)}</span>
-        ${e.durationHours?`<span>Duration: ${e.durationHours}h</span>`:""}
-        ${e.elevatedUntil?`<span>Access until ${d(e.elevatedUntil)}</span>`:""}
+        <span>Submitted ${formatDateTime(item.createdAt)}</span>
+        ${item.durationHours ? `<span>Duration: ${item.durationHours}h</span>` : ""}
+        ${item.elevatedUntil ? `<span>Access until ${formatDateTime(item.elevatedUntil)}</span>` : ""}
       </div>
-      ${m}
-    </article>`}bindEvents(){n("paAccessRequestsRefresh")?.addEventListener("click",()=>{this.fetchList()}),document.querySelectorAll("[data-access-filter]").forEach(s=>{s.addEventListener("click",()=>{const t=s.getAttribute("data-access-filter")||"all";this.store.set("filter",t),document.querySelectorAll("[data-access-filter]").forEach(a=>{const r=a.getAttribute("data-access-filter")===t;a.classList.toggle("active",r),a.setAttribute("aria-selected",r?"true":"false")}),this.render()})});const e=n("paAccessRequestsList");e?.addEventListener("change",s=>{const t=s.target.closest("[data-duration-select]");if(!t)return;const a=t.getAttribute("data-duration-select"),r=e.querySelector(`[data-duration-custom="${a}"]`);if(!r)return;const o=t.value==="custom";r.hidden=!o,o&&r.focus()}),e?.addEventListener("click",s=>{const t=s.target.closest("[data-access-approve], [data-access-reject]");if(!t)return;const a=t.getAttribute("data-access-approve")||t.getAttribute("data-access-reject");a&&(t.hasAttribute("data-access-approve")?this.review(a,"approve"):this.review(a,"reject"))})}getDurationHours(e){const s=n("paAccessRequestsList"),t=s?.querySelector(`[data-duration-select="${e}"]`);if(!t)return 3;if(t.value==="custom"){const r=s?.querySelector(`[data-duration-custom="${e}"]`),o=parseInt(String(r?.value??""),10);if(!Number.isFinite(o)||o<1||o>72)throw new Error("Enter a custom duration between 1 and 72 hours.");return o}const a=parseInt(t.value,10);return Number.isFinite(a)?a:3}review(e,s){if(s==="approve"){let t=3;try{t=this.getDurationHours(e)}catch(r){l(r?.message||"Invalid duration.","danger");return}const a=t===1?"1 hour":`${t} hours`;p({title:"Approve temporary editor role?",message:`The user\u2019s role will change from <strong>viewer</strong> to <strong>editor</strong> for <strong>${a}</strong>, then revert automatically. User management stays restricted.`,confirmLabel:"Approve",danger:!1,iconClass:"ri-check-line",iconTone:"warning",onConfirm:()=>this.patchReview(e,"approve","",t)});return}p({title:"Reject access request?",message:"The requester will be notified by email and in the app.",confirmLabel:"Reject",iconClass:"ri-close-circle-line",onConfirm:()=>{const t=window.prompt("Optional note for the requester:")?.trim()||"";this.patchReview(e,"reject",t)}})}async patchReview(e,s,t,a){try{const r={action:s,rejectionNote:t};s==="approve"&&a!=null&&(r.durationHours=a);const o=await fetch(`/api/admin/access-requests/${encodeURIComponent(e)}`,{method:"PATCH",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify(r)}),u=await o.json();if(!o.ok)throw new Error(u.error||"Request failed.");l(s==="approve"?"Access approved.":"Request rejected.","success"),await this.fetchList()}catch(r){l(r?.message||"Could not update request.","danger")}}}export{A as AccessRequestsModule};
+      ${actions}
+    </article>`;
+  }
+  bindEvents() {
+    $id("paAccessRequestsRefresh")?.addEventListener("click", () => {
+      void this.fetchList();
+    });
+    document.querySelectorAll("[data-access-filter]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const filter = btn.getAttribute("data-access-filter") || "all";
+        this.store.set("filter", filter);
+        document.querySelectorAll("[data-access-filter]").forEach((el) => {
+          const active = el.getAttribute("data-access-filter") === filter;
+          el.classList.toggle("active", active);
+          el.setAttribute("aria-selected", active ? "true" : "false");
+        });
+        this.render();
+      });
+    });
+    const list = $id("paAccessRequestsList");
+    list?.addEventListener("change", (e) => {
+      const select = e.target.closest("[data-duration-select]");
+      if (!select) return;
+      const requestId = select.getAttribute("data-duration-select");
+      const custom = list.querySelector(`[data-duration-custom="${requestId}"]`);
+      if (!custom) return;
+      const isCustom = select.value === "custom";
+      custom.hidden = !isCustom;
+      if (isCustom) custom.focus();
+    });
+    list?.addEventListener("click", (e) => {
+      const target = e.target.closest("[data-access-approve], [data-access-reject]");
+      if (!target) return;
+      const id = target.getAttribute("data-access-approve") || target.getAttribute("data-access-reject");
+      if (!id) return;
+      if (target.hasAttribute("data-access-approve")) {
+        void this.review(id, "approve");
+      } else {
+        void this.review(id, "reject");
+      }
+    });
+  }
+  getDurationHours(requestId) {
+    const list = $id("paAccessRequestsList");
+    const select = list?.querySelector(`[data-duration-select="${requestId}"]`);
+    if (!select) return 3;
+    if (select.value === "custom") {
+      const custom = list?.querySelector(`[data-duration-custom="${requestId}"]`);
+      const n = parseInt(String(custom?.value ?? ""), 10);
+      if (!Number.isFinite(n) || n < 1 || n > 72) {
+        throw new Error("Enter a custom duration between 1 and 72 hours.");
+      }
+      return n;
+    }
+    const preset = parseInt(select.value, 10);
+    return Number.isFinite(preset) ? preset : 3;
+  }
+  review(id, action) {
+    if (action === "approve") {
+      let durationHours = 3;
+      try {
+        durationHours = this.getDurationHours(id);
+      } catch (err) {
+        showToast(err?.message || "Invalid duration.", "danger");
+        return;
+      }
+      const hourLabel = durationHours === 1 ? "1 hour" : `${durationHours} hours`;
+      requestBulkAction({
+        title: "Approve temporary editor role?",
+        message: `The user\u2019s role will change from <strong>viewer</strong> to <strong>editor</strong> for <strong>${hourLabel}</strong>, then revert automatically. User management stays restricted.`,
+        confirmLabel: "Approve",
+        danger: false,
+        iconClass: "ri-check-line",
+        iconTone: "warning",
+        onConfirm: () => this.patchReview(id, "approve", "", durationHours)
+      });
+      return;
+    }
+    requestBulkAction({
+      title: "Reject access request?",
+      message: "The requester will be notified by email and in the app.",
+      confirmLabel: "Reject",
+      iconClass: "ri-close-circle-line",
+      onConfirm: () => {
+        const rejectionNote = window.prompt("Optional note for the requester:")?.trim() || "";
+        void this.patchReview(id, "reject", rejectionNote);
+      }
+    });
+  }
+  async patchReview(id, action, rejectionNote, durationHours) {
+    try {
+      const payload = { action, rejectionNote };
+      if (action === "approve" && durationHours != null) {
+        payload.durationHours = durationHours;
+      }
+      const res = await fetch(`/api/admin/access-requests/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Request failed.");
+      showToast(action === "approve" ? "Access approved." : "Request rejected.", "success");
+      await this.fetchList();
+    } catch (err) {
+      showToast(err?.message || "Could not update request.", "danger");
+    }
+  }
+}
+export {
+  AccessRequestsModule
+};
+//# sourceMappingURL=AccessRequestsModule.js.map

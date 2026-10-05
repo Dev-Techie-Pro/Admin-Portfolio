@@ -1,1 +1,385 @@
-import{Module as N}from"../../core/Module.js";import{$id as a}from"../../utils/dom.js";import{PAGE as B,getLoginPath as S}from"../../core/router.js";import{eventBus as A}from"../../core/EventBus.js";import{authService as g}from"../../core/AuthService.js";import{clearNotifications as P,loadNotifications as v,markNotificationRead as T,renderNotifications as _}from"./notifications.js";import{showToast as f}from"./toast.js";import{closeConfirm as D,isConfirmOpen as W,initConfirmDialog as R,requestLogout as O}from"./confirm.js";import{anyPanelOpen as M,closePanels as H}from"./panels.js";import{closeAllCardMenus as x}from"./cardMenu.js";import{AddUserManager as j}from"./AddUserManager.js";import{CustomizationModule as q}from"./CustomizationModule.js";import{initSettingsNav as z}from"./settingsNav.js";import{initSidebarCollapse as G}from"./sidebarCollapse.js";import{initSidebarGroupNav as I}from"./sidebarGroupNav.js";import{storage as w}from"../../core/StorageService.js";import{applyUserDisplay as L,applyRoleBasedAccess as y}from"../../utils/user-display.js";import{getAccessCapabilities as K}from"../../core/access.js";import{uploadUserAvatar as $}from"../../utils/avatar-upload.js";import{closeMobileHeaderSearch as V,isMobileHeaderSearchOpen as Y,openMobileHeaderSearch as F}from"./mobileHeaderSearch.js";import{maybeShowRoleAccessModal as U}from"./roleAccessModal.js";import{syncElevationBanner as E}from"./elevationBanner.js";import{focusGlobalSearch as C,initGlobalSearch as J}from"./globalSearch.js";const Q=["Projects","Categories","Tags","Technologies","Tool Categories","Tools","Media Library","Testimonials","Blog Posts","Blog Categories","Experience","Dashboard","Contact Messages","Recent Activities","Settings","Users","Access Requests","Comments & Likes"];class ke extends N{constructor(){super({name:"Shell"}),this._sessionExpiryTimer=null,this.customization=new q,this.addUser=new j({on:this.on.bind(this),closeUserMenu:()=>{this._userMenuWrap?.classList.remove("open"),a("paUserMenu")?.setAttribute("aria-expanded","false")}})}async init(){R(),this.bindEvents(),this.addUser.bindEvents(),this.onBus("profile:updated",e=>{L(e),y(e?.role),this.addUser.setProfileRole(e?.role)}),await Promise.all([this.loadUserSession(),this.customization.init(),v({force:!0})]),_(),z(),I(),G(),J()}async loadUserSession(){try{const{user:e,sessionExpiresAt:l}=await g.session();if(!e)return;this.scheduleSessionExpiry(l);try{const n=await g.getProfile();L({fullName:n.fullName,username:n.username,email:n.email||e.email,role:n.role||e.role,avatarUrl:n.avatarUrl}),y(n.role||e.role,e.capabilities),E(),w.reconcileRecentActivitiesScope({user:{id:n.id||e.id,capabilities:e.capabilities}}),this.addUser.setProfileRole(n.role||e.role),U({id:n.id||e.id,role:n.role||e.role})}catch{L(e),y(e.role,e.capabilities),E(),w.reconcileRecentActivitiesScope({user:e}),this.addUser.setProfileRole(e.role),U({id:e.id,role:e.role})}}catch(e){console.warn("[Shell] session load failed:",e)}}scheduleSessionExpiry(e){if(this._sessionExpiryTimer&&(window.clearTimeout(this._sessionExpiryTimer),this._sessionExpiryTimer=null),!e)return;const l=new Date(e).getTime()-Date.now();if(l<=0){this.expireSessionNow();return}this._sessionExpiryTimer=window.setTimeout(()=>{this.expireSessionNow()},l)}async expireSessionNow(){try{await g.logout()}catch{}window.location.assign(`${S()}?session=expired`)}bindEvents(){const e=a("paSidebar"),l=a("paSidebarOverlay"),n=a("paMobileToggle"),o=()=>{e?.classList.remove("mobile-open"),l?.classList.remove("visible")};this._closeMobileSidebar=o,this.on(n,"click",()=>{e?.classList.add("mobile-open"),l?.classList.add("visible")}),this.on(l,"click",o);const m=t=>{if(t.getAttribute("href")==="#")return;document.querySelectorAll(".pa-nav-subitem").forEach(u=>u.classList.remove("active")),document.querySelectorAll(".pa-nav-toggle").forEach(u=>u.classList.remove("active")),t.classList.add("active");const c=t.dataset.nav;c&&!Q.includes(c)&&f(`"${c}" section is not implemented in this demo`,"info"),o()};document.querySelectorAll(".pa-nav-subitem[data-nav], .pa-nav-subitem[data-settings-tab]").forEach(t=>{this.on(t,"click",s=>{t.getAttribute("href")==="#"&&s.preventDefault(),m(t)})});const r=a("paUserMenuWrap"),i=a("paUserMenu");this._userMenuWrap=r,i&&r&&(this.on(i,"click",t=>{t.stopPropagation();const s=r.classList.toggle("open");i.setAttribute("aria-expanded",s?"true":"false"),s&&p?.classList.remove("open")}),this.on(i,"keydown",t=>{if(t.key==="Enter"||t.key===" "){t.preventDefault();const s=r.classList.toggle("open");i.setAttribute("aria-expanded",s?"true":"false")}})),this.bindHeaderAvatarUpload();const d=a("paUserDropdownLogout");d&&this.on(d,"click",t=>{t.stopPropagation(),r?.classList.remove("open"),i?.setAttribute("aria-expanded","false"),this.handleLogout()});const h=a("paLogoutBtn");h&&this.on(h,"click",()=>this.handleLogout());const p=a("paNotifWrap"),b=a("paNotifBtn");if(this._notifWrap=p,b&&p){this.on(b,"click",s=>{s.stopPropagation();const c=!p.classList.contains("open");p.classList.toggle("open"),p.classList.contains("open")&&(r?.classList.remove("open"),i?.setAttribute("aria-expanded","false"),c&&v({force:!0}))}),this.on(b,"keydown",s=>{if(s.key==="Enter"||s.key===" "){s.preventDefault();const c=!p.classList.contains("open");p.classList.toggle("open"),c&&v({force:!0})}}),this.on(a("paNotifClearBtn"),"click",s=>{if(s.stopPropagation(),!K().canClearAllNotifications){f("You do not have permission to clear notifications.","warning",2200);return}P().then(()=>{f("Notifications cleared","info",1800)}).catch(c=>{f(c?.message||"Could not clear notifications.","danger",2200)})});const t=a("paNotifList");t&&this.on(t,"click",s=>{const c=s.target.closest("[data-notif-id]");if(!c)return;const u=c.dataset.notifId,k=c.dataset.notifLink;T(u).then(()=>{k&&(window.location.href=k)})})}this.onBus("notifications:updated",()=>{_()}),this.onBus("storage:invalidated",t=>{(t==="pa_notifications"||t==="pa_recent_activities")&&v({silent:!0})}),this.on(document,"click",t=>{p&&!p.contains(t.target)&&p.classList.remove("open"),r&&!r.contains(t.target)&&(r.classList.contains("pa-user-menu--locked")||(r.classList.remove("open"),i?.setAttribute("aria-expanded","false"))),t.target.closest(".pa-card-actions, .pa-lv-more-wrap, .pa-lv-actions, .pa-cat-card__list-actions, .pa-cat-card__footer-more, .pa-proj-card__head-more, .pa-proj-card__list-more, .pa-proj-card__list-actions, .pa-media-card__thumb-more, .pa-media-card__footer-more, .pa-media-card__list-more, .pa-media-card__list-actions")||x()}),this.on(document,"keydown",t=>{(t.metaKey||t.ctrlKey)&&t.key?.toLowerCase()==="k"&&(t.preventDefault(),window.innerWidth<=899?F()||C():C()),t.key==="Escape"&&(Y()?V():W()?D():a("paBulkConfirmOverlay")?.classList.contains("visible")?A.emit("bulk-confirm:close"):M()?H():(x(),p?.classList.remove("open"),r?.classList.remove("open"),i?.setAttribute("aria-expanded","false"),o())),t.key?.toLowerCase()==="n"&&!M()&&!document.activeElement.matches("input, textarea, select, [contenteditable]")&&A.emit("shortcut:new-item",{page:B})})}bindHeaderAvatarUpload(){const e=a("paUserDropdownAvatar"),l=this._userMenuWrap||a("paUserMenuWrap"),n=a("paUserMenu");if(!e)return;let o=a("paHeaderAvatarInput");o||(o=document.createElement("input"),o.type="file",o.id="paHeaderAvatarInput",o.accept="image/png,image/jpeg,image/webp",o.hidden=!0,document.body.appendChild(o));const m=()=>{l?.classList.add("pa-user-menu--locked","open"),n?.setAttribute("aria-expanded","true")},r=(i=!1)=>{l?.classList.remove("pa-user-menu--locked"),i&&(l?.classList.remove("open"),n?.setAttribute("aria-expanded","false"))};this.on(e,"click",i=>{i.preventDefault(),i.stopPropagation(),m(),o.click()}),this.on(o,"cancel",()=>{r(!1),o.value=""}),this.on(window,"focus",()=>{l?.classList.contains("pa-user-menu--locked")&&window.setTimeout(()=>{!o.files?.length&&!e.classList.contains("is-uploading")&&r(!1)},280)}),this.on(o,"change",async i=>{const d=i.target.files?.[0];if(!d){r(!1),i.target.value="";return}m(),await $(d,{onComplete:h=>r(!!h)}),i.target.value=""})}handleLogout(){O(async()=>{f("Logging out...","info",1500);try{await g.logout()}catch(e){console.warn("[Shell] logout failed:",e)}try{await w.clearPersistentCache()}catch(e){console.warn("[Shell] cache clear failed:",e)}window.location.href=S()})}destroy(){this.customization.destroy(),super.destroy()}}export{ke as ShellModule};
+import { Module } from "../../core/Module.js";
+import { $id } from "../../utils/dom.js";
+import { PAGE, getLoginPath } from "../../core/router.js";
+import { eventBus } from "../../core/EventBus.js";
+import { authService } from "../../core/AuthService.js";
+import {
+  clearNotifications,
+  loadNotifications,
+  markNotificationRead,
+  renderNotifications
+} from "./notifications.js";
+import { showToast } from "./toast.js";
+import { closeConfirm, isConfirmOpen, initConfirmDialog, requestLogout } from "./confirm.js";
+import { anyPanelOpen, closePanels } from "./panels.js";
+import { closeAllCardMenus } from "./cardMenu.js";
+import { AddUserManager } from "./AddUserManager.js";
+import { CustomizationModule } from "./CustomizationModule.js";
+import { initSettingsNav } from "./settingsNav.js";
+import { initSidebarCollapse } from "./sidebarCollapse.js";
+import { initSidebarGroupNav } from "./sidebarGroupNav.js";
+import { storage } from "../../core/StorageService.js";
+import { applyUserDisplay, applyRoleBasedAccess } from "../../utils/user-display.js";
+import { getAccessCapabilities } from "../../core/access.js";
+import { uploadUserAvatar } from "../../utils/avatar-upload.js";
+import {
+  closeMobileHeaderSearch,
+  isMobileHeaderSearchOpen,
+  openMobileHeaderSearch
+} from "./mobileHeaderSearch.js";
+import { maybeShowRoleAccessModal } from "./roleAccessModal.js";
+import { syncElevationBanner } from "./elevationBanner.js";
+import { focusGlobalSearch, initGlobalSearch } from "./globalSearch.js";
+const KNOWN_NAV_LABELS = [
+  "Projects",
+  "Categories",
+  "Tags",
+  "Technologies",
+  "Tool Categories",
+  "Tools",
+  "Media Library",
+  "Testimonials",
+  "Blog Posts",
+  "Blog Categories",
+  "Experience",
+  "Dashboard",
+  "Contact Messages",
+  "Recent Activities",
+  "Settings",
+  "Users",
+  "Access Requests",
+  "Comments & Likes"
+];
+class ShellModule extends Module {
+  constructor() {
+    super({ name: "Shell" });
+    this._sessionExpiryTimer = null;
+    this.customization = new CustomizationModule();
+    this.addUser = new AddUserManager({
+      on: this.on.bind(this),
+      closeUserMenu: () => {
+        this._userMenuWrap?.classList.remove("open");
+        $id("paUserMenu")?.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
+  async init() {
+    initConfirmDialog();
+    this.bindEvents();
+    this.addUser.bindEvents();
+    this.onBus("profile:updated", (profile) => {
+      applyUserDisplay(profile);
+      applyRoleBasedAccess(profile?.role);
+      this.addUser.setProfileRole(profile?.role);
+    });
+    await Promise.all([
+      this.loadUserSession(),
+      this.customization.init(),
+      loadNotifications({ force: true })
+    ]);
+    renderNotifications();
+    initSettingsNav();
+    initSidebarGroupNav();
+    initSidebarCollapse();
+    initGlobalSearch();
+  }
+  async loadUserSession() {
+    try {
+      const { user, sessionExpiresAt } = await authService.session();
+      if (!user) return;
+      this.scheduleSessionExpiry(sessionExpiresAt);
+      try {
+        const profile = await authService.getProfile();
+        applyUserDisplay({
+          fullName: profile.fullName,
+          username: profile.username,
+          email: profile.email || user.email,
+          role: profile.role || user.role,
+          avatarUrl: profile.avatarUrl
+        });
+        applyRoleBasedAccess(profile.role || user.role, user.capabilities);
+        syncElevationBanner();
+        storage.reconcileRecentActivitiesScope({
+          user: { id: profile.id || user.id, capabilities: user.capabilities }
+        });
+        this.addUser.setProfileRole(profile.role || user.role);
+        void maybeShowRoleAccessModal({
+          id: profile.id || user.id,
+          role: profile.role || user.role
+        });
+      } catch {
+        applyUserDisplay(user);
+        applyRoleBasedAccess(user.role, user.capabilities);
+        syncElevationBanner();
+        storage.reconcileRecentActivitiesScope({ user });
+        this.addUser.setProfileRole(user.role);
+        void maybeShowRoleAccessModal({ id: user.id, role: user.role });
+      }
+    } catch (err) {
+      console.warn("[Shell] session load failed:", err);
+    }
+  }
+  scheduleSessionExpiry(sessionExpiresAt) {
+    if (this._sessionExpiryTimer) {
+      window.clearTimeout(this._sessionExpiryTimer);
+      this._sessionExpiryTimer = null;
+    }
+    if (!sessionExpiresAt) return;
+    const ms = new Date(sessionExpiresAt).getTime() - Date.now();
+    if (ms <= 0) {
+      void this.expireSessionNow();
+      return;
+    }
+    this._sessionExpiryTimer = window.setTimeout(() => {
+      void this.expireSessionNow();
+    }, ms);
+  }
+  async expireSessionNow() {
+    try {
+      await authService.logout();
+    } catch {
+    }
+    window.location.assign(`${getLoginPath()}?session=expired`);
+  }
+  bindEvents() {
+    const sidebar = $id("paSidebar");
+    const overlay = $id("paSidebarOverlay");
+    const toggle = $id("paMobileToggle");
+    const closeMobileSidebar = () => {
+      sidebar?.classList.remove("mobile-open");
+      overlay?.classList.remove("visible");
+    };
+    this._closeMobileSidebar = closeMobileSidebar;
+    this.on(toggle, "click", () => {
+      sidebar?.classList.add("mobile-open");
+      overlay?.classList.add("visible");
+    });
+    this.on(overlay, "click", closeMobileSidebar);
+    const handleNavSelection = (item) => {
+      const href = item.getAttribute("href");
+      if (href === "#") return;
+      document.querySelectorAll(".pa-nav-subitem").forEach((i) => i.classList.remove("active"));
+      document.querySelectorAll(".pa-nav-toggle").forEach((i) => i.classList.remove("active"));
+      item.classList.add("active");
+      const label = item.dataset.nav;
+      if (label && !KNOWN_NAV_LABELS.includes(label)) {
+        showToast(`"${label}" section is not implemented in this demo`, "info");
+      }
+      closeMobileSidebar();
+    };
+    document.querySelectorAll(".pa-nav-subitem[data-nav], .pa-nav-subitem[data-settings-tab]").forEach((item) => {
+      this.on(item, "click", (e) => {
+        if (item.getAttribute("href") === "#") e.preventDefault();
+        handleNavSelection(item);
+      });
+    });
+    const userMenuWrap = $id("paUserMenuWrap");
+    const userMenuBtn = $id("paUserMenu");
+    this._userMenuWrap = userMenuWrap;
+    if (userMenuBtn && userMenuWrap) {
+      this.on(userMenuBtn, "click", (e) => {
+        e.stopPropagation();
+        const isOpen = userMenuWrap.classList.toggle("open");
+        userMenuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        if (isOpen) notifWrap?.classList.remove("open");
+      });
+      this.on(userMenuBtn, "keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          const isOpen = userMenuWrap.classList.toggle("open");
+          userMenuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        }
+      });
+    }
+    this.bindHeaderAvatarUpload();
+    const userDropdownLogout = $id("paUserDropdownLogout");
+    if (userDropdownLogout) {
+      this.on(userDropdownLogout, "click", (e) => {
+        e.stopPropagation();
+        userMenuWrap?.classList.remove("open");
+        userMenuBtn?.setAttribute("aria-expanded", "false");
+        this.handleLogout();
+      });
+    }
+    const logoutBtn = $id("paLogoutBtn");
+    if (logoutBtn) {
+      this.on(logoutBtn, "click", () => this.handleLogout());
+    }
+    const notifWrap = $id("paNotifWrap");
+    const notifBtn = $id("paNotifBtn");
+    this._notifWrap = notifWrap;
+    if (notifBtn && notifWrap) {
+      this.on(notifBtn, "click", (e) => {
+        e.stopPropagation();
+        const opening = !notifWrap.classList.contains("open");
+        notifWrap.classList.toggle("open");
+        if (notifWrap.classList.contains("open")) {
+          userMenuWrap?.classList.remove("open");
+          userMenuBtn?.setAttribute("aria-expanded", "false");
+          if (opening) void loadNotifications({ force: true });
+        }
+      });
+      this.on(notifBtn, "keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          const opening = !notifWrap.classList.contains("open");
+          notifWrap.classList.toggle("open");
+          if (opening) void loadNotifications({ force: true });
+        }
+      });
+      this.on($id("paNotifClearBtn"), "click", (e) => {
+        e.stopPropagation();
+        if (!getAccessCapabilities().canClearAllNotifications) {
+          showToast("You do not have permission to clear notifications.", "warning", 2200);
+          return;
+        }
+        void clearNotifications().then(() => {
+          showToast("Notifications cleared", "info", 1800);
+        }).catch((err) => {
+          showToast(err?.message || "Could not clear notifications.", "danger", 2200);
+        });
+      });
+      const notifList = $id("paNotifList");
+      if (notifList) {
+        this.on(notifList, "click", (e) => {
+          const item = e.target.closest("[data-notif-id]");
+          if (!item) return;
+          const id = item.dataset.notifId;
+          const link = item.dataset.notifLink;
+          void markNotificationRead(id).then(() => {
+            if (link) window.location.href = link;
+          });
+        });
+      }
+    }
+    this.onBus("notifications:updated", () => {
+      renderNotifications();
+    });
+    this.onBus("storage:invalidated", (key) => {
+      if (key === "pa_notifications" || key === "pa_recent_activities") {
+        void loadNotifications({ silent: true });
+      }
+    });
+    this.on(document, "click", (e) => {
+      if (notifWrap && !notifWrap.contains(e.target)) notifWrap.classList.remove("open");
+      if (userMenuWrap && !userMenuWrap.contains(e.target)) {
+        if (!userMenuWrap.classList.contains("pa-user-menu--locked")) {
+          userMenuWrap.classList.remove("open");
+          userMenuBtn?.setAttribute("aria-expanded", "false");
+        }
+      }
+      if (!e.target.closest(".pa-card-actions, .pa-lv-more-wrap, .pa-lv-actions, .pa-cat-card__list-actions, .pa-cat-card__footer-more, .pa-proj-card__head-more, .pa-proj-card__list-more, .pa-proj-card__list-actions, .pa-media-card__thumb-more, .pa-media-card__footer-more, .pa-media-card__list-more, .pa-media-card__list-actions")) closeAllCardMenus();
+    });
+    this.on(document, "keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key?.toLowerCase() === "k") {
+        e.preventDefault();
+        if (window.innerWidth <= 899) {
+          if (!openMobileHeaderSearch()) focusGlobalSearch();
+        } else {
+          focusGlobalSearch();
+        }
+      }
+      if (e.key === "Escape") {
+        if (isMobileHeaderSearchOpen()) {
+          closeMobileHeaderSearch();
+        } else if (isConfirmOpen()) {
+          closeConfirm();
+        } else if ($id("paBulkConfirmOverlay")?.classList.contains("visible")) {
+          eventBus.emit("bulk-confirm:close");
+        } else if (anyPanelOpen()) {
+          closePanels();
+        } else {
+          closeAllCardMenus();
+          notifWrap?.classList.remove("open");
+          userMenuWrap?.classList.remove("open");
+          userMenuBtn?.setAttribute("aria-expanded", "false");
+          closeMobileSidebar();
+        }
+      }
+      if (e.key?.toLowerCase() === "n" && !anyPanelOpen() && !document.activeElement.matches("input, textarea, select, [contenteditable]")) {
+        eventBus.emit("shortcut:new-item", { page: PAGE });
+      }
+    });
+  }
+  bindHeaderAvatarUpload() {
+    const avatarBtn = $id("paUserDropdownAvatar");
+    const userMenuWrap = this._userMenuWrap || $id("paUserMenuWrap");
+    const userMenuBtn = $id("paUserMenu");
+    if (!avatarBtn) return;
+    let avatarInput = $id("paHeaderAvatarInput");
+    if (!avatarInput) {
+      avatarInput = document.createElement("input");
+      avatarInput.type = "file";
+      avatarInput.id = "paHeaderAvatarInput";
+      avatarInput.accept = "image/png,image/jpeg,image/webp";
+      avatarInput.hidden = true;
+      document.body.appendChild(avatarInput);
+    }
+    const lockMenu = () => {
+      userMenuWrap?.classList.add("pa-user-menu--locked", "open");
+      userMenuBtn?.setAttribute("aria-expanded", "true");
+    };
+    const unlockMenu = (closeAfter = false) => {
+      userMenuWrap?.classList.remove("pa-user-menu--locked");
+      if (closeAfter) {
+        userMenuWrap?.classList.remove("open");
+        userMenuBtn?.setAttribute("aria-expanded", "false");
+      }
+    };
+    this.on(avatarBtn, "click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      lockMenu();
+      avatarInput.click();
+    });
+    this.on(avatarInput, "cancel", () => {
+      unlockMenu(false);
+      avatarInput.value = "";
+    });
+    this.on(window, "focus", () => {
+      if (!userMenuWrap?.classList.contains("pa-user-menu--locked")) return;
+      window.setTimeout(() => {
+        if (!avatarInput.files?.length && !avatarBtn.classList.contains("is-uploading")) {
+          unlockMenu(false);
+        }
+      }, 280);
+    });
+    this.on(avatarInput, "change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) {
+        unlockMenu(false);
+        e.target.value = "";
+        return;
+      }
+      lockMenu();
+      await uploadUserAvatar(file, {
+        onComplete: (profile) => unlockMenu(!!profile)
+      });
+      e.target.value = "";
+    });
+  }
+  handleLogout() {
+    requestLogout(async () => {
+      showToast("Logging out...", "info", 1500);
+      try {
+        await authService.logout();
+      } catch (err) {
+        console.warn("[Shell] logout failed:", err);
+      }
+      try {
+        await storage.clearPersistentCache();
+      } catch (err) {
+        console.warn("[Shell] cache clear failed:", err);
+      }
+      window.location.href = getLoginPath();
+    });
+  }
+  destroy() {
+    this.customization.destroy();
+    super.destroy();
+  }
+}
+export {
+  ShellModule
+};
+//# sourceMappingURL=ShellModule.js.map

@@ -1,11 +1,65 @@
-import{escapeHtml as d}from"./dom.js";function m(e,o,i){if(o!=="grouped"||typeof i!="function")return e;const s=e.map((n,r)=>({item:n,index:r,info:i(n)||{}}));return s.sort((n,r)=>{const a=String(n.info.title||"").localeCompare(String(r.info.title||""),void 0,{sensitivity:"base"});if(a!==0)return a;const c=String(n.info.key||"").localeCompare(String(r.info.key||""));return c!==0?c:n.index-r.index}),s.map(n=>n.item)}function h(e,o,i){return`${e} ${e===1?o:i}`}function y(e,o,i,s){const n=d(e.title||"Uncategorized"),r=e.subtitle?`<span class="pa-group-heading__sub">${d(e.subtitle)}</span>`:"",a=e.actionHtml||(e.href?`<a class="pa-group-heading__link" href="${d(e.href)}">${d(e.linkLabel||"Open")} <i class="ri-arrow-right-line"></i></a>`:"");return`<div class="pa-group-heading" data-group-key="${d(String(e.key||""))}">
+import { escapeHtml } from "./dom.js";
+function arrangeForLayout(items, layoutMode, getGroupInfo) {
+  if (layoutMode !== "grouped" || typeof getGroupInfo !== "function") return items;
+  const decorated = items.map((item, index) => ({ item, index, info: getGroupInfo(item) || {} }));
+  decorated.sort((a, b) => {
+    const byTitle = String(a.info.title || "").localeCompare(String(b.info.title || ""), void 0, { sensitivity: "base" });
+    if (byTitle !== 0) return byTitle;
+    const byKey = String(a.info.key || "").localeCompare(String(b.info.key || ""));
+    if (byKey !== 0) return byKey;
+    return a.index - b.index;
+  });
+  return decorated.map((entry) => entry.item);
+}
+function itemCountLabel(count, singular, plural) {
+  const word = count === 1 ? singular : plural;
+  return `${count} ${word}`;
+}
+function renderGroupHeading(group, count, singular, plural) {
+  const title = escapeHtml(group.title || "Uncategorized");
+  const subtitle = group.subtitle ? `<span class="pa-group-heading__sub">${escapeHtml(group.subtitle)}</span>` : "";
+  const action = group.actionHtml || (group.href ? `<a class="pa-group-heading__link" href="${escapeHtml(group.href)}">${escapeHtml(group.linkLabel || "Open")} <i class="ri-arrow-right-line"></i></a>` : "");
+  return `<div class="pa-group-heading" data-group-key="${escapeHtml(String(group.key || ""))}">
     <div class="pa-group-heading__main">
-      <i class="${d(e.icon||"ri-folder-line")}" aria-hidden="true"></i>
+      <i class="${escapeHtml(group.icon || "ri-folder-line")}" aria-hidden="true"></i>
       <div class="pa-group-heading__copy">
-        <h2 class="pa-group-heading__title">${n}</h2>
-        ${r}
+        <h2 class="pa-group-heading__title">${title}</h2>
+        ${subtitle}
       </div>
-      <span class="pa-group-heading__count">${d(h(o,i,s))}</span>
+      <span class="pa-group-heading__count">${escapeHtml(itemCountLabel(count, singular, plural))}</span>
     </div>
-    ${a}
-  </div>`}function k(e,o,i,s,n,r){if(!e.length)return"";const a={};o.forEach(t=>{const l=String(i(t)?.key??"");a[l]=(a[l]||0)+1});const c=[];for(const t of e){const l=i(t)||{key:"",title:"Uncategorized"},u=String(l.key??""),p=c[c.length-1];p&&p.key===u?p.items.push(t):c.push({...l,key:u,items:[t]})}let f=0;return c.map(t=>{const l=y(t,a[t.key]||t.items.length,n,r),u=t.items.map(p=>s(p,f++)).join("");return`${l}${u}`}).join("")}export{m as arrangeForLayout,h as itemCountLabel,y as renderGroupHeading,k as renderGroupedCards};
+    ${action}
+  </div>`;
+}
+function renderGroupedCards(pageItems, allItems, getGroupInfo, renderCard, singular, plural) {
+  if (!pageItems.length) return "";
+  const countByKey = {};
+  allItems.forEach((item) => {
+    const key = String(getGroupInfo(item)?.key ?? "");
+    countByKey[key] = (countByKey[key] || 0) + 1;
+  });
+  const groups = [];
+  for (const item of pageItems) {
+    const info = getGroupInfo(item) || { key: "", title: "Uncategorized" };
+    const key = String(info.key ?? "");
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) {
+      last.items.push(item);
+    } else {
+      groups.push({ ...info, key, items: [item] });
+    }
+  }
+  let cardIndex = 0;
+  return groups.map((group) => {
+    const heading = renderGroupHeading(group, countByKey[group.key] || group.items.length, singular, plural);
+    const cards = group.items.map((item) => renderCard(item, cardIndex++)).join("");
+    return `${heading}${cards}`;
+  }).join("");
+}
+export {
+  arrangeForLayout,
+  itemCountLabel,
+  renderGroupHeading,
+  renderGroupedCards
+};
+//# sourceMappingURL=groupLayout.js.map
