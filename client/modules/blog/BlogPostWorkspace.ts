@@ -623,7 +623,7 @@ export class BlogPostWorkspace {
       const data = await res.json();
       const id = data.legacyId ?? this.blog.currentEditId;
       if (id != null) {
-        this.openEdit(id);
+        await this.open(id, 'edit');
         this.blog.toast('Revision restored — review and save', 'success');
       }
     } catch {
