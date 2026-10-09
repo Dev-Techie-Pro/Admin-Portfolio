@@ -6,7 +6,7 @@ import {
   notifyCredentialsEmailStatus,
   populateStaffRoleSelect,
   showUserCredentialsPanel
-} from "./chunks/chunk-6X4MIWUH.js";
+} from "./chunks/chunk-OMY6DID5.js";
 import {
   debounce
 } from "./chunks/chunk-FGASNEFQ.js";
@@ -23,7 +23,7 @@ import {
   previewUserAvatar,
   showNavFlyout,
   syncSidebarGroupNav
-} from "./chunks/chunk-NW3CN2TL.js";
+} from "./chunks/chunk-TSRKGQ3U.js";
 import {
   initPasswordToggles
 } from "./chunks/chunk-HUO73BB4.js";
@@ -40,7 +40,7 @@ import {
 import {
   handleFileValidation,
   uploadCmsFileWithPreview
-} from "./chunks/chunk-IW7GETM7.js";
+} from "./chunks/chunk-6L4F3GVQ.js";
 import {
   PAGE,
   getCurrentPage,
@@ -51,41 +51,26 @@ import {
   closeAllCardMenus
 } from "./chunks/chunk-ILGO5IJP.js";
 import {
-  APPEARANCE_DEFAULTS,
-  ICON_PREVIEW_SIZES,
-  MAX_CUSTOM_FONTS,
   Module,
-  VALID_FONT_SIZES,
-  VALID_FONT_WEIGHTS,
-  VALID_ICON_SIZES,
-  VALID_SPACINGS,
   activateTab,
   addNotification,
   anyPanelOpen,
-  applyAppearanceSettings,
   applyCapabilityGatedElements,
-  bootstrapAppearanceFromCache,
-  buildCustomFontFromFile,
   clearNotifications,
   closeConfirm,
   closePanels,
   eventBus,
   getAccessCapabilities,
-  getFontById,
-  getFontGroups,
   initConfirmDialog,
   isConfirmOpen,
   loadNotifications,
   markNotificationRead,
-  normalizeAppearanceSettings,
   openPanel,
-  readAppearanceCache,
   registerPanel,
   renderNotifications,
   requestLogout,
-  storage,
-  writeAppearanceCache
-} from "./chunks/chunk-JKW3G2ST.js";
+  storage
+} from "./chunks/chunk-3Q6M2ATW.js";
 import {
   $all,
   $id,
@@ -381,11 +366,424 @@ var AddUserManager = class {
   }
 };
 
+// client/utils/customFonts.ts
+var MAX_CUSTOM_FONTS = 5;
+var MAX_FONT_BYTES = 2 * 1024 * 1024;
+var FONT_MIME_TYPES = /* @__PURE__ */ new Set([
+  "font/woff",
+  "font/woff2",
+  "font/ttf",
+  "font/otf",
+  "application/font-woff",
+  "application/font-woff2",
+  "application/x-font-woff",
+  "application/x-font-ttf",
+  "application/x-font-otf",
+  "application/octet-stream"
+]);
+var FONT_EXTENSIONS = {
+  woff: "woff",
+  woff2: "woff2",
+  ttf: "truetype",
+  otf: "opentype"
+};
+var CUSTOM_FONT_STYLE_ID = "pa-custom-fonts-style";
+function isCustomFontId(id) {
+  return typeof id === "string" && id.startsWith("custom-");
+}
+function deriveFontFormat(file) {
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  return FONT_EXTENSIONS[ext] || "woff2";
+}
+function deriveFontName(file) {
+  const base = file.name.replace(/\.[^.]+$/, "");
+  return base.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 60) || "Custom Font";
+}
+function deriveFamilyName(displayName) {
+  const safe = String(displayName || "Custom Font").replace(/[^\w\s-]/g, "").trim().slice(0, 50) || "Custom Font";
+  return `PA Custom ${safe}`;
+}
+function createCustomFontId() {
+  const rand = Math.random().toString(36).slice(2, 8);
+  return `custom-${Date.now().toString(36)}${rand}`;
+}
+function validateFontFile(file) {
+  if (!file) return "No file selected.";
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  if (!FONT_EXTENSIONS[ext]) {
+    return `"${file.name}" \u2014 only WOFF, WOFF2, TTF, or OTF files are supported.`;
+  }
+  if (!FONT_MIME_TYPES.has(file.type) && file.type !== "") {
+    return `"${file.name}" \u2014 unsupported file type.`;
+  }
+  if (file.size > MAX_FONT_BYTES) {
+    return `"${file.name}" \u2014 file exceeds the 2MB limit.`;
+  }
+  return null;
+}
+function normalizeCustomFonts(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((f) => f && isCustomFontId(f.id) && f.url && f.familyName).slice(0, MAX_CUSTOM_FONTS).map((f) => ({
+    id: f.id,
+    name: String(f.name || f.familyName).slice(0, 60),
+    familyName: String(f.familyName).slice(0, 80),
+    url: f.url,
+    format: f.format || "woff2",
+    fileName: typeof f.fileName === "string" ? f.fileName.slice(0, 120) : "",
+    uploadedAt: f.uploadedAt || null
+  }));
+}
+function customFontToOption(font) {
+  const stack = `'${font.familyName}', sans-serif`;
+  return {
+    id: font.id,
+    name: font.name,
+    stack,
+    sample: "Your custom typeface",
+    isCustom: true
+  };
+}
+function registerCustomFonts(customFonts = []) {
+  if (typeof document === "undefined") return;
+  let style = document.getElementById(CUSTOM_FONT_STYLE_ID);
+  if (!style) {
+    style = document.createElement("style");
+    style.id = CUSTOM_FONT_STYLE_ID;
+    document.head.appendChild(style);
+  }
+  const rules = normalizeCustomFonts(customFonts).map((font) => {
+    const format = font.format || "woff2";
+    const escapedFamily = font.familyName.replace(/'/g, "\\'");
+    const escapedUrl = font.url.replace(/"/g, '\\"');
+    return `@font-face{font-family:'${escapedFamily}';src:url("${escapedUrl}") format('${format}');font-display:swap;}`;
+  });
+  style.textContent = rules.join("\n");
+}
+async function buildCustomFontFromFile(file) {
+  const error = validateFontFile(file);
+  if (error) throw new Error(error);
+  const { uploadCustomFontFile } = await import("./chunks/media-upload-7Q3U6LA7.js");
+  const uploaded = await uploadCustomFontFile(file);
+  const url = uploaded.url;
+  const name = deriveFontName(file);
+  const familyName = deriveFamilyName(name);
+  return {
+    id: createCustomFontId(),
+    name,
+    familyName,
+    url,
+    format: deriveFontFormat(file),
+    fileName: file.name,
+    uploadedAt: (/* @__PURE__ */ new Date()).toISOString()
+  };
+}
+
+// client/utils/googleFonts.ts
+var LAYOUT_PRELOADED = /* @__PURE__ */ new Set(["inter", "outfit"]);
+var GOOGLE_FONT_SPECS = {
+  "plus-jakarta-sans": { family: "Plus+Jakarta+Sans", weights: "300;400;600;700" },
+  manrope: { family: "Manrope", weights: "300;400;600;700" },
+  figtree: { family: "Figtree", weights: "300;400;600;700" },
+  "dm-sans": { family: "DM+Sans", weights: "400;500;600;700" },
+  sora: { family: "Sora", weights: "300;400;600;700" },
+  "instrument-sans": { family: "Instrument+Sans", weights: "400;500;600;700" },
+  "space-grotesk": { family: "Space+Grotesk", weights: "400;500;600;700" },
+  onest: { family: "Onest", weights: "300;400;600;700" },
+  fraunces: { family: "Fraunces", weights: "400;600;700" },
+  "source-serif-4": { family: "Source+Serif+4", weights: "400;600;700" },
+  literata: { family: "Literata", weights: "400;600;700" },
+  "jetbrains-mono": { family: "JetBrains+Mono", weights: "400;500;700" },
+  "ibm-plex-mono": { family: "IBM+Plex+Mono", weights: "400;500;700" },
+  "fira-code": { family: "Fira+Code", weights: "400;500;700" },
+  "source-code-pro": { family: "Source+Code+Pro", weights: "400;500;700" },
+  "dm-mono": { family: "DM+Mono", weights: "400;500" }
+};
+function ensureGoogleFontLoaded(fontId) {
+  if (!fontId || typeof document === "undefined") return;
+  if (LAYOUT_PRELOADED.has(fontId) || fontId.startsWith("custom-")) return;
+  const spec = GOOGLE_FONT_SPECS[fontId];
+  if (!spec) return;
+  const linkId = `pa-gf-${fontId}`;
+  if (document.getElementById(linkId)) return;
+  const link = document.createElement("link");
+  link.id = linkId;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${spec.family}:wght@${spec.weights}&display=swap`;
+  document.head.appendChild(link);
+}
+
+// client/utils/appearanceCache.ts
+var APPEARANCE_CACHE_KEY = "pa_appearance_settings_v2";
+var APPEARANCE_DEFAULTS = {
+  theme: "dark",
+  accent: "#ff6600",
+  fontSize: "14px",
+  fontFamily: "inter",
+  fontWeight: "400",
+  cornerRadius: "14px",
+  cardSpacing: "10px",
+  iconSize: "medium",
+  customFonts: []
+};
+var ICON_SIZE_PRESETS = {
+  small: {
+    nav: "12px",
+    action: "14px",
+    stat: "18px",
+    header: "16px",
+    empty: "32px",
+    toggle: "14px",
+    circle: "38px",
+    btn: "34px"
+  },
+  medium: {
+    nav: "14px",
+    action: "16px",
+    stat: "22px",
+    header: "18px",
+    empty: "40px",
+    toggle: "16px",
+    circle: "44px",
+    btn: "38px"
+  },
+  large: {
+    nav: "18px",
+    action: "20px",
+    stat: "26px",
+    header: "22px",
+    empty: "48px",
+    toggle: "20px",
+    circle: "52px",
+    btn: "44px"
+  }
+};
+var ICON_PREVIEW_SIZES = { small: "12px", medium: "16px", large: "20px" };
+var CUSTOM_FONTS = [
+  { group: "Sans-serif", fonts: [
+    { id: "inter", name: "Inter", stack: "'Inter', sans-serif", sample: "The quick brown fox" },
+    { id: "outfit", name: "Outfit", stack: "'Outfit', sans-serif", sample: "Clean and modern" },
+    { id: "plus-jakarta-sans", name: "Plus Jakarta Sans", stack: "'Plus Jakarta Sans', sans-serif", sample: "Modern admin dashboard" },
+    { id: "manrope", name: "Manrope", stack: "'Manrope', sans-serif", sample: "Clear and balanced" },
+    { id: "figtree", name: "Figtree", stack: "'Figtree', sans-serif", sample: "Friendly and professional" },
+    { id: "dm-sans", name: "DM Sans", stack: "'DM Sans', sans-serif", sample: "The quick brown fox" },
+    { id: "sora", name: "Sora", stack: "'Sora', sans-serif", sample: "Tech-forward clarity" },
+    { id: "instrument-sans", name: "Instrument Sans", stack: "'Instrument Sans', sans-serif", sample: "Crisp UI typography" },
+    { id: "space-grotesk", name: "Space Grotesk", stack: "'Space Grotesk', sans-serif", sample: "Geometric precision" },
+    { id: "onest", name: "Onest", stack: "'Onest', sans-serif", sample: "Designed for interfaces" }
+  ] },
+  { group: "Serif", fonts: [
+    { id: "fraunces", name: "Fraunces", stack: "'Fraunces', serif", sample: "Elegant and literary" },
+    { id: "source-serif-4", name: "Source Serif 4", stack: "'Source Serif 4', serif", sample: "Readable long-form text" },
+    { id: "literata", name: "Literata", stack: "'Literata', serif", sample: "Warm editorial tone" }
+  ] },
+  { group: "Monospace", fonts: [
+    { id: "jetbrains-mono", name: "JetBrains Mono", stack: "'JetBrains Mono', monospace", sample: "const app = true;" },
+    { id: "ibm-plex-mono", name: "IBM Plex Mono", stack: "'IBM Plex Mono', monospace", sample: "function() { }" },
+    { id: "fira-code", name: "Fira Code", stack: "'Fira Code', monospace", sample: "const data = [];" },
+    { id: "source-code-pro", name: "Source Code Pro", stack: "'Source Code Pro', monospace", sample: "export default {};" },
+    { id: "dm-mono", name: "DM Mono", stack: "'DM Mono', monospace", sample: "npm run dev" }
+  ] }
+];
+var FONT_SIZE_MAP = {
+  "10px": "10px",
+  "14px": "14px",
+  "16px": "16px"
+};
+var FONT_SIZE_TOKEN_BASE = {
+  xm: 8,
+  sm: 10,
+  xmd: 12,
+  md: 14,
+  lg: 16,
+  xl: 22,
+  xxl: 42
+};
+var FONT_WEIGHT_MAP = {
+  300: "300",
+  400: "400",
+  600: "600",
+  700: "700"
+};
+var FONT_WEIGHT_OFFSETS = {
+  xs: -200,
+  sm: -100,
+  md: 0,
+  lg: 100,
+  xl: 200
+};
+function clampFontWeight(value) {
+  return String(Math.min(900, Math.max(100, value)));
+}
+function applyFontSizeTokens(root, fontSize) {
+  const basePx = parseFloat(FONT_SIZE_MAP[fontSize] || FONT_SIZE_MAP["14px"]);
+  const scale = basePx / FONT_SIZE_TOKEN_BASE.md;
+  Object.entries(FONT_SIZE_TOKEN_BASE).forEach(([token, px]) => {
+    root.style.setProperty(`--pa-fs-${token}`, `${Math.round(px * scale * 100) / 100}px`);
+  });
+  root.style.fontSize = `${basePx}px`;
+  root.dataset.fontSize = fontSize;
+}
+function applyFontWeightTokens(root, fontWeight) {
+  const base = parseInt(FONT_WEIGHT_MAP[fontWeight] || FONT_WEIGHT_MAP["400"], 10);
+  Object.entries(FONT_WEIGHT_OFFSETS).forEach(([token, offset]) => {
+    root.style.setProperty(`--pa-fw-${token}`, clampFontWeight(base + offset));
+  });
+  if (document.body) document.body.style.fontWeight = String(base);
+  root.dataset.fontWeight = fontWeight;
+}
+var SPACING_MAP = {
+  "5px": "5px",
+  "10px": "10px",
+  "15px": "15px"
+};
+var RADIUS_MAP = {
+  "0px": { sm: "0px", md: "0px", lg: "0px", xl: "0px" },
+  "5px": { sm: "5px", md: "10px", lg: "15px", xl: "20px" },
+  "14px": { sm: "8px", md: "15px", lg: "18px", xl: "24px" },
+  "25px": { sm: "14px", md: "18px", lg: "20px", xl: "30px" }
+};
+var ALL_FONT_IDS = CUSTOM_FONTS.flatMap((g) => g.fonts.map((f) => f.id));
+var VALID_RADII = Object.keys(RADIUS_MAP);
+var VALID_FONT_SIZES = Object.keys(FONT_SIZE_MAP);
+function migrateFontSize(size) {
+  if (typeof size === "string" && VALID_FONT_SIZES.includes(size)) return size;
+  const px = parseFloat(String(size)) || 14;
+  if (px <= 11) return "10px";
+  if (px <= 15) return "14px";
+  return "16px";
+}
+var VALID_FONT_WEIGHTS = Object.keys(FONT_WEIGHT_MAP);
+var VALID_SPACINGS = Object.keys(SPACING_MAP);
+var VALID_ICON_SIZES = Object.keys(ICON_SIZE_PRESETS);
+function applyIconSizeVariables(root, iconSize) {
+  const preset = ICON_SIZE_PRESETS[iconSize] || ICON_SIZE_PRESETS.medium;
+  root.style.setProperty("--pa-icon-nav", preset.nav);
+  root.style.setProperty("--pa-icon-action", preset.action);
+  root.style.setProperty("--pa-icon-stat", preset.stat);
+  root.style.setProperty("--pa-icon-header", preset.header);
+  root.style.setProperty("--pa-icon-empty", preset.empty);
+  root.style.setProperty("--pa-icon-toggle", preset.toggle);
+  root.style.setProperty("--pa-icon-circle", preset.circle);
+  root.style.setProperty("--pa-icon-btn", preset.btn);
+  root.dataset.iconSize = VALID_ICON_SIZES.includes(iconSize) ? iconSize : "medium";
+}
+function hexToRgb(hex) {
+  return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)].join(",");
+}
+function applyAccentCssVariables(root, accent) {
+  const hex = /^#[0-9a-fA-F]{6}$/.test(accent) ? accent : APPEARANCE_DEFAULTS.accent;
+  const rgb = hexToRgb(hex);
+  root.style.setProperty("--pa-orange", hex);
+  root.style.setProperty("--pa-orange-rgb", rgb);
+  root.style.setProperty("--pa-orange-dim", `rgba(${rgb}, 0.12)`);
+  root.style.setProperty("--pa-orange-hover", hex);
+  root.style.setProperty("--pa-orange-glow", `rgba(${rgb}, 0.22)`);
+  root.style.setProperty("--pa-orange-border", `rgba(${rgb}, 0.28)`);
+  root.style.setProperty("--pa-orange-lighter", `rgba(${rgb}, 0.5)`);
+}
+function isValidFontFamilyId(id, customFonts = []) {
+  return ALL_FONT_IDS.includes(id) || customFonts.some((f) => f.id === id);
+}
+function getFontGroups(customFonts = []) {
+  const groups = CUSTOM_FONTS.map((group) => ({ ...group, fonts: [...group.fonts] }));
+  const normalized = normalizeCustomFonts(customFonts);
+  if (normalized.length) {
+    groups.unshift({
+      group: "Your Uploads",
+      fonts: normalized.map(customFontToOption)
+    });
+  }
+  return groups;
+}
+function getFontById(id, customFonts = []) {
+  for (const g of CUSTOM_FONTS) {
+    const f = g.fonts.find((x) => x.id === id);
+    if (f) return f;
+  }
+  const custom = normalizeCustomFonts(customFonts).find((f) => f.id === id);
+  if (custom) return customFontToOption(custom);
+  return CUSTOM_FONTS[0].fonts[0];
+}
+function normalizeAppearanceSettings(raw) {
+  const settings = { ...APPEARANCE_DEFAULTS, customFonts: [] };
+  if (!raw || typeof raw !== "object") return settings;
+  if (["light", "dark", "system"].includes(raw.theme)) settings.theme = raw.theme;
+  if (/^#[0-9a-fA-F]{6}$/.test(raw.accent)) settings.accent = raw.accent;
+  if (raw.fontSize) settings.fontSize = migrateFontSize(raw.fontSize);
+  settings.customFonts = normalizeCustomFonts(raw.customFonts);
+  if (typeof raw.fontFamily === "string" && isValidFontFamilyId(raw.fontFamily, settings.customFonts)) {
+    settings.fontFamily = raw.fontFamily;
+  } else if (isCustomFontId(raw.fontFamily)) {
+    settings.fontFamily = APPEARANCE_DEFAULTS.fontFamily;
+  }
+  const weight = String(raw.fontWeight);
+  if (VALID_FONT_WEIGHTS.includes(weight)) settings.fontWeight = weight;
+  if (typeof raw.cornerRadius === "string" && VALID_RADII.includes(raw.cornerRadius)) {
+    settings.cornerRadius = raw.cornerRadius;
+  }
+  if (VALID_SPACINGS.includes(raw.cardSpacing)) settings.cardSpacing = raw.cardSpacing;
+  if (VALID_ICON_SIZES.includes(raw.iconSize)) settings.iconSize = raw.iconSize;
+  return settings;
+}
+function readAppearanceCache() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(APPEARANCE_CACHE_KEY);
+    if (!raw) return null;
+    return normalizeAppearanceSettings(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+function writeAppearanceCache(settings) {
+  if (typeof window === "undefined" || !settings) return;
+  try {
+    localStorage.setItem(APPEARANCE_CACHE_KEY, JSON.stringify(normalizeAppearanceSettings(settings)));
+  } catch (err) {
+    console.warn("[appearanceCache] could not write localStorage:", err);
+  }
+}
+function applyAppearanceSettings(settings, options = {}) {
+  if (!settings || typeof document === "undefined") return;
+  const normalized = normalizeAppearanceSettings(settings);
+  const systemDark = options.systemDark ?? window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const dark = normalized.theme === "system" ? systemDark : normalized.theme === "dark";
+  document.body?.classList.toggle("light", !dark);
+  document.documentElement.style.colorScheme = dark ? "dark" : "light";
+  const root = document.documentElement;
+  applyAccentCssVariables(root, normalized.accent);
+  applyFontSizeTokens(root, normalized.fontSize);
+  registerCustomFonts(normalized.customFonts);
+  ensureGoogleFontLoaded(normalized.fontFamily);
+  const font = getFontById(normalized.fontFamily, normalized.customFonts);
+  if (document.body) document.body.style.fontFamily = font.stack;
+  applyFontWeightTokens(root, normalized.fontWeight);
+  const radius = RADIUS_MAP[normalized.cornerRadius] || RADIUS_MAP["14px"];
+  root.style.setProperty("--pa-radius", normalized.cornerRadius);
+  root.style.setProperty("--pa-radius-sm", radius.sm);
+  root.style.setProperty("--pa-radius-md", radius.md);
+  root.style.setProperty("--pa-radius-lg", radius.lg);
+  root.style.setProperty("--pa-radius-xl", radius.xl);
+  const spacing = SPACING_MAP[normalized.cardSpacing] || "10px";
+  root.style.setProperty("--pa-card-gap", spacing);
+  root.dataset.cardSpacing = normalized.cardSpacing;
+  applyIconSizeVariables(root, normalized.iconSize);
+  eventBus.emit("appearance:updated", { settings: normalized });
+  return normalized;
+}
+function bootstrapAppearanceFromCache() {
+  const cached = readAppearanceCache();
+  if (cached) applyAppearanceSettings(cached);
+  if (typeof window !== "undefined") {
+    window.__paWriteAppearanceCache = writeAppearanceCache;
+  }
+  return cached;
+}
+
 // client/modules/shell/CustomizationModule.ts
-var CUSTOM_STORE_KEY = "appearance_settings_v2";
 var CustomizationModule = class extends Module {
   constructor() {
-    super({ name: "Customization", storageKey: CUSTOM_STORE_KEY });
+    super({ name: "Customization" });
     this.settings = { ...APPEARANCE_DEFAULTS };
     this.systemMq = window.matchMedia("(prefers-color-scheme: dark)");
   }
@@ -394,24 +792,17 @@ var CustomizationModule = class extends Module {
     this.ensureFontUploadUI();
     this.ensureIconSizeUI();
     this.bindEvents();
-    const cached = readAppearanceCache();
-    if (cached) {
-      this.settings = { ...cached };
-      this.render();
-    }
     await this.load();
     this.render();
   }
   async load() {
-    const saved = await storage.get(CUSTOM_STORE_KEY, null);
-    if (saved && typeof saved === "object") {
-      this.settings = normalizeAppearanceSettings(saved);
-      writeAppearanceCache(this.settings);
+    const cached = readAppearanceCache();
+    if (cached) {
+      this.settings = normalizeAppearanceSettings(cached);
     }
   }
   async save() {
     writeAppearanceCache(this.settings);
-    await this.saveRecords(this.settings, { feedback: false });
   }
   render() {
     applyAppearanceSettings(this.settings, { systemDark: this.systemMq.matches });
@@ -1877,39 +2268,15 @@ function initSidebarNav() {
 }
 
 // client/utils/appearanceApply.ts
-async function loadPublicAppearance() {
-  const cached = readAppearanceCache();
-  if (cached) return cached;
-  const bag = typeof window !== "undefined" ? window.__paPrefetch : null;
-  const pending = bag?.appearance_settings_v2;
-  if (pending && typeof pending.then === "function") {
-    try {
-      const value = await pending;
-      if (value) {
-        writeAppearanceCache(value);
-        return value;
-      }
-    } catch {
-    }
-  }
-  const res = await fetch("/api/appearance/public", {
-    method: "GET",
-    credentials: "same-origin",
-    headers: { Accept: "application/json" }
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (data) writeAppearanceCache(data);
-  return data;
+function loadLocalAppearance() {
+  return readAppearanceCache() ?? { ...APPEARANCE_DEFAULTS };
 }
 async function initAuthAppearance() {
   try {
-    const cached = readAppearanceCache();
-    if (cached) applyAppearanceSettings(cached);
-    const settings = await loadPublicAppearance();
-    if (settings) applyAppearanceSettings(settings);
+    const settings = loadLocalAppearance();
+    applyAppearanceSettings(settings);
     const { updateFaviconFromAppearance } = await import("./chunks/favicon-E5RED5ZK.js");
-    updateFaviconFromAppearance(settings || cached || {});
+    updateFaviconFromAppearance(settings);
   } catch {
   }
 }
@@ -2129,52 +2496,52 @@ var PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
 async function loadPageModuleClass(page) {
   switch (page) {
     case "dashboard":
-      return (await import("./chunks/DashboardModule-7AS3FNKB.js")).DashboardModule;
+      return (await import("./chunks/DashboardModule-5O7QVLWL.js")).DashboardModule;
     case "projects":
-      return (await import("./chunks/ProjectsModule-Z2G5GZRE.js")).ProjectsModule;
+      return (await import("./chunks/ProjectsModule-3W5U77CE.js")).ProjectsModule;
     case "categories":
-      return (await import("./chunks/CategoriesModule-Z47E3NUQ.js")).CategoriesModule;
+      return (await import("./chunks/CategoriesModule-Y53T7DZD.js")).CategoriesModule;
     case "project-tags":
     case "tags":
-      return (await import("./chunks/TagsModule-FCX57364.js")).TagsModule;
+      return (await import("./chunks/TagsModule-FKW2AUX2.js")).TagsModule;
     case "project-technologies":
-      return (await import("./chunks/ProjectTechnologiesModule-NLXYKCKG.js")).ProjectTechnologiesModule;
+      return (await import("./chunks/ProjectTechnologiesModule-QUSFTHLK.js")).ProjectTechnologiesModule;
     case "blog-tags":
-      return (await import("./chunks/BlogTagsModule-YSRBBGZ2.js")).BlogTagsModule;
+      return (await import("./chunks/BlogTagsModule-X77QAPVJ.js")).BlogTagsModule;
     case "technologies":
-      return (await import("./chunks/TechnologiesModule-HBWT2EMI.js")).TechnologiesModule;
+      return (await import("./chunks/TechnologiesModule-SJU2MFA4.js")).TechnologiesModule;
     case "tool-categories":
-      return (await import("./chunks/ToolCategoriesModule-UVC5IRR7.js")).ToolCategoriesModule;
+      return (await import("./chunks/ToolCategoriesModule-SX6UU3ZO.js")).ToolCategoriesModule;
     case "blog-categories":
-      return (await import("./chunks/BlogCategoriesModule-G3MX3MD3.js")).BlogCategoriesModule;
+      return (await import("./chunks/BlogCategoriesModule-OCDYODSV.js")).BlogCategoriesModule;
     case "tools":
-      return (await import("./chunks/ToolsModule-JUBAL6QI.js")).ToolsModule;
+      return (await import("./chunks/ToolsModule-2SBDRQXE.js")).ToolsModule;
     case "media":
-      return (await import("./chunks/MediaModule-WQDSRLTQ.js")).MediaModule;
+      return (await import("./chunks/MediaModule-G4OA3VWA.js")).MediaModule;
     case "testimonials":
-      return (await import("./chunks/TestimonialsModule-J2KDPR74.js")).TestimonialsModule;
+      return (await import("./chunks/TestimonialsModule-H6IMAV6B.js")).TestimonialsModule;
     case "blogposts":
-      return (await import("./chunks/BlogModule-G34TVBIW.js")).BlogModule;
+      return (await import("./chunks/BlogModule-LOKFW5Y5.js")).BlogModule;
     case "experience":
-      return (await import("./chunks/ExperienceModule-KE4YCECF.js")).ExperienceModule;
+      return (await import("./chunks/ExperienceModule-WM32ULND.js")).ExperienceModule;
     case "contact-messages":
-      return (await import("./chunks/ContactMessagesModule-YZCTNM3A.js")).ContactMessagesModule;
+      return (await import("./chunks/ContactMessagesModule-BNMTULRS.js")).ContactMessagesModule;
     case "blog-engagement":
-      return (await import("./chunks/BlogEngagementModule-TUSO4SS2.js")).BlogEngagementModule;
+      return (await import("./chunks/BlogEngagementModule-3JLQ4HJ4.js")).BlogEngagementModule;
     case "access-requests":
-      return (await import("./chunks/AccessRequestsModule-BRB3D3OT.js")).AccessRequestsModule;
+      return (await import("./chunks/AccessRequestsModule-B7KVG7GV.js")).AccessRequestsModule;
     case "users":
-      return (await import("./chunks/UsersModule-ZL5NAVLN.js")).UsersModule;
+      return (await import("./chunks/UsersModule-QH2WXGLU.js")).UsersModule;
     case "recent-activities":
-      return (await import("./chunks/RecentActivitiesModule-IU736SX5.js")).RecentActivitiesModule;
+      return (await import("./chunks/RecentActivitiesModule-FVFXACUB.js")).RecentActivitiesModule;
     case "settings":
-      return (await import("./chunks/SettingsModule-6J62IRNN.js")).SettingsModule;
+      return (await import("./chunks/SettingsModule-GUAHAQF6.js")).SettingsModule;
     case "login":
-      return (await import("./chunks/LoginModule-ZEAYXIWR.js")).LoginModule;
+      return (await import("./chunks/LoginModule-S23WAVN6.js")).LoginModule;
     case "forgot-password":
-      return (await import("./chunks/ForgotPasswordModule-RF7JQKHN.js")).ForgotPasswordModule;
+      return (await import("./chunks/ForgotPasswordModule-7A4DAQBB.js")).ForgotPasswordModule;
     case "reset-password":
-      return (await import("./chunks/ResetPasswordModule-6V63EYJX.js")).ResetPasswordModule;
+      return (await import("./chunks/ResetPasswordModule-4BDC4AL3.js")).ResetPasswordModule;
     default:
       return null;
   }
@@ -2199,7 +2566,7 @@ function bindGlobalPanelChrome() {
 var quickAddModule = null;
 async function bindQuickAddButton(pageModule) {
   if (quickAddModule) return;
-  const { QuickAddModule } = await import("./chunks/QuickAddModule-QBGRYSES.js");
+  const { QuickAddModule } = await import("./chunks/QuickAddModule-CVUJEKCW.js");
   quickAddModule = new QuickAddModule(pageModule);
   quickAddModule.bindEvents();
 }

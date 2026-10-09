@@ -79,7 +79,6 @@ export function toTimestamp(value) {
   return Number.isFinite(t) ? t : 0;
 }
 
-/** Sort records newest-first by a date field (defaults to createdAt). */
 export function sortByNewestFirst(records, field = 'createdAt') {
   return records.slice().sort((a, b) => toTimestamp(b[field]) - toTimestamp(a[field]));
 }

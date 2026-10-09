@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "client/main.ts",
+    "client/boot-prefetch.ts",
+    "client/prefetch-config.ts",
+    "client/build-client.mjs",
+    "app/**/{page,layout,route}.{ts,tsx}",
+    "scripts/*.{mjs,js}"
+  ],
+  "project": [
+    "client/**/*.ts",
+    "app/**/*.{ts,tsx}",
+    "lib/**/*.{ts,tsx}"
+  ],
+  "ignore": [
+    "public/**",
+    ".next/**",
+    "supabase/migrations_archive/**"
+  ]
+}

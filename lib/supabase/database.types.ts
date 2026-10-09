@@ -1617,7 +1617,6 @@ export type Database = {
       site_settings: {
         Row: {
           admin_email: string | null
-          appearance_settings: Json
           contact_message_columns: Json
           created_at: string
           date_format: string | null
@@ -1647,7 +1646,6 @@ export type Database = {
         }
         Insert: {
           admin_email?: string | null
-          appearance_settings?: Json
           contact_message_columns?: Json
           created_at?: string
           date_format?: string | null
@@ -1677,7 +1675,6 @@ export type Database = {
         }
         Update: {
           admin_email?: string | null
-          appearance_settings?: Json
           contact_message_columns?: Json
           created_at?: string
           date_format?: string | null

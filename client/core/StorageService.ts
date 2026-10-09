@@ -1,4 +1,3 @@
-import { writeAppearanceCache } from '../utils/appearanceCache.js';
 import { persistentCache, isEntryStale } from './PersistentCache.js';
 import { eventBus } from './EventBus.js';
 import { canManageSiteSettings } from './cms-access.js';
@@ -41,7 +40,6 @@ const REMOTE_ROUTES = {
   pa_blog_tags: '/api/blog-tags',
   pa_project_tags: '/api/project-tags',
   pa_settings: '/api/settings',
-  appearance_settings_v2: '/api/appearance',
   pa_msg_column_visibility: '/api/preferences/contact-columns',
   pa_notification_preferences: '/api/notification-preferences',
   pa_notifications: '/api/notifications',
@@ -72,7 +70,6 @@ export class StorageService {
   async _persist(key, value, fetchedAt = Date.now()) {
     this._cache.set(key, value);
     this._meta.set(key, fetchedAt);
-    if (key === 'appearance_settings_v2') writeAppearanceCache(value);
     await persistentCache.set(key, value, fetchedAt);
   }
 
@@ -100,14 +97,9 @@ export class StorageService {
       .filter(([, value]) => value !== null && value !== undefined)
       .map(([key, value]) => ({ key, value, fetchedAt }));
 
-    if (payload.appearance !== null && payload.appearance !== undefined) {
-      entries.push({ key: 'appearance_settings_v2', value: payload.appearance, fetchedAt });
-    }
-
     entries.forEach(({ key, value }) => {
       this._cache.set(key, value);
       this._meta.set(key, fetchedAt);
-      if (key === 'appearance_settings_v2') writeAppearanceCache(value);
     });
 
     await persistentCache.setMany(entries, fetchedAt);
@@ -125,10 +117,6 @@ export class StorageService {
           Object.entries(payload.data || {}).forEach(([key, value]) => {
             if (value !== null && value !== undefined) this._cache.set(key, value);
           });
-          if (payload.appearance !== null && payload.appearance !== undefined) {
-            this._cache.set('appearance_settings_v2', payload.appearance);
-            writeAppearanceCache(payload.appearance);
-          }
           if (payload.session) {
             window.__paBootstrapSession = payload.session;
             this.reconcileRecentActivitiesScope(payload.session);
@@ -153,7 +141,6 @@ export class StorageService {
       if (entry.value === null || entry.value === undefined) return;
       this._cache.set(key, entry.value);
       this._meta.set(key, entry.fetchedAt || 0);
-      if (key === 'appearance_settings_v2') writeAppearanceCache(entry.value);
     });
   }
 
@@ -235,7 +222,6 @@ export class StorageService {
       if (persisted?.value !== null && persisted?.value !== undefined) {
         this._cache.set(key, persisted.value);
         this._meta.set(key, persisted.fetchedAt || 0);
-        if (key === 'appearance_settings_v2') writeAppearanceCache(persisted.value);
         this._scheduleRevalidate(key, route, fallback);
         return persisted.value;
       }
@@ -284,7 +270,6 @@ export class StorageService {
     }
 
     this._cache.set(key, value);
-    if (key === 'appearance_settings_v2') writeAppearanceCache(value);
     try {
       const res = await fetch(route, {
         method: 'PUT',

@@ -1,5 +1,5 @@
 /**
- * Appearance settings localStorage cache — instant apply on load, DB remains source of truth.
+ * Appearance settings — browser localStorage only (customization panel + auth pages).
  */
 
 import {

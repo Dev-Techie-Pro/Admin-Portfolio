@@ -1,6 +1,3 @@
-/**
- * Client prefetch config — keep PAGE_KEYS in sync with lib/cms/prefetch-config.js
- */
 (function initPrefetchConfig(global) {
   const PAGE_KEYS = {
     dashboard: [
@@ -21,7 +18,7 @@
     experience: ['pa_experience'],
     'contact-messages': ['pa_contact_messages'],
     'recent-activities': ['pa_recent_activities'],
-    settings: ['pa_settings', 'appearance_settings_v2', 'pa_recent_activities', 'pa_notification_preferences'],
+    settings: ['pa_settings', 'pa_recent_activities', 'pa_notification_preferences'],
   };
 
   const ROUTE_BY_KEY = {
@@ -42,7 +39,6 @@
     pa_tools: '/api/tools',
     pa_tool_categories: '/api/tool-categories',
     pa_settings: '/api/settings',
-    appearance_settings_v2: '/api/appearance',
     pa_msg_column_visibility: '/api/preferences/contact-columns',
     pa_notification_preferences: '/api/notification-preferences',
     pa_notifications: '/api/notifications',

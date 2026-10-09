@@ -11,6 +11,7 @@
     "lint": "next lint",
     "lint:css": "stylelint \"app/**/*.css\"",
     "typecheck": "tsc --noEmit",
+    "knip": "knip",
     "typecheck:audit": "tsc -p tsconfig.audit.json --noEmit",
     "verify:deployment": "node scripts/verify-deployment-env.mjs",
     "test:ci": "node scripts/test-api-guards.mjs && node scripts/test-prefetch-sync.mjs && node scripts/verify-deployment-env.mjs && node scripts/test-preview-token.mjs && node scripts/test-guard-smoke.mjs && node scripts/test-public-api-hardening.mjs",
@@ -38,6 +39,7 @@
     "esbuild": "^0.28.2",
     "stylelint": "^16.20.0",
     "stylelint-config-standard": "^38.0.0",
+    "knip": "^5.88.1",
     "typescript": "^5.8.3"
   }
 }

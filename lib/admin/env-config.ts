@@ -14,6 +14,8 @@ export const UNCHANGED_SECRET = '__UNCHANGED__';
  *   placeholder?: string;
  *   options?: { value: string; label: string }[];
  *   fullWidth?: boolean;
+ *   control?: 'toggle' | 'chips';
+ *   unitSuffix?: string;
  * }} EnvFieldDef
  */
 
@@ -36,6 +38,7 @@ export const UI_ENV_DEFINITIONS = [
     type: 'number',
     fullWidth: true,
     placeholder: '90',
+    unitSuffix: 'days',
     description:
       'How many days to keep ended rows in the <code>user_sessions</code> table before the prune cron deletes them.',
     details: [
@@ -53,6 +56,7 @@ export const UI_ENV_DEFINITIONS = [
     type: 'number',
     fullWidth: true,
     placeholder: '90',
+    unitSuffix: 'days',
     description:
       'Maximum age of rows shown under Settings → Security → Login activity and stored in <code>login_activity</code>.',
     details: [
@@ -70,6 +74,7 @@ export const UI_ENV_DEFINITIONS = [
     type: 'number',
     fullWidth: true,
     placeholder: '100',
+    unitSuffix: 'req',
     description:
       'Maximum number of <code>login_activity</code> rows stored per user account.',
     details: [
@@ -96,6 +101,7 @@ export const UI_ENV_DEFINITIONS = [
     secret: false,
     type: 'number',
     placeholder: '900',
+    unitSuffix: 'sec',
     description: 'Time window for login rate limiting (default 15 minutes).',
     defaultValue: '900',
   },
@@ -116,6 +122,7 @@ export const UI_ENV_DEFINITIONS = [
     secret: false,
     type: 'number',
     placeholder: '3600',
+    unitSuffix: 'sec',
     defaultValue: '3600',
   },
   {
@@ -135,6 +142,7 @@ export const UI_ENV_DEFINITIONS = [
     secret: false,
     type: 'number',
     placeholder: '3600',
+    unitSuffix: 'sec',
     defaultValue: '3600',
   },
   {
@@ -154,6 +162,7 @@ export const UI_ENV_DEFINITIONS = [
     secret: false,
     type: 'number',
     placeholder: '60',
+    unitSuffix: 'sec',
     defaultValue: '60',
   },
   {
@@ -173,6 +182,7 @@ export const UI_ENV_DEFINITIONS = [
     secret: false,
     type: 'number',
     placeholder: '3600',
+    unitSuffix: 'sec',
     defaultValue: '3600',
   },
   {
@@ -181,6 +191,7 @@ export const UI_ENV_DEFINITIONS = [
     required: false,
     secret: false,
     type: 'select',
+    control: 'chips',
     description: 'Identifier exposed to the portfolio site via public config (optional).',
     options: [
       { value: '', label: 'None' },
@@ -215,6 +226,7 @@ export const UI_ENV_DEFINITIONS = [
     required: false,
     secret: false,
     type: 'select',
+    control: 'toggle',
     fullWidth: true,
     description:
       'Controls whether the CMS batches multiple write operations into fewer database round-trips.',
@@ -235,6 +247,7 @@ export const UI_ENV_DEFINITIONS = [
     required: false,
     secret: false,
     type: 'select',
+    control: 'toggle',
     fullWidth: true,
     description:
       'How aggressively the media sync reconciles storage files with <code>media_assets</code> records.',
@@ -420,6 +433,7 @@ export const UI_ENV_DEFINITIONS = [
     required: false,
     secret: false,
     type: 'select',
+    control: 'toggle',
     options: [
       { value: '', label: 'Disabled' },
       { value: 'true', label: 'Enabled — send SMTP acknowledgement' },
@@ -452,6 +466,7 @@ export const UI_ENV_DEFINITIONS = [
     required: false,
     secret: false,
     type: 'select',
+    control: 'toggle',
     options: [
       { value: '', label: 'Optional (default)' },
       { value: 'true', label: 'true — block admin/super_admin without enrolled TOTP' },
@@ -470,36 +485,57 @@ export const UI_ENV_DEFINITIONS = [
   },
 ];
 
+/** Flatten section keys or legacy `keys` on a group card. */
+export function getEnvGroupFieldKeys(group) {
+  if (group.sections?.length) {
+    return group.sections.flatMap((section) => section.keys);
+  }
+  return group.keys || [];
+}
+
 export const UI_ENV_GROUPS = [
   {
     id: 'security',
     title: 'Security & Cron',
+    stepLabel: 'Security',
     icon: 'ri-shield-keyhole-line',
+    tone: 'green',
     description:
-      'Retention for sessions and login activity audit data. Stored in the database and applied on save. Cron HTTP authentication uses <code>CRON_SECRET</code> in your deployment environment (not editable here).',
+      'Retention for sessions and login activity audit data. Stored in the database and applied on save.',
     column: 'left',
-    keys: [
-      'SESSION_PRUNE_KEEP_DAYS',
-      'LOGIN_ACTIVITY_RETENTION_DAYS',
-      'LOGIN_ACTIVITY_PER_USER_CAP',
-      'RATE_LIMIT_AUTH_LOGIN_MAX',
-      'RATE_LIMIT_AUTH_LOGIN_WINDOW_SEC',
-      'RATE_LIMIT_PUBLIC_CONTACT_MAX',
-      'RATE_LIMIT_PUBLIC_CONTACT_WINDOW_SEC',
-      'RATE_LIMIT_AUTH_FORGOT_PASSWORD_MAX',
-      'RATE_LIMIT_AUTH_FORGOT_PASSWORD_WINDOW_SEC',
-      'RATE_LIMIT_PUBLIC_CONTENT_READ_MAX',
-      'RATE_LIMIT_PUBLIC_CONTENT_READ_WINDOW_SEC',
-      'RATE_LIMIT_STAFF_MEDIA_UPLOAD_MAX',
-      'RATE_LIMIT_STAFF_MEDIA_UPLOAD_WINDOW_SEC',
-      'REQUIRE_MFA_ADMINS',
-      'REDIRECTS_JSON',
+    sections: [
+      {
+        title: 'Retention',
+        keys: ['SESSION_PRUNE_KEEP_DAYS', 'LOGIN_ACTIVITY_RETENTION_DAYS'],
+      },
+      {
+        title: 'Rate limits',
+        keys: [
+          'LOGIN_ACTIVITY_PER_USER_CAP',
+          'RATE_LIMIT_AUTH_LOGIN_MAX',
+          'RATE_LIMIT_AUTH_LOGIN_WINDOW_SEC',
+          'RATE_LIMIT_PUBLIC_CONTACT_MAX',
+          'RATE_LIMIT_PUBLIC_CONTACT_WINDOW_SEC',
+          'RATE_LIMIT_AUTH_FORGOT_PASSWORD_MAX',
+          'RATE_LIMIT_AUTH_FORGOT_PASSWORD_WINDOW_SEC',
+          'RATE_LIMIT_PUBLIC_CONTENT_READ_MAX',
+          'RATE_LIMIT_PUBLIC_CONTENT_READ_WINDOW_SEC',
+          'RATE_LIMIT_STAFF_MEDIA_UPLOAD_MAX',
+          'RATE_LIMIT_STAFF_MEDIA_UPLOAD_WINDOW_SEC',
+        ],
+      },
+      {
+        title: 'Authentication',
+        keys: ['REQUIRE_MFA_ADMINS', 'REDIRECTS_JSON'],
+      },
     ],
   },
   {
     id: 'integrations',
     title: 'Integrations',
+    stepLabel: 'Integrations',
     icon: 'ri-plug-line',
+    tone: 'purple',
     description:
       'Analytics, webhooks, and Turnstile. Portfolio reads public keys from <code>/api/public/config</code>.',
     column: 'left',
@@ -509,21 +545,15 @@ export const UI_ENV_GROUPS = [
       'WEBHOOK_PUBLISH_URL',
       'TURNSTILE_SITE_KEY',
       'TURNSTILE_SECRET_KEY',
+      'CMS_BATCH_WRITES',
     ],
-  },
-  {
-    id: 'performance',
-    title: 'Performance',
-    icon: 'ri-speed-line',
-    description:
-      'Advanced toggles for CMS and media behavior. Leave defaults unless you are troubleshooting or running a one-off maintenance task.',
-    column: 'left',
-    keys: ['CMS_BATCH_WRITES', 'MEDIA_FULL_RECONCILE'],
   },
   {
     id: 'smtp',
     title: 'SMTP Email',
+    stepLabel: 'SMTP',
     icon: 'ri-mail-settings-line',
+    tone: 'green',
     description:
       'Outgoing mail configuration for <strong>Contact Messages → Reply</strong> and <strong>Users → send login credentials</strong>. Stored in the database. Without SMTP, those actions fail gracefully or show an error.',
     column: 'right',
@@ -541,7 +571,9 @@ export const UI_ENV_GROUPS = [
   {
     id: 'branding',
     title: 'Email Branding',
+    stepLabel: 'Branding',
     icon: 'ri-palette-line',
+    tone: 'yellow',
     description:
       'Optional visual identity in HTML emails (name, title, links). All fields are cosmetic and safe to leave empty.',
     column: 'right',
@@ -553,6 +585,17 @@ export const UI_ENV_GROUPS = [
       'EMAIL_GITHUB_URL',
       'EMAIL_LINKEDIN_URL',
     ],
+  },
+  {
+    id: 'performance',
+    title: 'Performance',
+    stepLabel: 'Performance',
+    icon: 'ri-speed-line',
+    tone: 'green',
+    description:
+      'Advanced toggles for CMS and media behavior. Leave defaults unless you are troubleshooting or running a one-off maintenance task.',
+    column: 'right',
+    keys: ['MEDIA_FULL_RECONCILE'],
   },
 ];
 

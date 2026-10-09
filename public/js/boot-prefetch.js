@@ -179,23 +179,18 @@
   function isAuthRoute(path) {
     return /\/(login|forget-password|reset-password)(\/|$)/.test(path);
   }
-  function ensureAppearancePrefetch(path, fetchOpts, bag) {
-    if (bag.appearance_settings_v2) {
-      queueDynamicFavicon(bag.appearance_settings_v2);
-      return;
-    }
-    var appearanceUrl = isAuthRoute(path) ? "/api/appearance/public" : "/api/appearance";
-    bag.appearance_settings_v2 = fetch(appearanceUrl, fetchOpts).then(function(res) {
-      return res.ok ? res.json() : null;
-    }).then(function(data) {
-      if (data && typeof window.__paWriteAppearanceCache === "function") {
-        window.__paWriteAppearanceCache(data);
+  function queueFaviconFromLocalStorage() {
+    try {
+      var raw = localStorage.getItem(APPEARANCE_CACHE_KEY);
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      if (typeof window.__paUpdateFavicon === "function") {
+        window.__paUpdateFavicon(data);
+        return;
       }
-      return data;
-    }).catch(function() {
-      return null;
-    });
-    queueDynamicFavicon(bag.appearance_settings_v2);
+      queueDynamicFavicon(Promise.resolve(data));
+    } catch (e) {
+    }
   }
   function prefetchPageKeys(page, bag, fetchOpts) {
     var keys = PAGE_KEYS[page] || [];
@@ -215,12 +210,7 @@
     bag.__bootstrap = fetch(url, fetchOpts).then(function(res) {
       return res.ok ? res.json() : null;
     }).then(function(payload) {
-      if (!payload) return null;
-      if (payload.appearance && typeof window.__paWriteAppearanceCache === "function") {
-        window.__paWriteAppearanceCache(payload.appearance);
-      }
-      queueDynamicFavicon(Promise.resolve(payload.appearance));
-      return payload;
+      return payload || null;
     }).catch(function() {
       return null;
     });
@@ -232,8 +222,8 @@
       headers: { Accept: "application/json" }
     };
     var bag = window.__paPrefetch || {};
+    queueFaviconFromLocalStorage();
     if (isAuthRoute(path)) {
-      ensureAppearancePrefetch(path, fetchOpts, bag);
       window.__paPrefetch = bag;
       return;
     }
@@ -242,7 +232,6 @@
       window.__paDidBootstrap = true;
       startBootstrap(page, bag, fetchOpts);
     } else {
-      ensureAppearancePrefetch(path, fetchOpts, bag);
       prefetchPageKeys(page, bag, fetchOpts);
     }
     window.__paPrefetch = bag;

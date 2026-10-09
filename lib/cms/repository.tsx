@@ -50,7 +50,7 @@ const CONTACT_MESSAGE_COLUMNS = 'id, legacy_id, sender_name, sender_email, subje
 const CONTACT_REPLY_COLUMNS = 'id, message_id, body, subject, cc, attachment_url, attachment_name, attachment_mime, attachment_size, sent_at, created_at, updated_at';
 const RECENT_ACTIVITY_COLUMNS = 'id, user_id, action_title, action_description, type, status, metadata, created_at';
 const CATEGORY_COLUMNS = 'key, label, description, is_builtin, created_at';
-const SITE_SETTINGS_COLUMNS = 'site_title, site_tagline, site_url, admin_email, site_description, date_format, time_format, timezone, items_per_page, default_view, language, maintenance_mode, profile_full_name, profile_username, profile_role, profile_phone, profile_dob, profile_bio, profile_location, profile_website, profile_social_links, appearance_settings, contact_message_columns';
+const SITE_SETTINGS_COLUMNS = 'site_title, site_tagline, site_url, admin_email, site_description, date_format, time_format, timezone, items_per_page, default_view, language, maintenance_mode, profile_full_name, profile_username, profile_role, profile_phone, profile_dob, profile_bio, profile_location, profile_website, profile_social_links, contact_message_columns';
 const TOOL_ITEM_COLUMNS = 'legacy_id, category_id, name, icon_class, icon_url, sort_order, created_at';
 const BLOG_CATEGORY_COLUMNS = 'legacy_id, key, label, description, proficiency_pct, icon_class, color, sort_order, created_at';
 const TOOL_CATEGORY_COLUMNS = 'legacy_id, key, label, description, proficiency_pct, icon_class, color, sort_order, created_at';
@@ -1723,7 +1723,7 @@ export async function saveContactMessages(records) {
 
 // ─── Site settings (pa_settings) ───────────────────────────────────────────
 
-/** One site_settings row per request — shared by getSettings / getAppearance / getContactColumnVisibility. */
+/** One site_settings row per request — shared by getSettings / getContactColumnVisibility. */
 const fetchSiteSettingsRow = cache(async () => getCached('cms:site-settings', CMS_CACHE_TTL.settings, async () => {
   const { data, error } = await supabase()
     .from('site_settings')
@@ -1812,34 +1812,6 @@ export async function saveSettings(settings) {
     profile_social_links: settings.socialLinks ?? existing?.profile_social_links ?? [],
   };
   const { error } = await supabase().from('site_settings').upsert(row, { onConflict: 'site_id' });
-  if (error) throw error;
-  invalidateCache('cms:site-settings');
-  invalidateCmsReadCaches();
-}
-
-// ─── Appearance (appearance_settings_v2) ─────────────────────────────────────
-
-const DEFAULT_APPEARANCE = {
-  theme: 'dark',
-  accent: '#ff6600',
-  fontSize: '14px',
-  fontFamily: 'inter',
-  fontWeight: '400',
-  cornerRadius: '14px',
-  cardSpacing: '10px',
-  iconSize: 'medium',
-  customFonts: [],
-};
-
-export async function getAppearance() {
-  const data = await fetchSiteSettingsRow();
-  return { ...DEFAULT_APPEARANCE, ...(data?.appearance_settings || {}) };
-}
-
-export async function saveAppearance(settings) {
-  const { error } = await supabase()
-    .from('site_settings')
-    .upsert({ site_id: SITE_ID, appearance_settings: settings }, { onConflict: 'site_id' });
   if (error) throw error;
   invalidateCache('cms:site-settings');
   invalidateCmsReadCaches();

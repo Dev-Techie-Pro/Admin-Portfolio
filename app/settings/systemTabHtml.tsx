@@ -192,16 +192,7 @@ export const SYSTEM_TAB_HTML = `
 
                 <div class="pa-tab-panel" data-panel="system-section" data-content="env">
                 <section class="pa-env-section" id="systemEnvSection">
-                    <div class="pa-bkp-header pa-bkp-layout-head mb-16">
-                        <div class="pa-bkp-header-copy">
-                            <div class="pa-bkp-header-icon" aria-hidden="true"><i class="ri-settings-3-line"></i></div>
-                            <div>
-                                <h2 class="pa-bkp-title">Environment</h2>
-                                <p class="pa-bkp-subtitle">Runtime configuration stored in the database. Deployment secrets remain in your host environment.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="pa-info-box mb-16" id="systemEnvMeta">Loading environment settings…</div>
+                    <div class="pa-info-box mb-16" id="systemEnvMeta" hidden>Loading environment settings…</div>
                     ${SYSTEM_ENV_FORM_HTML}
                 </section>
                 </div>

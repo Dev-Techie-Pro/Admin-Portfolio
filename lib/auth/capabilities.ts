@@ -14,7 +14,7 @@ export type AccessCapabilities = {
   isViewer: boolean;
   /** CMS create / update / delete (API: guardEditor). */
   canManageContent: boolean;
-  /** Site settings, appearance PUT, contact column prefs (API: guardAdmin). */
+  /** Site settings, contact column prefs (API: guardAdmin). */
   canManageSiteSettings: boolean;
   /** Settings → Security: revoke all sessions (API: guardAdmin). */
   canLogoutAllDevices: boolean;
@@ -38,7 +38,6 @@ const ADMIN_SETTINGS_TABS = ['system'] as const;
 /** Storage keys that persist via guardAdmin API routes. */
 export const SITE_SETTINGS_STORAGE_KEYS = new Set([
   'pa_settings',
-  'appearance_settings_v2',
   'pa_msg_column_visibility',
 ]);
 

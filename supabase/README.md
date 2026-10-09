@@ -188,7 +188,7 @@ Run `npm run test:ci` (includes `scripts/test-public-api-hardening.mjs`) or chec
 |--------------|---------|
 | `sites` | Root tenant (`slug = 'default'`) |
 | `profiles` | Staff users — extends `auth.users` with role and profile fields |
-| `site_settings` | Site-wide config (General tab). `appearance_settings` JSON for theme/UI; `contact_message_columns` JSON for inbox columns |
+| `site_settings` | Site-wide config (General tab). `contact_message_columns` JSON for inbox columns. Theme/UI customization is browser-only (`localStorage`), not in this table |
 | `site_runtime_config` | Per-site `settings` + `secrets` JSON (SMTP, retention, performance). Admin-only RLS |
 | `notification_preferences` | Settings → Notifications (per user) |
 | `security_settings` | Settings → Security (2FA flags, per user) |
@@ -203,7 +203,7 @@ Run `npm run test:ci` (includes `scripts/test-public-api-hardening.mjs`) or chec
 | `api_rate_limits` | Rate-limit buckets for `pa_rate_limit_allow` (service role only; no direct client access) |
 | `dashboard_stats` | **View** — aggregated counts for dashboard home (with cache helpers in later migrations) |
 
-> **Removed:** standalone per-user `user_preferences` / `appearance_settings` tables (`20260922120000`). Theme data is in `site_settings.appearance_settings`.
+> **Removed:** standalone per-user `user_preferences` / `appearance_settings` tables (`20260922120000`). `site_settings.appearance_settings` dropped in `20261012120000_drop_site_settings_appearance_settings.sql` (theme is per-browser `localStorage`).
 
 ### CMS content
 
@@ -319,7 +319,7 @@ Suggested import order:
 4. Technologies, experience, testimonials, blog posts, blog categories  
 5. Tool categories and items  
 6. Contact messages  
-7. Site settings (general + appearance JSON)
+7. Site settings (general tab fields)
 
 ---
 

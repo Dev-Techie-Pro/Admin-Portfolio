@@ -18,7 +18,6 @@ const mustGuardStaff = [
 
 const mustGuardAdminPut = [
   'app/api/settings/route.ts',
-  'app/api/appearance/route.ts',
   'app/api/preferences/contact-columns/route.ts',
 ];
 

@@ -44,7 +44,6 @@ function writeSessionCache(icons) {
   try {
     sessionStorage.setItem(CACHE_KEY, JSON.stringify(icons));
   } catch {
-    // Ignore quota errors — registry will be refetched next session.
   }
 }
 

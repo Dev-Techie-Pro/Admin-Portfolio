@@ -8,7 +8,6 @@ const allowlist = new Set([
   'auth/reset-password/route.ts',
   'auth/callback/complete/route.ts',
   'health/supabase/route.ts',
-  'appearance/public/route.ts',
   'public/contact/route.ts',
   'public/config/route.ts',
   'public/blog/[slug]/comments/route.ts',

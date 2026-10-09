@@ -1,4 +1,3 @@
-import { writeAppearanceCache } from "../utils/appearanceCache.js";
 import { persistentCache, isEntryStale } from "./PersistentCache.js";
 import { eventBus } from "./EventBus.js";
 import { canManageSiteSettings } from "./cms-access.js";
@@ -36,7 +35,6 @@ const REMOTE_ROUTES = {
   pa_blog_tags: "/api/blog-tags",
   pa_project_tags: "/api/project-tags",
   pa_settings: "/api/settings",
-  appearance_settings_v2: "/api/appearance",
   pa_msg_column_visibility: "/api/preferences/contact-columns",
   pa_notification_preferences: "/api/notification-preferences",
   pa_notifications: "/api/notifications"
@@ -63,7 +61,6 @@ class StorageService {
   async _persist(key, value, fetchedAt = Date.now()) {
     this._cache.set(key, value);
     this._meta.set(key, fetchedAt);
-    if (key === "appearance_settings_v2") writeAppearanceCache(value);
     await persistentCache.set(key, value, fetchedAt);
   }
   /** Drop scoped activity cache when a different user or scope signs in on this browser. */
@@ -85,13 +82,9 @@ class StorageService {
     if (!payload) return;
     const fetchedAt = payload.fetchedAt ? Date.parse(payload.fetchedAt) : Date.now();
     const entries = Object.entries(payload.data || {}).filter(([, value]) => value !== null && value !== void 0).map(([key, value]) => ({ key, value, fetchedAt }));
-    if (payload.appearance !== null && payload.appearance !== void 0) {
-      entries.push({ key: "appearance_settings_v2", value: payload.appearance, fetchedAt });
-    }
     entries.forEach(({ key, value }) => {
       this._cache.set(key, value);
       this._meta.set(key, fetchedAt);
-      if (key === "appearance_settings_v2") writeAppearanceCache(value);
     });
     await persistentCache.setMany(entries, fetchedAt);
   }
@@ -105,10 +98,6 @@ class StorageService {
         Object.entries(payload.data || {}).forEach(([key, value]) => {
           if (value !== null && value !== void 0) this._cache.set(key, value);
         });
-        if (payload.appearance !== null && payload.appearance !== void 0) {
-          this._cache.set("appearance_settings_v2", payload.appearance);
-          writeAppearanceCache(payload.appearance);
-        }
         if (payload.session) {
           window.__paBootstrapSession = payload.session;
           this.reconcileRecentActivitiesScope(payload.session);
@@ -130,7 +119,6 @@ class StorageService {
       if (entry.value === null || entry.value === void 0) return;
       this._cache.set(key, entry.value);
       this._meta.set(key, entry.fetchedAt || 0);
-      if (key === "appearance_settings_v2") writeAppearanceCache(entry.value);
     });
   }
   _scheduleRevalidate(key, route, fallback) {
@@ -201,7 +189,6 @@ class StorageService {
       if (persisted?.value !== null && persisted?.value !== void 0) {
         this._cache.set(key, persisted.value);
         this._meta.set(key, persisted.fetchedAt || 0);
-        if (key === "appearance_settings_v2") writeAppearanceCache(persisted.value);
         this._scheduleRevalidate(key, route, fallback);
         return persisted.value;
       }
@@ -241,7 +228,6 @@ class StorageService {
       throw new StorageQuotaError(key, "Only administrators can change site settings.");
     }
     this._cache.set(key, value);
-    if (key === "appearance_settings_v2") writeAppearanceCache(value);
     try {
       const res = await fetch(route, {
         method: "PUT",

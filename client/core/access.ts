@@ -27,7 +27,6 @@ function setElementAccessible(el: Element, allowed: boolean) {
   }
 }
 
-/** UX only — authorization is enforced on API routes. */
 export function applyCapabilityGatedElements(capabilities = activeCapabilities) {
   document.querySelectorAll('.pa-admin-only-item').forEach((el) => {
     setElementAccessible(el, capabilities.isAdmin);

@@ -2,7 +2,6 @@ const chartInstances = new WeakMap();
 
 let apexChartsLoadPromise: Promise<void> | null = null;
 
-/** Load ApexCharts only when dashboard charts need it. */
 export function ensureApexChartsLoaded(): Promise<void> {
   if (typeof window !== 'undefined' && typeof ApexCharts !== 'undefined') {
     return Promise.resolve();

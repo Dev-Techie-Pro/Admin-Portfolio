@@ -6,6 +6,25 @@ import { setupAllPasswordToggles } from "../../utils/password-toggle.js";
 import { activateTab } from "../shell/panels.js";
 import { staggerReveal } from "../../utils/motion.js";
 const UNCHANGED_SECRET = "__UNCHANGED__";
+const ENV_TOGGLE_KEYS = /* @__PURE__ */ new Set([
+  "REQUIRE_MFA_ADMINS",
+  "CONTACT_AUTO_REPLY_ENABLED",
+  "CMS_BATCH_WRITES",
+  "MEDIA_FULL_RECONCILE"
+]);
+function envToggleIsChecked(key, value) {
+  if (key === "CMS_BATCH_WRITES") return value !== "false";
+  if (key === "MEDIA_FULL_RECONCILE" || key === "REQUIRE_MFA_ADMINS" || key === "CONTACT_AUTO_REPLY_ENABLED") {
+    return value === "true";
+  }
+  return false;
+}
+function envToggleValueFromChecked(key, checked) {
+  if (key === "CMS_BATCH_WRITES") return checked ? "" : "false";
+  if (key === "MEDIA_FULL_RECONCILE") return checked ? "true" : "";
+  if (key === "REQUIRE_MFA_ADMINS" || key === "CONTACT_AUTO_REPLY_ENABLED") return checked ? "true" : "";
+  return "";
+}
 function listEnvFormKeys() {
   const form = $id("systemEnvForm");
   if (!form) return [];
@@ -140,7 +159,9 @@ class SystemManager {
       page: 1,
       pageSize: 10,
       exportRunning: false,
-      env: null
+      env: null,
+      envFormBaseline: null,
+      envStepIndex: 0
     };
     this._bound = false;
   }
@@ -366,7 +387,25 @@ class SystemManager {
       });
     }
     const envForm = $id("systemEnvForm");
-    if (envForm) setupAllPasswordToggles(envForm);
+    if (envForm) {
+      setupAllPasswordToggles(envForm);
+      this.bindEnvTimeline(envForm);
+      this.on(envForm, "input", () => this.syncEnvDirtyState());
+      this.on(envForm, "change", () => this.syncEnvDirtyState());
+      envForm.querySelectorAll(".pa-env-toggle-checkbox").forEach((checkbox) => {
+        this.on(checkbox, "change", () => {
+          const key = checkbox.dataset.envToggleKey;
+          if (!key) return;
+          const hidden = this.getEnvFormField(key);
+          if (!hidden) return;
+          hidden.value = envToggleValueFromChecked(key, checkbox.checked);
+          const labelEl = checkbox.closest(".pa-env-field-row")?.querySelector(".pa-toggle-label");
+          const label = labelEl?.textContent?.trim() || key;
+          const state = checkbox.checked ? "enabled" : "disabled";
+          showToast(`${label} ${state}. Save settings to apply.`, "info");
+        });
+      });
+    }
   }
   setViewMode(mode) {
     this.state.viewMode = mode;
@@ -1029,6 +1068,78 @@ class SystemManager {
     if (!form) return null;
     return form.querySelector(`[name="${key}"]`);
   }
+  bindEnvTimeline(form) {
+    form.querySelectorAll(".pa-env-timeline-step").forEach((btn) => {
+      this.on(btn, "click", () => {
+        const index = Number(btn.dataset.envStepIndex);
+        if (Number.isFinite(index)) this.setEnvStep(index);
+      });
+    });
+    const prevBtn = $id("systemEnvStepPrevBtn");
+    const nextBtn = $id("systemEnvStepNextBtn");
+    if (prevBtn) {
+      this.on(prevBtn, "click", () => {
+        if (prevBtn.disabled) return;
+        this.setEnvStep(Math.max(0, (this.state.envStepIndex ?? 0) - 1));
+      });
+    }
+    if (nextBtn) {
+      this.on(nextBtn, "click", () => {
+        const max = form.querySelectorAll(".pa-env-step-panel").length - 1;
+        this.setEnvStep(Math.min(max, (this.state.envStepIndex ?? 0) + 1));
+      });
+    }
+    this.setEnvStep(this.state.envStepIndex ?? 0);
+  }
+  setEnvStep(index) {
+    const form = $id("systemEnvForm");
+    if (!form) return;
+    const steps = form.querySelectorAll(".pa-env-timeline-step");
+    const panels = form.querySelectorAll(".pa-env-step-panel");
+    const max = panels.length - 1;
+    const next = Math.max(0, Math.min(index, max));
+    this.state.envStepIndex = next;
+    steps.forEach((step, i) => {
+      step.classList.remove("is-complete", "is-active", "is-pending");
+      if (i < next) step.classList.add("is-complete");
+      else if (i === next) step.classList.add("is-active");
+      else step.classList.add("is-pending");
+      step.setAttribute("aria-selected", i === next ? "true" : "false");
+    });
+    panels.forEach((panel, i) => {
+      const active = i === next;
+      panel.hidden = !active;
+      panel.classList.toggle("is-active", active);
+    });
+    const onFinalStep = next === max;
+    const prevBtn = $id("systemEnvStepPrevBtn");
+    const nextBtn = $id("systemEnvStepNextBtn");
+    if (prevBtn) prevBtn.disabled = next === 0;
+    if (nextBtn) nextBtn.hidden = onFinalStep;
+    form.querySelectorAll("[data-env-finalize-action]").forEach((el) => {
+      el.hidden = !onFinalStep;
+      el.disabled = !onFinalStep;
+    });
+    this.syncEnvDirtyState();
+  }
+  captureEnvFormBaseline() {
+    this.state.envFormBaseline = JSON.stringify(this.collectEnvironmentUpdates());
+    this.syncEnvDirtyState();
+  }
+  syncEnvDirtyState() {
+    const dirtyEl = $id("systemEnvDirty");
+    if (!dirtyEl) return;
+    const form = $id("systemEnvForm");
+    const panels = form?.querySelectorAll(".pa-env-step-panel");
+    const max = panels ? panels.length - 1 : 0;
+    const onFinalStep = (this.state.envStepIndex ?? 0) === max;
+    if (!onFinalStep || !this.state.envFormBaseline) {
+      dirtyEl.hidden = true;
+      return;
+    }
+    const current = JSON.stringify(this.collectEnvironmentUpdates());
+    dirtyEl.hidden = current === this.state.envFormBaseline;
+  }
   hydrateEnvironmentForm(values = {}) {
     for (const key of listEnvFormKeys()) {
       const el = this.getEnvFormField(key);
@@ -1041,6 +1152,25 @@ class SystemManager {
         el.value = value;
       }
     }
+    const form = $id("systemEnvForm");
+    if (!form) return;
+    ENV_TOGGLE_KEYS.forEach((key) => {
+      const hidden = this.getEnvFormField(key);
+      const checkbox = form.querySelector(
+        `.pa-env-toggle-checkbox[data-env-toggle-key="${key}"]`
+      );
+      if (!hidden || !checkbox) return;
+      const value = values[key] ?? hidden.value ?? "";
+      hidden.value = value;
+      checkbox.checked = envToggleIsChecked(key, value);
+    });
+    form.querySelectorAll(".pa-env-chip-input").forEach((radio) => {
+      const name = radio.name;
+      if (!name) return;
+      const value = values[name] ?? "";
+      radio.checked = radio.value === value;
+    });
+    this.captureEnvFormBaseline();
   }
   collectEnvironmentUpdates() {
     const updates = {};
@@ -1070,9 +1200,8 @@ class SystemManager {
     );
     if (!panel?.classList.contains("active")) return;
     requestAnimationFrame(() => {
-      form.querySelectorAll(".pa-motion-stagger").forEach((col) => {
-        staggerReveal(col, ".pa-env-card");
-      });
+      const active = form.querySelector(".pa-env-step-panel.is-active");
+      if (active) staggerReveal(active, ".pa-env-field-row");
     });
   }
   async loadEnvironment() {
@@ -1150,6 +1279,7 @@ class SystemManager {
       this.state.env = payload;
       this.hydrateEnvironmentForm(payload.values || {});
       this.renderEnvironmentMeta(payload);
+      this.captureEnvFormBaseline();
       showStatusToast(payload.message || "Settings saved.", "success");
     } catch (err) {
       showToast(err.message || "Could not save environment configuration.", "danger");

@@ -1,7 +1,7 @@
 import {
+  APPEARANCE_DEFAULTS,
   applyAppearanceSettings,
   readAppearanceCache,
-  writeAppearanceCache,
 } from './appearanceCache.js';
 
 const DEFAULT_ACCENT = '#ff6600';
@@ -33,45 +33,16 @@ export function applyAppearanceBranding(settings = {}) {
   applyAppearanceSettings(settings);
 }
 
-export async function loadPublicAppearance() {
-  const cached = readAppearanceCache();
-  if (cached) return cached;
-
-  const bag = typeof window !== 'undefined' ? window.__paPrefetch : null;
-  const pending = bag?.appearance_settings_v2;
-  if (pending && typeof pending.then === 'function') {
-    try {
-      const value = await pending;
-      if (value) {
-        writeAppearanceCache(value);
-        return value;
-      }
-    } catch {
-      /* fall through */
-    }
-  }
-
-  const res = await fetch('/api/appearance/public', {
-    method: 'GET',
-    credentials: 'same-origin',
-    headers: { Accept: 'application/json' },
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (data) writeAppearanceCache(data);
-  return data;
+export function loadLocalAppearance() {
+  return readAppearanceCache() ?? { ...APPEARANCE_DEFAULTS };
 }
 
 export async function initAuthAppearance() {
   try {
-    const cached = readAppearanceCache();
-    if (cached) applyAppearanceSettings(cached);
-
-    const settings = await loadPublicAppearance();
-    if (settings) applyAppearanceSettings(settings);
-
+    const settings = loadLocalAppearance();
+    applyAppearanceSettings(settings);
     const { updateFaviconFromAppearance } = await import('./favicon.js');
-    updateFaviconFromAppearance(settings || cached || {});
+    updateFaviconFromAppearance(settings);
   } catch {
     /* keep defaults */
   }

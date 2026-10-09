@@ -6,9 +6,7 @@ import {
 } from './image-compress.js';
 
 export const VALID_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
-/** Large originals are OK — compression runs before upload size checks. */
 export const MAX_SOURCE_IMAGE_BYTES = 50 * 1024 * 1024;
-/** Must stay within server `UPLOAD_MAX_IMAGE_BYTES` (10MB) after compression. */
 export const MAX_UPLOAD_IMAGE_BYTES = 10 * 1024 * 1024;
 export const MAX_CONTACT_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 
@@ -78,7 +76,6 @@ export async function readValidFiles(fileList, { folder = 'general', page, purpo
         type: uploaded.mimeType || file.type,
       });
     } catch {
-      /* skip failed upload */
     }
   }
   return results;

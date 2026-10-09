@@ -43,7 +43,7 @@ The same deployment also exposes **CORS-enabled public APIs** under `/api/public
 - **Recent activities** — audit trail of user actions with retention policies and cron purge
 - **Notifications** — in-app notification inbox with per-user preference controls
 - **Settings** — general site config, profile, security (MFA + backup codes + role request), notifications, and system admin tools (SQL export, **runtime config** in `site_runtime_config` — SMTP, retention, performance)
-- **Appearance / customization** — global theme and UI panel (stored in `site_settings.appearance_settings`)
+- **Appearance / customization** — theme and UI panel (per-browser `localStorage`, not stored in the database)
 - **System admin** — SQL database export with table stats, environment config viewer, backup snapshot audit log
 - **Authentication** — Supabase Auth with login, MFA (TOTP), forgot/reset password, 24-hour session lifetime, and login activity
 - **Role-based access** — `super_admin`, `admin`, `editor`, and `viewer` roles enforced on API routes (`guardStaff`, `guardAdmin`, `guardEditor`)
@@ -308,7 +308,7 @@ The PostgreSQL schema covers:
 - **Views** — `dashboard_stats` (with caching helpers in later migrations)
 - **Storage** — public `media` bucket (10 MB object limit; MIME types include images, PDF, Office docs, zip, and web fonts — see migration `20260925140000_storage_upload_mime_types.sql`)
 
-Theme and UI customization live in `site_settings.appearance_settings` (JSON). Contact inbox column visibility is in `site_settings.contact_message_columns`. **Removed features:** `integrations` table (`20260925160000_drop_integrations_table.sql`), content-agent learning table `agent_suggestion_feedback` (`20260930120000_drop_content_agent_learning.sql`).
+Theme and UI customization are stored in the browser (`pa_appearance_settings_v2` in `localStorage`). Contact inbox column visibility is in `site_settings.contact_message_columns`. **Removed features:** `integrations` table (`20260925160000_drop_integrations_table.sql`), content-agent learning table `agent_suggestion_feedback` (`20260930120000_drop_content_agent_learning.sql`).
 
 Migrations: one squashed baseline in `supabase/migrations/` plus any newer incremental files. Archived history is in `supabase/migrations_archive/`. See [supabase/README.md](supabase/README.md) for tables, RLS, roles, and RPCs.
 
@@ -428,8 +428,6 @@ Staff CMS routes require an authenticated user with role `super_admin`, `admin`,
 | Endpoint                           | Methods                  | Purpose                         |
 | ---------------------------------- | ------------------------ | ------------------------------- |
 | `/api/settings`                    | GET, PUT                 | Site settings (General tab)     |
-| `/api/appearance`                  | GET, PUT                 | Theme / UI customization        |
-| `/api/appearance/public`           | GET                      | Public theme (unauthenticated)  |
 | `/api/profile`                     | GET, PUT                 | User profile                    |
 | `/api/preferences/contact-columns` | GET, PUT                 | Contact table column visibility |
 | `/api/notification-preferences`    | GET, PUT                 | Notification preferences        |
@@ -505,7 +503,7 @@ Client-side storage keys map to these routes in `client/core/StorageService.ts` 
 
 - **Middleware** (`middleware.ts`) validates Supabase sessions on every request, enforces MFA when required, and signs users out when the dashboard session deadline passes. Unauthenticated users are redirected to `/login`; authenticated users on auth pages are redirected to `/`.
 - **API guards** (`lib/auth/guard.ts` → `lib/auth/request-cache.tsx`): `guardAuthenticated()`, `guardStaff()`, `guardAdmin()`, and `guardEditor()` enforce access on route handlers.
-- **Capabilities** (`lib/auth/capabilities.ts`, mirrored in `client/core/access.ts`) derive UI and effective write access: `canManageContent` (CMS / `guardEditor`), `canManageSiteSettings` (settings, appearance, contact columns / `guardAdmin`), `canAccessBlogEngagement`, viewer read-only CMS (`client/core/cms-access.ts`), and temporary elevation merging into `isEditor` / `canManageContent` when `elevated_until` is active.
+- **Capabilities** (`lib/auth/capabilities.ts`, mirrored in `client/core/access.ts`) derive UI and effective write access: `canManageContent` (CMS / `guardEditor`), `canManageSiteSettings` (settings, contact columns / `guardAdmin`), `canAccessBlogEngagement`, viewer read-only CMS (`client/core/cms-access.ts`), and temporary elevation merging into `isEditor` / `canManageContent` when `elevated_until` is active.
 - **Session lifetime** — 24 hours from sign-in (`SESSION_LIFETIME_SECONDS` in `lib/auth/constants.ts`), tracked via `pa_sess_deadline` cookie and `last_sign_in_at`.
 - **MFA** — TOTP enrollment and verification via `/api/auth/mfa/*`; backup codes in `two_factor_backup_codes`.
 - **Roles** (stored in `profiles.role`):

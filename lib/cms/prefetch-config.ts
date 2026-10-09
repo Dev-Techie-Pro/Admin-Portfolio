@@ -18,7 +18,7 @@ export const PAGE_KEYS = {
   experience: ['pa_experience'],
   'contact-messages': ['pa_contact_messages'],
   'recent-activities': ['pa_recent_activities'],
-  settings: ['pa_settings', 'appearance_settings_v2', 'pa_recent_activities', 'pa_notification_preferences'],
+  settings: ['pa_settings', 'pa_recent_activities', 'pa_notification_preferences'],
 };
 
 export const GLOBAL_KEYS = ['pa_notifications'];

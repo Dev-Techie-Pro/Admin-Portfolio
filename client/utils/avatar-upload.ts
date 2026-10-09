@@ -55,7 +55,7 @@ export async function uploadUserAvatar(file, opts = {}) {
       try {
         const profile = await authService.getProfile();
         applyUserDisplay(profile);
-      } catch { /* keep preview cleared */ }
+      } catch {  }
     }
     showToast(err?.message || 'Could not save avatar.', 'danger');
     opts.onComplete?.(null);

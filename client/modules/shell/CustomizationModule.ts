@@ -1,6 +1,5 @@
 import { Module } from '../../core/Module.js';
 import { $id, escapeHtml } from '../../utils/dom.js';
-import { storage } from '../../core/StorageService.js';
 import { closePanels, activateTab, registerPanel } from './panels.js';
 import { getThemeBackground, updateFavicon } from '../../utils/favicon.js';
 import {
@@ -22,11 +21,9 @@ import {
   writeAppearanceCache,
 } from '../../utils/appearanceCache.js';
 
-const CUSTOM_STORE_KEY = 'appearance_settings_v2';
-
 export class CustomizationModule extends Module {
   constructor() {
-    super({ name: 'Customization', storageKey: CUSTOM_STORE_KEY });
+    super({ name: 'Customization' });
     this.settings = { ...APPEARANCE_DEFAULTS };
     this.systemMq = window.matchMedia('(prefers-color-scheme: dark)');
   }
@@ -36,26 +33,19 @@ export class CustomizationModule extends Module {
     this.ensureFontUploadUI();
     this.ensureIconSizeUI();
     this.bindEvents();
-    const cached = readAppearanceCache();
-    if (cached) {
-      this.settings = { ...cached };
-      this.render();
-    }
     await this.load();
     this.render();
   }
 
   async load() {
-    const saved = await storage.get(CUSTOM_STORE_KEY, null);
-    if (saved && typeof saved === 'object') {
-      this.settings = normalizeAppearanceSettings(saved);
-      writeAppearanceCache(this.settings);
+    const cached = readAppearanceCache();
+    if (cached) {
+      this.settings = normalizeAppearanceSettings(cached);
     }
   }
 
   async save() {
     writeAppearanceCache(this.settings);
-    await this.saveRecords(this.settings, { feedback: false });
   }
 
   render() {

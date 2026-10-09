@@ -1,8 +1,3 @@
-/**
- * Starts API fetches as early as possible (before React hydration / ES modules).
- * Cold load: single /api/bootstrap request. Navigation: per-key warm-up for the target page.
- * StorageService consumes promises from window.__paPrefetch when module boot runs.
- */
 (function bootPrefetch() {
   if (typeof window === 'undefined') return;
 
@@ -184,7 +179,6 @@
       root.style.setProperty('--pa-icon-btn', iconPreset.btn);
       root.dataset.iconSize = iconKey;
     } catch (e) {
-      /* ignore invalid cache */
     }
   }
 
@@ -193,7 +187,6 @@
     try {
       localStorage.setItem(APPEARANCE_CACHE_KEY, JSON.stringify(settings));
     } catch (e) {
-      /* ignore quota errors */
     }
   };
 
@@ -203,23 +196,18 @@
     return /\/(login|forget-password|reset-password)(\/|$)/.test(path);
   }
 
-  function ensureAppearancePrefetch(path, fetchOpts, bag) {
-    if (bag.appearance_settings_v2) {
-      queueDynamicFavicon(bag.appearance_settings_v2);
-      return;
+  function queueFaviconFromLocalStorage() {
+    try {
+      var raw = localStorage.getItem(APPEARANCE_CACHE_KEY);
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      if (typeof window.__paUpdateFavicon === 'function') {
+        window.__paUpdateFavicon(data);
+        return;
+      }
+      queueDynamicFavicon(Promise.resolve(data));
+    } catch (e) {
     }
-
-    var appearanceUrl = isAuthRoute(path) ? '/api/appearance/public' : '/api/appearance';
-    bag.appearance_settings_v2 = fetch(appearanceUrl, fetchOpts)
-      .then(function (res) { return res.ok ? res.json() : null; })
-      .then(function (data) {
-        if (data && typeof window.__paWriteAppearanceCache === 'function') {
-          window.__paWriteAppearanceCache(data);
-        }
-        return data;
-      })
-      .catch(function () { return null; });
-    queueDynamicFavicon(bag.appearance_settings_v2);
   }
 
   function prefetchPageKeys(page, bag, fetchOpts) {
@@ -239,12 +227,7 @@
     bag.__bootstrap = fetch(url, fetchOpts)
       .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (payload) {
-        if (!payload) return null;
-        if (payload.appearance && typeof window.__paWriteAppearanceCache === 'function') {
-          window.__paWriteAppearanceCache(payload.appearance);
-        }
-        queueDynamicFavicon(Promise.resolve(payload.appearance));
-        return payload;
+        return payload || null;
       })
       .catch(function () { return null; });
   }
@@ -258,8 +241,9 @@
 
     var bag = window.__paPrefetch || {};
 
+    queueFaviconFromLocalStorage();
+
     if (isAuthRoute(path)) {
-      ensureAppearancePrefetch(path, fetchOpts, bag);
       window.__paPrefetch = bag;
       return;
     }
@@ -270,7 +254,6 @@
       window.__paDidBootstrap = true;
       startBootstrap(page, bag, fetchOpts);
     } else {
-      ensureAppearancePrefetch(path, fetchOpts, bag);
       prefetchPageKeys(page, bag, fetchOpts);
     }
 

@@ -17,7 +17,6 @@ import {
   getProjectTechnologyUsage,
   getBlogTags,
   getSettings,
-  getAppearance,
   getContactColumnVisibility,
 } from './repository';
 import { getNotificationPreferences, getUserNotifications } from './notifications';
@@ -73,9 +72,8 @@ function sessionFromProfile(userId, authEmail, profile, elevatedUntil) {
 
 async function fetchPageData(page, auth) {
   const pageKeys = getKeysForPage(page);
-  const dataKeys = pageKeys.filter((key) => key !== 'appearance_settings_v2');
   const entries = await Promise.all(
-    dataKeys.map(async (key) => {
+    pageKeys.map(async (key) => {
       const fetcher = KEY_FETCHERS[key];
       if (!fetcher) return [key, null];
       try {
@@ -88,9 +86,6 @@ async function fetchPageData(page, auth) {
   );
 
   const data = Object.fromEntries(entries);
-  if (pageKeys.includes('appearance_settings_v2')) {
-    data.appearance_settings_v2 = data.appearance_settings_v2 ?? null;
-  }
 
   if (!data.pa_notifications) {
     try {
@@ -105,23 +100,17 @@ async function fetchPageData(page, auth) {
 }
 
 export async function getBootstrapPayload(page, auth) {
-  const [profile, appearance, data] = await Promise.all([
+  const [profile, data] = await Promise.all([
     getProfileForUser(auth.user),
-    getAppearance(),
     fetchPageData(page, auth),
   ]);
 
   const elevatedUntil = auth.elevatedUntil ?? await getActiveElevationUntil(auth.user.id);
   const sessionUser = sessionFromProfile(auth.user.id, auth.user.email, profile, elevatedUntil);
 
-  if (getKeysForPage(page).includes('appearance_settings_v2')) {
-    data.appearance_settings_v2 = appearance;
-  }
-
   return {
     profile,
     session: { user: sessionUser },
-    appearance,
     data,
     fetchedAt: new Date().toISOString(),
   };
