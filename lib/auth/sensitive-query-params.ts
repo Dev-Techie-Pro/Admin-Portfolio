@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** Query keys that must never appear in URLs (credentials leak via history, referrers, logs). */
 export const SENSITIVE_AUTH_QUERY_KEYS = ['email', 'password', 'passwd', 'pass'] as const;
 

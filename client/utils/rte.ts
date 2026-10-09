@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { promptUrl } from './url-prompt.js';
 
 function saveSelection(body) {

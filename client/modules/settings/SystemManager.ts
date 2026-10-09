@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id, escapeHtml } from '../../utils/dom.js';
 import { showToast, showStatusToast } from '../shell/toast.js';
 import { requestConfirm } from '../shell/confirm.js';

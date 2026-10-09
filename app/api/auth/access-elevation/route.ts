@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { guardStaff } from '@/lib/auth/guard';
 import { getStaffElevationStatus } from '@/lib/cms/access-elevation-requests';

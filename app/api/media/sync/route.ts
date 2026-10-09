@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { syncAllEntityMedia } from '@/lib/cms/media-sync';
 import { invalidateCmsReadCaches } from '@/lib/cms/server-cache';

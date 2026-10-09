@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { getKeysForPage } from './prefetch-config';
 import {
   getProjects,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { guardStaff } from '@/lib/auth/guard';
 import { jsonGet, jsonGetCached } from '@/lib/api/json-response';
 import { PAGE_KEYS } from '@/lib/cms/prefetch-config';

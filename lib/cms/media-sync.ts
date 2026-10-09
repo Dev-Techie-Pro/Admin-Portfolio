@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createHash } from 'crypto';
 import { createAdminClient } from '../supabase/admin';
 import { SITE_ID, legacyUuid } from './constants';

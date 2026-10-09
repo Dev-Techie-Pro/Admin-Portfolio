@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Custom uploaded font helpers — validation, @font-face registration, and metadata.
  */

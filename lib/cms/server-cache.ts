@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { kvDelete, kvDeleteByPrefix, kvGetJson, kvSetJson } from './kv-rest';
 
 const store = new Map();

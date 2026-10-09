@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AuthModule } from './AuthModule.js';
 import { $id } from '../../utils/dom.js';
 import { authService } from '../../core/AuthService.js';

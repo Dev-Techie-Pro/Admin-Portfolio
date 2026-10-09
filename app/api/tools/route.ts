@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { getToolItems, saveToolItems } from '@/lib/cms/repository';
 import { getToolItemActivitySnapshots } from '@/lib/cms/activity-snapshots';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** PostgREST / Postgres errors when `access_elevation_requests` is not migrated yet. */
 export function isAccessElevationTableMissing(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;

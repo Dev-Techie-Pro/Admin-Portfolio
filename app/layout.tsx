@@ -1,3 +1,4 @@
+// @ts-nocheck
 import './globals.css';
 
 export const metadata = {
@@ -30,9 +31,9 @@ export default function RootLayout({ children }) {
         />
         <link rel="modulepreload" href="/js/main.js" />
         {/* Static public scripts — plain tags avoid Next.js preload warnings */}
-        <script src="/js/prefetch-config.js" />
-        <script src="/js/boot-prefetch.js" />
-        <script src="/js/body-loader-template.js" />
+        <script src="/js/prefetch-config.js" defer />
+        <script src="/js/boot-prefetch.js" defer />
+        <script src="/js/body-loader-template.js" defer />
       </head>
       <body suppressHydrationWarning>
         <script

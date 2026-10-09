@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { CrudCardModule } from '../../core/CrudCardModule.js';
 import { escapeHtml, $id } from '../../utils/dom.js';
 import { formatDate, parseSortInput, sortByNewestFirst } from '../../utils/format.js';

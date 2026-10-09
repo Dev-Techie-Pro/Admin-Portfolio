@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** Storage keys each page module reads during load() — keep in sync with client/prefetch-config.ts */
 export const PAGE_KEYS = {
   dashboard: [

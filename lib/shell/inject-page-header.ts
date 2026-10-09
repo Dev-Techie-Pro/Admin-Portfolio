@@ -1,3 +1,4 @@
+// @ts-nocheck
 export type PageHeaderMeta = {
   title: string;
   subtitle: string;

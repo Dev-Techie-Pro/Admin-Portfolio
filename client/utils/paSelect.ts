@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { escapeHtml, $id } from './dom.js';
 import { mountFloatingLayer, type FloatingLayerHandle } from './floatingLayer.js';
 

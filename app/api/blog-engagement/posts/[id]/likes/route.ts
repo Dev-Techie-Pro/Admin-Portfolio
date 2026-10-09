@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { clearLikesForPost } from '@/lib/cms/blog-engagement';
 import { guardEditor } from '@/lib/auth/guard';

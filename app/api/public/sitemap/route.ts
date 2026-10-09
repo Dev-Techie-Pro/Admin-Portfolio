@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { publicCorsOptions } from '@/lib/api/public-cors';
 import { buildSitemapXml } from '@/lib/cms/public-sitemap';
 

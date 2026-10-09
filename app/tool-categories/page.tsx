@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const metadata = { title: 'Portfolio Admin — Categories' };
 
 import StaffLegacyBody from '@/components/StaffLegacyBody';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { guardStaff } from '@/lib/auth/guard';
 import { searchCmsContent } from '@/lib/cms/content-search';

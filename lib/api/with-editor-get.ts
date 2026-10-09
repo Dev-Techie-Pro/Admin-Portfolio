@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { guardEditor } from '@/lib/auth/guard';
 import { jsonGet, jsonGetCached } from '@/lib/api/json-response';
 

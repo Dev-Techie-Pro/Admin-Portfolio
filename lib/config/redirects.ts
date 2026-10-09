@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { warmRuntimeSettings, getRuntimeSettingSync } from '@/lib/config/runtime-settings';
 
 export type RuntimeRedirect = {

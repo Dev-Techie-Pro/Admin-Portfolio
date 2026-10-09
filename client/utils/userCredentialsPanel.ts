@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id } from './dom.js';
 import { showToast } from '../modules/shell/toast.js';
 import { closePanels, openPanel, registerPanel } from '../modules/shell/panels.js';

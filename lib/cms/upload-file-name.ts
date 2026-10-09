@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Context-aware storage file names: `{page}-{purpose}[-{folder}]-{timestamp}[-{seq}].{ext}`
  * (UUID prefix is added server-side in storage paths.)

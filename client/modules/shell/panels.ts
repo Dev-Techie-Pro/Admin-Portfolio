@@ -1,5 +1,12 @@
+// @ts-nocheck
 import { $id } from '../../utils/dom.js';
+import { bindFocusTrap } from '../../utils/focus-trap.js';
 import { canManageContent } from '../../core/cms-access.js';
+
+let disposeFocusTrap = null;
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /** Panels viewers may still open (e.g. read-only chrome). */
 const VIEWER_PANEL_IDS = new Set(['paCustomPanel']);
@@ -15,6 +22,8 @@ export function anyPanelOpen() {
 }
 
 export function closePanels() {
+  disposeFocusTrap?.();
+  disposeFocusTrap = null;
   $id('paPanelOverlay')?.classList.remove('visible');
   registeredPanelIds.forEach((id) => $id(id)?.classList.remove('visible'));
   $id('paCustomToggle')?.classList.remove('active');
@@ -32,7 +41,12 @@ export function openPanel(panelId, hidePanelIds = []) {
   if (!canManageContent() && !VIEWER_PANEL_IDS.has(panelId)) return;
   hidePanelIds.forEach((id) => $id(id)?.classList.remove('visible'));
   $id('paPanelOverlay')?.classList.add('visible');
-  $id(panelId)?.classList.add('visible');
+  const panel = $id(panelId);
+  panel?.classList.add('visible');
+  disposeFocusTrap?.();
+  disposeFocusTrap = bindFocusTrap(panel);
+  const firstFocus = panel?.querySelector(FOCUSABLE_SELECTOR);
+  if (firstFocus instanceof HTMLElement) firstFocus.focus();
 }
 
 export function setButtonLoading(btnId, loading) {

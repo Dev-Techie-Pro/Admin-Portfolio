@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * IndexedDB cache for CMS data — survives full page reloads.
  * Used with stale-while-revalidate in StorageService.

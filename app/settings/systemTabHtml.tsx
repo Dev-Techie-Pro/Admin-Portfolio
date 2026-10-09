@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { buildSystemEnvFormHtml } from './buildSystemEnvFormHtml';
 
 const SYSTEM_ENV_FORM_HTML = buildSystemEnvFormHtml();

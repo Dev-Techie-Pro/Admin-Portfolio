@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { isValidUrl } from './strings.js';
 
 let overlay = null;

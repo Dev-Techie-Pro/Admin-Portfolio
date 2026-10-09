@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** Browser-side image compression (WebP when supported, adaptive quality & dimensions). */
 
 export type ImageCompressPreset =

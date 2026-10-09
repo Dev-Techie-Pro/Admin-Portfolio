@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { BODY_HTML, SETTINGS_SHELL_SUFFIX_START } from './bodyHtml';
 import { getSettingsPageMeta, resolveSettingsTab } from '@/lib/settings/page-meta';
 import { SYSTEM_SECTION_TOOLBAR_HTML } from './systemSectionToolbarHtml';

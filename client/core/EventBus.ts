@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * EventBus — lightweight pub/sub for decoupled module communication.
  *

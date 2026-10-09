@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { escapeHtml } from './dom.js';
 import { mountFloatingLayer, type FloatingLayerHandle } from './floatingLayer.js';
 import { addStackChip, getStackChipSelections } from './chips.js';

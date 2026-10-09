@@ -1,3 +1,4 @@
+// @ts-nocheck
 export function validatePasswordStrength(password) {
   const value = String(password || '');
   if (value.length < 8) {

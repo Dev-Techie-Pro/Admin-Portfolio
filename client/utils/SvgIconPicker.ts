@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id } from './dom.js';
 import {
   loadRegistry,

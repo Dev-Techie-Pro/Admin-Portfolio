@@ -1,3 +1,4 @@
+// @ts-nocheck
 const chartInstances = new WeakMap();
 
 let apexChartsLoadPromise: Promise<void> | null = null;

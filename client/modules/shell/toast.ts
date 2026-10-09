@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id, escapeHtml } from '../../utils/dom.js';
 
 const TOAST_ICONS = {

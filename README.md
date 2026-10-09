@@ -112,7 +112,7 @@ Browser
 
 **HTML-in-TS/TSX pattern:** Page markup lives in `app/**/bodyHtml.ts` or `bodyHtml.tsx` (large exported strings). Shared shell pieces include `app/sidebarHtml.tsx`, `app/bodyHtmlParts.tsx`, `app/quickAddPanelHtml.tsx`, and overlay panels (`customPanelHtml.tsx`, `mediaPickerPanelHtml.tsx`, `iconPickerPanelHtml.tsx`, `addUserPanelHtml.tsx`). This preserves the original static HTML dashboard while integrating with Next.js routing.
 
-**Build note:** Server TypeScript is checked by Next.js; `next.config.mjs` may ignore type/lint errors during builds while the codebase is tightened incrementally. Always run `npm run build:client` after editing `client/`.
+**Build note:** CI runs `npm run typecheck`, `npm run typecheck:client`, `npm run lint`, and `npm run test:ci`. Production builds enforce TypeScript and ESLint (`next.config.mjs`). Always run `npm run build:client` after editing `client/` and commit updated `public/js` (CI checks for drift).
 
 ---
 
@@ -190,7 +190,7 @@ Portfolio-Admin-main/
 │   ├── migrations/               # Squashed baseline + new incremental migrations
 │   └── README.md                 # Detailed database documentation
 │
-├── scripts/                      # Optional dev utilities (not runtime)
+├── scripts/                      # CI tests + db:baseline (not runtime)
 │
 ├── middleware.ts                 # Auth redirect, MFA, session expiry, API 401
 ├── next.config.mjs
@@ -554,24 +554,9 @@ OAuth / email-link flows complete at `/auth/callback`.
 
 ---
 
-## Maintenance Scripts
+## `scripts/` folder
 
-The `scripts/` folder contains **optional Node.js utilities** for syncing sidebar HTML across many `bodyHtml*.tsx` files. These are **not** part of the runtime build and are not referenced in `package.json`.
-
-| Script                         | Purpose                                              |
-| ------------------------------ | ---------------------------------------------------- |
-| `scripts/get-sidebar-html.mjs` | Extract sidebar inner HTML for generators            |
-| `scripts/sync-sidebar-bodies.mjs` | Patch `bodyHtml*.tsx` files with updated sidebar  |
-| `scripts/sidebar-html-entry.mjs` | Entry helper for sidebar tooling                  |
-| `scripts/build-client.mjs`     | Legacy/alternate client build entry (use `client/build-client.mjs` via npm) |
-
-Example:
-
-```bash
-node scripts/sync-sidebar-bodies.mjs
-```
-
-Deleting `scripts/` does not affect `npm run dev`, `build`, or `start`.
+Used for **automated checks** and **database tooling** (see `package.json`: `test:ci`, `test:rls`, `verify:deployment`, `db:baseline`, `verify:client-drift`). Not loaded at runtime. Client builds use `client/build-client.mjs` via `npm run build:client`.
 
 ---
 

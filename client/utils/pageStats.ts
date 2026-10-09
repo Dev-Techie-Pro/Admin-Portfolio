@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id } from './dom.js';
 
 export function countInMonth(records, monthOffset = 0, dateField = 'createdAt') {

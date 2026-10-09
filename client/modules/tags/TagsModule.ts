@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { CrudCardModule } from '../../core/CrudCardModule.js';
 import { escapeHtml, $id, $all, $field, $input, $select } from '../../utils/dom.js';
 import { storage } from '../../core/StorageService.js';

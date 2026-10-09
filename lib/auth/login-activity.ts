@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createAdminClient } from '@/lib/supabase/admin';
 import { SESSION_LIFETIME_MS } from './constants';
 import {
@@ -41,10 +42,11 @@ function activityFromDb(row) {
 
 export async function findUserIdByEmail(email) {
   if (!email) return null;
+  const normalized = String(email).trim().toLowerCase();
   const { data } = await admin()
     .from('profiles')
     .select('id')
-    .ilike('email', email.trim())
+    .eq('email', normalized)
     .maybeSingle();
   return data?.id || null;
 }

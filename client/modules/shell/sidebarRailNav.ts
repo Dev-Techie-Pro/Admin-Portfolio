@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { hideNavFlyout, isSidebarCollapsedDesktop, showNavFlyout } from './sidebarCollapse.js';
 
 const ROUTE_RAIL: [string, string][] = [

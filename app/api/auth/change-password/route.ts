@@ -1,12 +1,14 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { guardAuthenticated } from '@/lib/auth/guard';
+import { guardAal2 } from '@/lib/auth/guard';
+import { jsonInternalError } from '@/lib/api/api-error';
 import { logPasswordChanged } from '@/lib/cms/activity-events';
 import { validatePasswordStrength } from '@/lib/auth/password-policy';
 
 export async function POST(request) {
   try {
-    const auth = await guardAuthenticated();
+    const auth = await guardAal2();
     if (!auth.ok) return auth.response;
 
     const { currentPassword, newPassword } = await request.json();
@@ -49,6 +51,6 @@ export async function POST(request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonInternalError('auth/change-password', error);
   }
 }

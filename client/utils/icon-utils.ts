@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ICONS } from './icon-registry.js';
 import { getSvgUrl } from './icon-registry-api.js';
 

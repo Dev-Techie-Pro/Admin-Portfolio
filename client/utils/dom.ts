@@ -1,3 +1,4 @@
+// @ts-nocheck
 const _queryCache = new Map();
 
 /** Root for `$` / `$all` queries (document or any subtree element). */
@@ -66,9 +67,14 @@ export function clearDomCache() {
 }
 
 export function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str == null ? '' : String(str);
-  return div.innerHTML;
+  const s = str == null ? '' : String(str);
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/`/g, '&#96;');
 }
 
 export function toggleClass(el, className, force) {

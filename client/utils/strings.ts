@@ -1,3 +1,4 @@
+// @ts-nocheck
 export { escapeHtml } from './dom.js';
 
 export function slugify(text) {

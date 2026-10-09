@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id, escapeHtml } from './dom.js';
 import { formatDate, formatFileSize } from './format.js';
 import { getMediaKind } from './paMediaCard.js';

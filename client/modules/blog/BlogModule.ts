@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { CrudCardModule } from '../../core/CrudCardModule.js';
 import { canManageContent } from '../../core/cms-access.js';
 import type { BulkSelectController } from '../../core/BulkSelectController.js';

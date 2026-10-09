@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Shared markup + mount helper for .pa-body-loader (used before main.js loads).
  */

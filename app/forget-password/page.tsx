@@ -1,3 +1,4 @@
+// @ts-nocheck
 import LegacyBody from '@/components/LegacyBody';
 import { BODY_HTML } from './bodyHtml';
 

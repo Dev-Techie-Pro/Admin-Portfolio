@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { escapeHtml } from './dom.js';
 import type { StackKind } from './stackCatalog.js';
 

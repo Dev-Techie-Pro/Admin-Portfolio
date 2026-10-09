@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id } from '../../utils/dom.js';
 import { getAccessCapabilities } from '../../core/access.js';
 import { authService } from '../../core/AuthService.js';

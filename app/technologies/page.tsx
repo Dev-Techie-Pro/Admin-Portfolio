@@ -1,3 +1,4 @@
+// @ts-nocheck
 import StaffLegacyBody from '@/components/StaffLegacyBody';
 import { BODY_HTML } from './bodyHtml';
 

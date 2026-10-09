@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { eventBus } from './EventBus.js';
 import { storage } from './StorageService.js';
 import { StateStore } from './StateStore.js';

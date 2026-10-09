@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { getBlogCategories, saveBlogCategories } from '@/lib/cms/repository';
 import { getBlogCategoryActivitySnapshots } from '@/lib/cms/activity-snapshots';

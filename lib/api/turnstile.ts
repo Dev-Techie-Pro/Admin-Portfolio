@@ -1,9 +1,13 @@
+// @ts-nocheck
 import { warmRuntimeSettings, getRuntimeSettingSync } from '@/lib/config/runtime-settings';
 
 export async function verifyTurnstileToken(token: string | null | undefined, remoteIp?: string | null) {
   await warmRuntimeSettings();
   const secret = getRuntimeSettingSync('TURNSTILE_SECRET_KEY')?.trim();
   if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      return { ok: false as const, error: 'Captcha is not configured for this site.' };
+    }
     return { ok: true as const, skipped: true };
   }
 

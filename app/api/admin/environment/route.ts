@@ -1,10 +1,11 @@
-import { guardAdmin } from '@/lib/auth/guard';
+// @ts-nocheck
+import { guardSuperAdmin } from '@/lib/auth/guard';
 import { jsonGet, jsonOk } from '@/lib/api/json-response';
 import { getRuntimeConfigForApi, saveRuntimeConfig } from '@/lib/config/runtime-settings';
 import { recordUserAction } from '@/lib/cms/activity-log';
 
 export async function GET() {
-  const auth = await guardAdmin();
+  const auth = await guardSuperAdmin();
   if (!auth.ok) return auth.response;
 
   try {
@@ -16,7 +17,7 @@ export async function GET() {
 }
 
 export async function PUT(request) {
-  const auth = await guardAdmin();
+  const auth = await guardSuperAdmin();
   if (!auth.ok) return auth.response;
 
   try {

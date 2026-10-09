@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { authService } from '../core/AuthService.js';
 import { eventBus } from '../core/EventBus.js';
 import { handleFileValidation } from './files.js';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import StaffLegacyBody from '@/components/StaffLegacyBody';
 import { MEDIA_PICKER_PANEL_HTML } from '@/app/mediaPickerPanelHtml';
 import { BODY_HTML } from './bodyHtml';

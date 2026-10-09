@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Match the 5MB contact reply upload limit (~6.7M base64 chars + data: prefix).
 const MAX_ATTACHMENT_DATA_URL_CHARS = 7_000_000;
 

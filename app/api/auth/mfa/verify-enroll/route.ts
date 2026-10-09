@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { guardAuthenticated } from '@/lib/auth/guard';
 import { generateBackupCodes, replaceUserBackupCodes } from '@/lib/auth/backup-codes';

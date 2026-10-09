@@ -1,0 +1,2 @@
+-- Placeholder: version recorded on linked remote DB (not in squashed baseline).
+-- No schema changes — remote already applied the original migration.

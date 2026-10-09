@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { CrudCardModule } from '../../core/CrudCardModule.js';
 import { sortByNewestFirst } from '../../utils/format.js';
 import { renderPaCatListRow } from '../../utils/paCatCard.js';

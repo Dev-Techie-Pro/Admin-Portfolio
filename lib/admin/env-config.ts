@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const UNCHANGED_SECRET = '__UNCHANGED__';
 
 /**

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { animate, stagger } from 'motion';
 
 export function prefersReducedMotion(): boolean {

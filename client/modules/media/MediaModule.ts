@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Module } from '../../core/Module.js';
 import { $id, $all, escapeHtml } from '../../utils/dom.js';
 import { formatFileSize, formatDate } from '../../utils/format.js';

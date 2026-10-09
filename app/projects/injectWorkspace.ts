@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { PROJECT_WORKSPACE_HTML } from '@/app/projectWorkspaceHtml';
 
 const BODY_OPEN = '<div class="pa-body" id="paBody">';

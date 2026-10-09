@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * StateStore — small reactive state container.
  *

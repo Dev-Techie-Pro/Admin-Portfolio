@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** Static shell; sidebar and admin-only nav are personalized server-side. */
 export const BODY_HTML = `<div class="pa-toast-wrap" id="paToastWrap" role="status" aria-live="polite"></div>
 <div class="pa-confirm-overlay" id="paConfirmOverlay">

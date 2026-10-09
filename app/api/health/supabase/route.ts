@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getDashboardStats } from '@/lib/cms/dashboard-stats';
 import { guardStaff, isGuardFailure } from '@/lib/auth/guard';

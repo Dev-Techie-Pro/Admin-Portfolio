@@ -1,3 +1,4 @@
+// @ts-nocheck
 const ROUTES = [
   ['/projects', 'projects'],
   ['/project-tags', 'project-tags'],

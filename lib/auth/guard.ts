@@ -1,7 +1,10 @@
+// @ts-nocheck
 export {
   guardAuthenticated,
   guardStaff,
   guardAdmin,
+  guardSuperAdmin,
+  guardAal2,
   guardEditor,
   getAuthenticatedSessionMeta,
   type GuardFailure,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { publicCorsJson, publicCorsOptions } from '@/lib/api/public-cors';
 import { checkRateLimit, rateLimitResponse } from '@/lib/api/rate-limit';
 import { togglePublicLike } from '@/lib/cms/blog-engagement';

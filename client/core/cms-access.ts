@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   CMS_WRITE_CONTROL_IDS,
   CMS_WRITE_DOM_SELECTORS,

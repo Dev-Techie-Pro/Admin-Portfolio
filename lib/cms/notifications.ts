@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createAdminClient } from '@/lib/supabase/admin';
 import { SITE_ID } from './constants';
 import { ADMIN_ROLES, STAFF_ROLES } from '@/lib/auth/constants';

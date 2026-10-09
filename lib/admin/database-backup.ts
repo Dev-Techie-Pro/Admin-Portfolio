@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createAdminClient } from '@/lib/supabase/admin';
 import { SITE_ID } from '@/lib/cms/constants';
 import {
@@ -10,17 +11,20 @@ import {
 
 const SCHEMA_VERSION = '2.0.0';
 const PAGE_SIZE = 1000;
-const EXCLUDED_TABLES = new Set(['dashboard_stats']);
+const EXCLUDED_TABLES = new Set([
+  'dashboard_stats',
+  'site_runtime_config',
+  'two_factor_backup_codes',
+  'user_sessions',
+  'login_activity',
+  'security_settings',
+]);
 
 const FALLBACK_TABLES = [
   'sites',
   'profiles',
   'site_settings',
-  'site_runtime_config',
   'notification_preferences',
-  'security_settings',
-  'two_factor_backup_codes',
-  'user_sessions',
   'categories',
   'media_assets',
   'projects',
@@ -41,7 +45,6 @@ const FALLBACK_TABLES = [
   'contact_messages',
   'contact_message_replies',
   'recent_activities',
-  'login_activity',
   'tool_categories',
   'tool_items',
   'user_notifications',

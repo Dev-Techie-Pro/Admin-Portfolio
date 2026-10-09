@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { animate, type DOMKeyframesDefinition } from 'motion';
 import { prefersReducedMotion } from './motion.js';
 

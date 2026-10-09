@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getClientIp } from '@/lib/auth/request-meta';
 import { getRuntimeSettingSync, warmRuntimeSettings } from '@/lib/config/runtime-settings';

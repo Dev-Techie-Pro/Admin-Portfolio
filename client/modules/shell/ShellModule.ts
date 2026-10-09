@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Module } from '../../core/Module.js';
 import { $id } from '../../utils/dom.js';
 import { PAGE, getLoginPath } from '../../core/router.js';

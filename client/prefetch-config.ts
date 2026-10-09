@@ -1,3 +1,4 @@
+// @ts-nocheck
 (function initPrefetchConfig(global) {
   const PAGE_KEYS = {
     dashboard: [

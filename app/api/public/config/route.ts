@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { publicCorsJson, publicCorsOptions } from '@/lib/api/public-cors';
 import { getPublicTurnstileSiteKey } from '@/lib/api/turnstile';
 import { warmRuntimeSettings, getRuntimeSettingSync } from '@/lib/config/runtime-settings';

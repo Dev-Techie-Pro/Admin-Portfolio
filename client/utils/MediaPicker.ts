@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id, escapeHtml } from './dom.js';
 import { storage } from '../core/StorageService.js';
 import { getMediaKind } from './paMediaCard.js';

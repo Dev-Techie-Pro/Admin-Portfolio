@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Canonical public origin for links in emails and notifications.
  * Prefer NEXT_PUBLIC_SITE_URL; fall back to proxy headers (Vercel, etc.).

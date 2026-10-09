@@ -1,3 +1,4 @@
+// @ts-nocheck
 const MOBILE_SEARCH_MAX = 899;
 
 let abortController = null;

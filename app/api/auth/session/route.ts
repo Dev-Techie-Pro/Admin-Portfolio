@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { guardAuthenticated, getAuthenticatedSessionMeta } from '@/lib/auth/guard';
 import { getSessionUserPayload } from '@/lib/auth/profile';

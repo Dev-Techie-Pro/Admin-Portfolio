@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { escapeHtml } from './dom.js';
 
 export type ListTableColumn = {

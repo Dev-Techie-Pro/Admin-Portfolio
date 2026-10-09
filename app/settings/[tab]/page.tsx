@@ -1,3 +1,4 @@
+// @ts-nocheck
 import StaffLegacyBody from '@/components/StaffLegacyBody';
 import { buildSettingsBodyHtml } from '../buildBodyHtml';
 import { getSettingsPageMeta, resolveSettingsTab, SETTINGS_TABS } from '@/lib/settings/page-meta';

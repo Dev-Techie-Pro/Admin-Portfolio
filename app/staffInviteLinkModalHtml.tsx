@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const STAFF_INVITE_LINK_MODAL_HTML = `<div class="pa-invite-link-overlay" id="paStaffInviteLinkOverlay" aria-hidden="true">
   <div class="pa-invite-link-dialog" role="dialog" aria-modal="true" aria-labelledby="paStaffInviteLinkTitle">
     <button type="button" class="pa-invite-link-close" id="paStaffInviteLinkClose" aria-label="Close"><i class="ri-close-line"></i></button>

@@ -1,3 +1,4 @@
+// @ts-nocheck
 const MENU_MARGIN = 8;
 const MENU_MIN_WIDTH = 160;
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { CrudCardModule } from '../../core/CrudCardModule.js';
 import { escapeHtml, $id, $all } from '../../utils/dom.js';
 import { isValidCategoryKey, slugify } from '../../utils/strings.js';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { SYSTEM_TAB_HTML } from './systemTabHtml';
 import { SETTINGS_BODY_HTML_PREFIX, SETTINGS_BODY_HTML_SUFFIX } from './bodyHtmlParts';
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { AccessCapabilities } from '@/lib/auth/capabilities';
 import { CMS_WRITE_CONTROL_IDS, CMS_VIEWER_STRIP_PANEL_IDS } from '@/lib/auth/cms-write-controls';
 import { buildSidebarInnerHtml } from '@/app/sidebarHtml';

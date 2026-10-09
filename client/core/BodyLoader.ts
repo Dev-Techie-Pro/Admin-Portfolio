@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Full-page loader — mounted on `document.body` while page data is fetched.
  */

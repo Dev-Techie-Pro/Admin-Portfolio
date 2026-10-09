@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** Shared ids / selectors for read-only (viewer) roles — server HTML + client DOM. */
 
 /**

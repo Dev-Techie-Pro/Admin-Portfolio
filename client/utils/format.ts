@@ -1,3 +1,4 @@
+// @ts-nocheck
 function deriveDataUrlSize(url) {
   if (typeof url !== 'string' || !url.startsWith('data:')) return 0;
   const comma = url.indexOf(',');

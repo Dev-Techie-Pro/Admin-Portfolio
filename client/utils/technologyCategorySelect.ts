@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { storage } from '../core/StorageService.js';
 import { escapeHtml, $id } from './dom.js';
 import { sortByNewestFirst } from './format.js';

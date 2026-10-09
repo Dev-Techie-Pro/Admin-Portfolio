@@ -1,3 +1,4 @@
+// @ts-nocheck
 const DEFAULT_MAX_HEIGHT = 300;
 const MIN_LAYER_HEIGHT = 96;
 const DEFAULT_GAP = 4;

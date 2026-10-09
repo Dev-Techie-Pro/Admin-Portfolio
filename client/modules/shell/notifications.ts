@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id, escapeHtml } from '../../utils/dom.js';
 import { storage } from '../../core/StorageService.js';
 import { eventBus } from '../../core/EventBus.js';

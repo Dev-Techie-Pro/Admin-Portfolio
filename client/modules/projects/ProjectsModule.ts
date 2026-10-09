@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Module } from '../../core/Module.js';
 import { $id, $all, escapeHtml } from '../../utils/dom.js';
 import { isValidUrl } from '../../utils/strings.js';

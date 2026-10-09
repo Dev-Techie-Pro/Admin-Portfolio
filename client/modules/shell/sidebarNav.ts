@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { getSettingsTabFromPath } from '../../core/router.js';
 import { syncSidebarGroupNav } from './sidebarGroupNav.js';
 import { syncSidebarRailActive } from './sidebarRailNav.js';

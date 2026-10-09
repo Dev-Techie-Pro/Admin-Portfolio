@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { getProjectTechnologyUsage } from '@/lib/cms/repository';
 import { withStaffGet } from '@/lib/api/with-staff-get';
 

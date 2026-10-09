@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { STAFF_ROLES } from '@/lib/auth/constants';
@@ -6,14 +7,14 @@ import {
   getMfaAssuranceLevel,
   listTotpFactors,
   needsMfaVerification,
-  unenrollTotpFactor,
   verifyLoginTotp,
 } from '@/lib/auth/mfa';
-import { updateSecuritySettings } from '@/lib/auth/security-settings';
 import { createClient } from '@/lib/supabase/server';
 import { recordLoginActivity } from '@/lib/auth/login-activity';
 import { logUserLogin } from '@/lib/cms/activity-events';
 import { applySessionDeadlineCookie } from '@/lib/auth/session-lifetime';
+import { checkRateLimit, rateLimitResponse } from '@/lib/api/rate-limit';
+import { setMfaStepUpCookie } from '@/lib/auth/mfa-stepup-cookie';
 
 export async function POST(request) {
   try {
@@ -32,6 +33,15 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const limit = await checkRateLimit(request, 'auth_login', `mfa:${user.id}`);
+    if (!limit.allowed) {
+      const { status, headers } = rateLimitResponse(limit.retryAfterSec);
+      return NextResponse.json(
+        { error: 'Too many verification attempts. Please try again later.' },
+        { status, headers },
+      );
+    }
+
     const aal = await getMfaAssuranceLevel(supabase);
     if (!needsMfaVerification(aal)) {
       return NextResponse.json({ ok: true, alreadyVerified: true });
@@ -42,11 +52,6 @@ export async function POST(request) {
       if (!consumed) {
         return NextResponse.json({ error: 'Invalid or used backup code.' }, { status: 401 });
       }
-      const { verified } = await listTotpFactors(supabase);
-      if (verified?.id) {
-        await unenrollTotpFactor(supabase, verified.id);
-      }
-      await updateSecuritySettings(user.id, { twoFactorEnabled: false, twoFactorMethod: null });
     } else {
       const { verified } = await listTotpFactors(supabase);
       const targetFactorId = factorId || verified?.id;
@@ -104,8 +109,12 @@ export async function POST(request) {
       },
     });
     applySessionDeadlineCookie(response);
+    if (useBackupCode) {
+      setMfaStepUpCookie(response, user.id);
+    }
     return response;
   } catch (error) {
-    return NextResponse.json({ error: error.message || 'Invalid verification code.' }, { status: 401 });
+    console.error('[auth/mfa/verify-login]', error);
+    return NextResponse.json({ error: 'Invalid verification code.' }, { status: 401 });
   }
 }

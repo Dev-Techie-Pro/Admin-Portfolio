@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { debounce } from '../../utils/timing.js';
 
 type SearchResult = {

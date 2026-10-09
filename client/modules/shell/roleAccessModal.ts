@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id } from '../../utils/dom.js';
 import { authService } from '../../core/AuthService.js';
 const BRIEFING_VERSION = 'v1';

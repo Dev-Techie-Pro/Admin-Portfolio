@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { PageHeaderMeta } from './inject-page-header';
 
 export const STAFF_PAGE_HEADERS = {

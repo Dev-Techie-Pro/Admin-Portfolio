@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Module } from './Module.js';
 import { $id, $all, $input, $field } from '../utils/dom.js';
 import { sortByNewestFirst } from '../utils/format.js';

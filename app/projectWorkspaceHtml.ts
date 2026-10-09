@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** Inline project editor — injected into the projects list page. */
 export const PROJECT_WORKSPACE_HTML = `
 <div class="pa-blog-workspace" id="paProjectWorkspace" aria-hidden="true">

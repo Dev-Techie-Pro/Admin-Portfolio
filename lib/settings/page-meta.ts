@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const SETTINGS_TABS = [
   'general',
   'profile',

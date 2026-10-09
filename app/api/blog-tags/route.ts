@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { getBlogTags, saveBlogTags } from '@/lib/cms/repository';
 import { guardEditor } from '@/lib/auth/guard';

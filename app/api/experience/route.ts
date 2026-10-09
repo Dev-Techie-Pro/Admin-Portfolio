@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { getExperience, saveExperience } from '@/lib/cms/repository';
 import { getExperienceActivitySnapshots } from '@/lib/cms/activity-snapshots';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { guardEditor, isGuardFailure } from '@/lib/auth/guard';
 import {

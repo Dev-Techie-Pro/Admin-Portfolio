@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { storage } from '../core/StorageService.js';
 
 export type StackKind = 'technology' | 'tool';

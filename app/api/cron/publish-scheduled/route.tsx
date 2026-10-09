@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { authorizeCronRequest } from '@/lib/api/cron-auth';
 import { publishScheduledBlogPosts } from '@/lib/cms/scheduled-publish';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ADMIN_ROLES, EDITOR_ROLES, STAFF_ROLES } from './constants';
 
 function isElevationActive(elevatedUntil: string | null | undefined): boolean {

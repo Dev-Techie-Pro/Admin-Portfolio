@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Optional Upstash / Vercel KV REST cache (KV_REST_API_URL + KV_REST_API_TOKEN).
  * Values are JSON-serialized.

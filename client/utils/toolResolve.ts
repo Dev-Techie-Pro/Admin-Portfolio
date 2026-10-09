@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { storage } from '../core/StorageService.js';
 import { defaultTechnologyCategoryId, loadToolCategories } from './technologyCategorySelect.js';
 

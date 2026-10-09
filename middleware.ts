@@ -12,6 +12,7 @@ import {
   readAdminMfaOkCookie,
   setAdminMfaOkCookie,
 } from '@/lib/auth/admin-mfa-cookie';
+import { MFA_STEPUP_COOKIE, readMfaStepUpCookie } from '@/lib/auth/mfa-stepup-cookie';
 import { stripSensitiveAuthQueryParams } from '@/lib/auth/sensitive-query-params';
 
 function isPublicPath(pathname) {
@@ -40,16 +41,16 @@ export async function middleware(request) {
     }
   }
 
+  if (isPublicPath(pathname)) {
+    return NextResponse.next();
+  }
+
   const redirects = await getRuntimeRedirects();
   const redirectHit = redirects.find((row) => row.from === pathname);
   if (redirectHit) {
     const url = request.nextUrl.clone();
     url.pathname = redirectHit.to;
     return NextResponse.redirect(url, redirectHit.permanent ? 308 : 307);
-  }
-
-  if (isPublicPath(pathname)) {
-    return NextResponse.next();
   }
 
   const { supabase, supabaseResponse } = createMiddlewareClient(request);
@@ -89,6 +90,9 @@ export async function middleware(request) {
       const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       needsMfa = aal?.nextLevel === 'aal2' && aal?.currentLevel !== 'aal2';
     } catch {
+      needsMfa = false;
+    }
+    if (needsMfa && readMfaStepUpCookie(request.cookies.get(MFA_STEPUP_COOKIE)?.value, user.id)) {
       needsMfa = false;
     }
   }
@@ -147,5 +151,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|js/|images/).*)'],
 };

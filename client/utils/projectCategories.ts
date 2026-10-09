@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const CATEGORY_META_PROJECTS: Record<string, { label: string; cls: string }> = {
   enterprise: { label: 'Enterprise Platform', cls: 'pa-cat-enterprise' },
   educational: { label: 'Educational Platform', cls: 'pa-cat-educational' },

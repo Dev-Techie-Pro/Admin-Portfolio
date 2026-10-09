@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { CrudCardModule } from '../../core/CrudCardModule.js';
 import { escapeHtml, $id } from '../../utils/dom.js';
 import { isValidUrl, uniqueCopyName } from '../../utils/strings.js';

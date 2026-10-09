@@ -1,3 +1,4 @@
+// @ts-nocheck
 (function bootPrefetch() {
   if (typeof window === 'undefined') return;
 

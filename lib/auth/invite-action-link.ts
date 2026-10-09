@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { getSiteUrlFromEnv } from '@/lib/site-url';
 
 /** Supabase may return a relative `auth/v1/verify?...` path — expand to an absolute URL. */

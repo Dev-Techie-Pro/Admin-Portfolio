@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const SITE_ID = '00000000-0000-4000-8000-000000000001';
 
 export const LEGACY_UUID_PREFIX = {

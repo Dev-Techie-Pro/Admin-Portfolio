@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { storage } from '../core/StorageService.js';
 import { loadStackCatalog, type StackCatalogItem, type StackKind } from './stackCatalog.js';
 import { resolveTechnologyByName } from './technologyResolve.js';

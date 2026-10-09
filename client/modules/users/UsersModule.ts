@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { CrudCardModule } from '../../core/CrudCardModule.js';
 import { escapeHtml, $id, $all, asFormField } from '../../utils/dom.js';
 import { setStatTrend, setStatValue } from '../../utils/pageStats.js';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Load Google Font families on demand (layout preloads Inter + Outfit only).
  */

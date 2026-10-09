@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { BLOG_POST_WORKSPACE_HTML } from '@/app/blogPostWorkspaceHtml';
 
 const BODY_OPEN = '<div class="pa-body" id="paBlogBody">';

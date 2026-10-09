@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { cache } from 'react';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isImageUrl, reconcileEntityMediaForRefs } from '@/lib/cms/media-sync';

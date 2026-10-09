@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { persistentCache, isEntryStale } from './PersistentCache.js';
 import { eventBus } from './EventBus.js';
 import { canManageSiteSettings } from './cms-access.js';

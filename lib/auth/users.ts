@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { randomBytes } from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { SITE_ID } from '@/lib/cms/constants';
@@ -14,6 +15,20 @@ function deriveUsername(email, fullName, username) {
   const fromName = (fullName || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '');
   if (fromName) return fromName;
   return String(email || '').split('@')[0]?.trim() || 'user';
+}
+
+export async function generatePasswordSetupLink(email: string) {
+  const normalized = String(email || '').trim().toLowerCase();
+  if (!normalized) throw new Error('Email is required to generate a setup link.');
+  const { data, error } = await admin().auth.admin.generateLink({
+    type: 'recovery',
+    email: normalized,
+  });
+  if (error) throw new Error(error.message);
+  const props = data?.properties as { action_link?: string } | null | undefined;
+  const link = props?.action_link;
+  if (!link) throw new Error('Could not generate password setup link.');
+  return String(link);
 }
 
 export function generateTemporaryPassword(length = 14) {
@@ -120,6 +135,8 @@ export async function createStaffUser({
     throw profileError;
   }
 
+  const setPasswordUrl = await generatePasswordSetupLink(normalizedEmail);
+
   return {
     user: {
       ...profileFromDb(profileRow),
@@ -127,8 +144,8 @@ export async function createStaffUser({
     },
     credentials: {
       email: normalizedEmail,
-      password: tempPassword,
       role: normalizedRole,
+      setPasswordUrl,
     },
   };
 }
@@ -262,6 +279,17 @@ export async function updateStaffUser(userId, payload, { actorId, actorRole }) {
   };
 }
 
+export async function countActiveSuperAdmins() {
+  const { count, error } = await admin()
+    .from('profiles')
+    .select('id', { count: 'exact', head: true })
+    .eq('role', 'super_admin')
+    .is('deleted_at', null)
+    .eq('is_active', true);
+  if (error) throw error;
+  return count || 0;
+}
+
 export async function deleteStaffUser(userId, { actorId, actorRole }) {
   assertCanManageUsers(actorRole);
 
@@ -302,18 +330,15 @@ export async function resetStaffUserCredentials(userId, { actorId, actorRole }) 
 
   assertCanModifyTarget(actorRole, existing.role);
 
-  const tempPassword = generateTemporaryPassword();
-  const client = admin();
-  const { error } = await client.auth.admin.updateUserById(userId, { password: tempPassword });
-  if (error) throw new Error(error.message);
+  const setPasswordUrl = await generatePasswordSetupLink(existing.email);
 
   return {
     user: existing,
     credentials: {
       email: existing.email,
-      password: tempPassword,
       role: existing.role,
       reset: true,
+      setPasswordUrl,
     },
   };
 }

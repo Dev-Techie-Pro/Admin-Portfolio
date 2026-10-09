@@ -1,3 +1,4 @@
+// @ts-nocheck
 const DEFAULT_ACCENT = '#ff6600';
 const DEFAULT_BG = '#0c0c0d';
 

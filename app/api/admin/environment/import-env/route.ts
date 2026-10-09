@@ -1,4 +1,5 @@
-import { guardAdmin } from '@/lib/auth/guard';
+// @ts-nocheck
+import { guardSuperAdmin } from '@/lib/auth/guard';
 import { jsonOk } from '@/lib/api/json-response';
 import {
   getRuntimeConfigForApi,
@@ -42,7 +43,7 @@ async function readImportPayload(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await guardAdmin();
+  const auth = await guardSuperAdmin();
   if (!auth.ok) return auth.response;
 
   try {

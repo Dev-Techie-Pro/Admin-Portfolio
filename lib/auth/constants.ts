@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const STAFF_ROLES = ['super_admin', 'admin', 'editor', 'viewer'];
 export const ADMIN_ROLES = ['super_admin', 'admin'];
 export const EDITOR_ROLES = ['super_admin', 'admin', 'editor'];

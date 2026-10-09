@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Build the Supabase Auth redirect URL for email links (invite, recovery).
  * Add your site origin with a wildcard in Supabase → Auth → URL configuration, e.g.

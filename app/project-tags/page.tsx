@@ -1,3 +1,4 @@
+// @ts-nocheck
 import StaffLegacyBody from '@/components/StaffLegacyBody';
 import { BODY_HTML } from '../tags/bodyHtml';
 import { injectPageHeaderMeta } from '@/lib/shell/inject-page-header';

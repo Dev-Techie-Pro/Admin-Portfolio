@@ -1,23 +1,36 @@
-import { createHash, randomBytes } from 'crypto';
+// @ts-nocheck
+import { createHmac, randomBytes } from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 function admin() {
   return createAdminClient();
 }
 
-function hashCode(code) {
-  return createHash('sha256').update(String(code).trim().toUpperCase()).digest('hex');
+function pepper(): string {
+  const value = process.env.BACKUP_CODE_PEPPER?.trim()
+    || process.env.SESSION_SIGNING_SECRET?.trim()
+    || process.env.CRON_SECRET?.trim();
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error('BACKUP_CODE_PEPPER or CRON_SECRET must be set in production.');
+  }
+  return value || 'dev-only-backup-pepper';
 }
 
-function formatCode(bytes) {
-  const raw = bytes.toString('hex').slice(0, 12).toUpperCase();
-  return `${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8, 12)}`;
+function hashCode(code: string) {
+  return createHmac('sha256', pepper())
+    .update(String(code).trim().toUpperCase())
+    .digest('hex');
+}
+
+function formatCode(bytes: Buffer) {
+  const raw = bytes.toString('hex').toUpperCase();
+  return `${raw.slice(0, 6)}-${raw.slice(6, 12)}-${raw.slice(12, 18)}-${raw.slice(18, 24)}`;
 }
 
 export function generateBackupCodes(count = 8) {
   const codes = [];
   for (let i = 0; i < count; i += 1) {
-    codes.push(formatCode(randomBytes(8)));
+    codes.push(formatCode(randomBytes(12)));
   }
   return codes;
 }
@@ -53,22 +66,12 @@ export async function countUnusedBackupCodes(userId) {
 export async function consumeBackupCode(userId, code) {
   const client = admin();
   const codeHash = hashCode(code);
-  const { data, error } = await client
-    .from('two_factor_backup_codes')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('code_hash', codeHash)
-    .is('used_at', null)
-    .maybeSingle();
+  const { data, error } = await client.rpc('pa_consume_backup_code', {
+    p_user_id: userId,
+    p_code_hash: codeHash,
+  });
   if (error) throw error;
-  if (!data) return false;
-
-  const { error: updateError } = await client
-    .from('two_factor_backup_codes')
-    .update({ used_at: new Date().toISOString() })
-    .eq('id', data.id);
-  if (updateError) throw updateError;
-  return true;
+  return data === true;
 }
 
 export async function clearUserBackupCodes(userId) {

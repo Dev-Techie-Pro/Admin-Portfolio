@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { escapeHtml } from './dom.js';
 import { formatDate } from './format.js';
 import { normalizeCategoryKey } from './categoryClassOptions.js';

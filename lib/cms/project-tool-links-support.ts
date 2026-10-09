@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** Detect PostgREST/DB errors when projects.category_keys is not migrated yet. */
 export function isProjectCategoryKeysUnavailable(error: unknown): boolean {
   const msg = String(

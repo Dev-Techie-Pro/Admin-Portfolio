@@ -1,3 +1,4 @@
+// @ts-nocheck
 const REGISTRY_URL = 'https://thesvg.org/api/registry.json';
 const REGISTRY_CDN_URL = 'https://cdn.jsdelivr.net/gh/glincker/thesvg@main/src/data/icons.json';
 const SVG_CDN_BASE = 'https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons';

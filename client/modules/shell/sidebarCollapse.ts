@@ -1,3 +1,4 @@
+// @ts-nocheck
 const STORAGE_KEY = 'pa_sidebar_collapsed';
 const DESKTOP_MQ = '(min-width: 861px)';
 

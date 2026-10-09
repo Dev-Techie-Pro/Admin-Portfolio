@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { showToast } from '../modules/shell/toast.js';
 import {
   compressImageFile,

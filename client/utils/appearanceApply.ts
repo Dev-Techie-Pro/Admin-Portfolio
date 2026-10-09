@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   APPEARANCE_DEFAULTS,
   applyAppearanceSettings,

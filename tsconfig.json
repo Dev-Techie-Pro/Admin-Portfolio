@@ -26,6 +26,6 @@
     "**/*.tsx",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "public/js/vendor"]
+  "exclude": ["node_modules", "public/js/vendor", "client"]
 }
 

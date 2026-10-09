@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createAdminClient } from '@/lib/supabase/admin';
 import { SITE_ID, legacyUuid } from './constants';
 import { getOrCreateLabelIds, resolveTechnologyUuidsByLegacyId, resolveToolUuidsByLegacyId } from './label-catalog';

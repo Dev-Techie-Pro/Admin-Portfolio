@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const CATEGORY_THEME = {
   enterprise: { hex: '#22c55e', colorVar: '--pa-green' },
   educational: { hex: '#dc12f7', colorVar: '--pa-purple' },

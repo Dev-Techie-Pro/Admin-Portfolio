@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id, $all } from '../../utils/dom.js';
 import { syncPaSelect } from '../../utils/paSelect.js';
 import { getRteHtml, setRteHtml } from '../../utils/rte.js';

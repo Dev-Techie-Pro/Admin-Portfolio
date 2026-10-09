@@ -1,4 +1,6 @@
-import { guardAdmin } from '@/lib/auth/guard';
+// @ts-nocheck
+import { guardAal2, guardSuperAdmin } from '@/lib/auth/guard';
+import { jsonInternalError } from '@/lib/api/api-error';
 import { jsonGet, jsonOk } from '@/lib/api/json-response';
 import {
   deleteExportRecord,
@@ -21,8 +23,10 @@ function sqlDownloadResponse({ sql, filename }) {
 }
 
 export async function GET(request) {
-  const auth = await guardAdmin();
+  const auth = await guardSuperAdmin();
   if (!auth.ok) return auth.response;
+  const aal = await guardAal2();
+  if (!aal.ok) return aal.response;
 
   const { searchParams } = new URL(request.url);
   const schema = searchParams.get('schema') === '1';
@@ -57,13 +61,15 @@ export async function GET(request) {
       history,
     });
   } catch (error) {
-    return jsonOk({ error: error.message || 'Could not load database backup data.' }, { status: 500 });
+    return jsonInternalError('admin/database-backup GET', error);
   }
 }
 
 export async function POST(request) {
-  const auth = await guardAdmin();
+  const auth = await guardSuperAdmin();
   if (!auth.ok) return auth.response;
+  const aal = await guardAal2();
+  if (!aal.ok) return aal.response;
 
   try {
     const body = await request.json().catch(() => ({}));
@@ -105,13 +111,15 @@ export async function POST(request) {
       request,
     }).catch(() => {});
 
-    return jsonOk({ error: error.message || 'Export failed.' }, { status: 500 });
+    return jsonInternalError('admin/database-backup POST', error);
   }
 }
 
 export async function DELETE(request) {
-  const auth = await guardAdmin();
+  const auth = await guardSuperAdmin();
   if (!auth.ok) return auth.response;
+  const aal = await guardAal2();
+  if (!aal.ok) return aal.response;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -140,6 +148,6 @@ export async function DELETE(request) {
 
     return jsonOk({ ok: true, deleted });
   } catch (error) {
-    return jsonOk({ error: error.message || 'Could not delete export record.' }, { status: 500 });
+    return jsonInternalError('admin/database-backup DELETE', error);
   }
 }

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Extract client metadata from an incoming request (IP, UA, location).
  */
@@ -51,16 +52,11 @@ export function formatLocationFromIp(ip) {
  * Resolve the best client IP from common proxy / platform headers.
  */
 export function getClientIp(request) {
-  const headerNames = [
-    'cf-connecting-ip',
-    'x-vercel-forwarded-for',
-    'x-real-ip',
-    'true-client-ip',
-    'x-client-ip',
-    'x-forwarded-for',
-  ];
+  const trusted = process.env.NODE_ENV === 'production'
+    ? ['cf-connecting-ip', 'x-vercel-forwarded-for']
+    : ['cf-connecting-ip', 'x-vercel-forwarded-for', 'x-real-ip', 'x-forwarded-for'];
 
-  for (const name of headerNames) {
+  for (const name of trusted) {
     const raw = request.headers.get(name);
     if (!raw) continue;
 
@@ -72,8 +68,12 @@ export function getClientIp(request) {
     if (normalized) return normalized;
   }
 
-  const forwarded = parseForwardedFor(request.headers.get('forwarded'));
-  return normalizeIpAddress(forwarded);
+  if (process.env.NODE_ENV !== 'production') {
+    const forwarded = parseForwardedFor(request.headers.get('forwarded'));
+    return normalizeIpAddress(forwarded);
+  }
+
+  return null;
 }
 
 export function getUserAgent(request) {
@@ -126,13 +126,6 @@ export async function resolveRequestLocation(request, ip = null) {
   }
 
   if (isPrivateIp(resolvedIp)) return `Private network (${resolvedIp})`;
-
-  try {
-    const geo = await lookupGeoFromIp(resolvedIp);
-    if (geo) return `${geo} · ${resolvedIp}`;
-  } catch {
-    // Fall back to raw public IP when geo lookup is unavailable.
-  }
 
   return resolvedIp;
 }

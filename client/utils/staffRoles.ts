@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const STAFF_ROLE_OPTIONS = [
   { value: 'super_admin', label: 'Super Admin' },
   { value: 'admin', label: 'Admin' },

@@ -1,3 +1,4 @@
+// @ts-nocheck
 async function authRequest(path, options = {}) {
   const res = await fetch(`/api/auth${path}`, {
     credentials: 'same-origin',

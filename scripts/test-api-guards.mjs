@@ -38,7 +38,7 @@ for (const file of routes) {
   const rel = path.relative(apiRoot, file).replace(/\\/g, '/');
   if (allowlist.has(rel)) continue;
   const text = fs.readFileSync(file, 'utf8');
-  const protectedRoute = /\bguard(Authenticated|Staff|Admin|Editor)\b/.test(text)
+  const protectedRoute = /\bguard(Authenticated|Staff|Admin|Editor|Aal2|SuperAdmin)\b/.test(text)
     || /\bwithStaffGet\b/.test(text)
     || /\bwithEditorGet\b/.test(text)
     || (/\bgetUser\(\)/.test(text) && /Unauthorized/.test(text));

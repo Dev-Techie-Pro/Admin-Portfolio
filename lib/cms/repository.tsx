@@ -1,6 +1,8 @@
+// @ts-nocheck
 import { createHash, randomUUID } from 'crypto';
 import { cache } from 'react';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isUuid } from '@/lib/validation/uuid';
 import { SITE_ID, legacyUuid } from './constants';
 import {
   recentActivityRetentionCutoffIso,

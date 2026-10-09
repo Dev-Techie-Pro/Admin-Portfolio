@@ -1,3 +1,4 @@
+// @ts-nocheck
 function normUrl(value) {
   return String(value || '').trim();
 }

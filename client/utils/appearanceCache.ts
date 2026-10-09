@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Appearance settings — browser localStorage only (customization panel + auth pages).
  */

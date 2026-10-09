@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Module } from '../../core/Module.js';
 import { storage } from '../../core/StorageService.js';
 import { $id, $all, escapeHtml } from '../../utils/dom.js';

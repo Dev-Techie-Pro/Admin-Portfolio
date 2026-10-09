@@ -49,9 +49,8 @@ function clearDomCache() {
   _queryCache.clear();
 }
 function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str == null ? "" : String(str);
-  return div.innerHTML;
+  const s = str == null ? "" : String(str);
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/`/g, "&#96;");
 }
 function toggleClass(el, className, force) {
   el?.classList.toggle(className, force);

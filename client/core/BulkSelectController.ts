@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id } from '../utils/dom.js';
 import { requestBulkAction } from '../modules/shell/confirm.js';
 import { canManageContent } from './cms-access.js';

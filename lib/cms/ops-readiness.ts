@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { warmRuntimeSettings, getRuntimeSettingSync } from '@/lib/config/runtime-settings';

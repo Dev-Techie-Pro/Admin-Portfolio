@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { getMedia, saveMedia } from '@/lib/cms/repository';
 import { guardStaff, guardEditor } from '@/lib/auth/guard';

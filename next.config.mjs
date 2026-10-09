@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
-  reactStrictMode: false,
+  reactStrictMode: true,
   async redirects() {
     return [
       {
@@ -53,6 +53,9 @@ const nextConfig = {
         "img-src 'self' data: blob: https:",
         "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
         "frame-src https://challenges.cloudflare.com",
+        "base-uri 'self'",
+        "object-src 'none'",
+        "form-action 'self'",
       ].join('; '),
     });
     return [
@@ -89,12 +92,10 @@ const nextConfig = {
     ];
   },
   typescript: {
-    // Production builds still compile; run `npm run typecheck` in CI to track remaining errors.
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    // Run `npm run lint` in CI; keep builds unblocked during incremental cleanup.
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   webpack: (config) => {
     config.resolve.alias['@'] = __dirname;

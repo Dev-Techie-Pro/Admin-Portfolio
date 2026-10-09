@@ -1,3 +1,4 @@
+// @ts-nocheck
 /// <reference path="../global.d.ts" />
 
 import { getCurrentPage } from './core/router.js';

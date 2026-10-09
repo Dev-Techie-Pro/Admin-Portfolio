@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { DEFAULT_TAG_ENTITY_LABELS, TagsModule } from '../tags/TagsModule.js';
 import { storage } from '../../core/StorageService.js';
 

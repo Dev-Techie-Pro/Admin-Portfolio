@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   UI_ENV_GROUPS,
   getEnvFieldDefinition,

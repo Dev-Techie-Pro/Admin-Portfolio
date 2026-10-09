@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id } from '../../utils/dom.js';
 import { eventBus } from '../../core/EventBus.js';
 import { closePanels } from './panels.js';

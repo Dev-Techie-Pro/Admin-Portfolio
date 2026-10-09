@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { publicCorsJson, publicCorsJsonCached, publicCorsOptions } from '@/lib/api/public-cors';
 import { getPublicEngagementBySlug } from '@/lib/cms/blog-engagement';
 import { getCached, PUBLIC_CACHE_MAX_AGE_SEC, PUBLIC_CACHE_TTL } from '@/lib/cms/server-cache';

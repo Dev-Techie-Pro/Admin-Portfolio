@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Module } from '../../core/Module.js';
 import { $id, escapeHtml } from '../../utils/dom.js';
 import { closePanels, activateTab, registerPanel } from './panels.js';

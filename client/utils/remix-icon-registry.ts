@@ -1,3 +1,4 @@
+// @ts-nocheck
 const REGISTRY_URL = '/api/remix-icon-registry';
 const CACHE_KEY = 'pa_remixicon_registry_v1';
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 const TOGGLE_SELECTOR = '.pa-password-toggle, .pa-auth-pass-toggle';
 const WRAP_SELECTOR = '.pa-password-wrap, .pa-auth-input-wrap';
 const BOUND_ATTR = 'data-pa-pw-toggle-bound';

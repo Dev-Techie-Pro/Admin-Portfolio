@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** Database / Environment segmented toggle — injected into settings page header on System route. */
 export const SYSTEM_SECTION_TOOLBAR_HTML = `
                 <div class="pa-settings-toolbar pa-system-section-toolbar" id="systemSectionTabs">

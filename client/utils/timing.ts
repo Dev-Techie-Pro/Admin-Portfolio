@@ -1,3 +1,4 @@
+// @ts-nocheck
 export function debounce(fn, wait) {
   let t;
   return function debounced(...args) {

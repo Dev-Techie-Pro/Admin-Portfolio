@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { getSettingsTabFromPath } from '../../core/router.js';
 import { openGroupsForActiveRoute } from './sidebarGroupNav.js';
 

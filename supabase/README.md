@@ -37,16 +37,16 @@ Content is managed through the dashboard UI — demo seed migrations in the arch
 
 If you already had the 58 incremental migrations applied on a linked remote, **do not** `db push` the baseline SQL — it would try to recreate existing objects. Instead, align migration history only:
 
-```powershell
-# Preview commands
-.\scripts\migration-repair-after-baseline.ps1 -WhatIf
+Mark each archived migration version on the remote as `reverted`, then mark the baseline as `applied` (no SQL execution), for example:
 
-# Mark archived versions reverted + baseline applied (no SQL execution)
-.\scripts\migration-repair-after-baseline.ps1
-npm run db:status   # local and remote should show 20261011120000
+```bash
+supabase migration repair --status reverted 20260906120000
+# …repeat for each version listed under supabase/migrations_archive/pre_baseline_20261011/
+supabase migration repair --status applied 20261011120000
+npm run db:status
 ```
 
-If the repair script stops mid-way (CLI timeout), finish remaining `reverted` repairs for any remote versions still listed, then:
+If repair stops mid-way (CLI timeout), finish remaining `reverted` repairs for any remote versions still listed, then:
 
 ```bash
 supabase migration repair --status applied 20261011120000
@@ -148,6 +148,7 @@ Historical incremental files (now squashed into `20261011120000_portfolio_admin_
 | `20261004120000_access_elevation_role_duration.sql` | Elevation duration columns; approve sets `profiles.role` until `elevated_until` |
 | `20261005120000_public_api_hardening.sql` | `api_rate_limits` + `pa_rate_limit_allow`; drop anon `contact_messages` insert; `content_revisions`, `staff_invites` |
 | `20261006120000_remote_history_align.sql` | **No-op** placeholder for remote migration history alignment |
+| `20261006090000_remote_history_align.sql` | **No-op** (some remotes record this version; see `supabase/migrations/`) |
 | `20261007120000_normalized_tags_and_technologies.sql` | Tag catalogs, junction tables, backfill; drops legacy `project_tags` |
 | `20261009120000_project_tool_links.sql` | `project_tool_links`; extends `pa_save_projects_batch` |
 | `20261010120000_project_category_keys.sql` | `projects.category_keys` array; batch save multi-category |

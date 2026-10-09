@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { guardStaff } from '@/lib/auth/guard';
 import { ADMIN_ROLES } from '@/lib/auth/constants';

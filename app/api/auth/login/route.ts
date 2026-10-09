@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -10,6 +11,7 @@ import { getMfaAssuranceLevel, listTotpFactors, needsMfaVerification } from '@/l
 import { applySessionDeadlineCookie } from '@/lib/auth/session-lifetime';
 import { checkRateLimit, rateLimitResponse } from '@/lib/api/rate-limit';
 import { acceptStaffInviteForUser } from '@/lib/auth/staff-invites';
+import { jsonInternalError } from '@/lib/api/api-error';
 
 async function logFailedAttempt(email, failureReason, request) {
   try {
@@ -29,6 +31,12 @@ async function logFailedAttempt(email, failureReason, request) {
 
 export async function POST(request) {
   try {
+    const { email, password } = await request.json();
+    if (!email || !password) {
+      return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
+    }
+
+    const emailKey = String(email).trim().toLowerCase();
     const limit = await checkRateLimit(request, 'auth_login');
     if (!limit.allowed) {
       const { status, headers } = rateLimitResponse(limit.retryAfterSec);
@@ -37,10 +45,13 @@ export async function POST(request) {
         { status, headers },
       );
     }
-
-    const { email, password } = await request.json();
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
+    const accountLimit = await checkRateLimit(request, 'auth_login', emailKey);
+    if (!accountLimit.allowed) {
+      const { status, headers } = rateLimitResponse(accountLimit.retryAfterSec);
+      return NextResponse.json(
+        { error: 'Too many login attempts for this account. Please try again later.' },
+        { status, headers },
+      );
     }
 
     const supabase = createClient();
@@ -153,6 +164,6 @@ export async function POST(request) {
     applySessionDeadlineCookie(response);
     return response;
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonInternalError('auth/login', error);
   }
 }

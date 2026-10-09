@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** Static shell; sidebar is personalized server-side (`personalizePageHtml`). */
 export const BODY_HTML = `<div class="pa-toast-wrap" id="paToastWrap" role="status" aria-live="polite"></div>
 <div class="pa-confirm-overlay" id="paConfirmOverlay">

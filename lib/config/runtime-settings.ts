@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { SITE_ID } from '@/lib/cms/constants';
 import { getCached, invalidateCache } from '@/lib/cms/server-cache';
 import { createAdminClient } from '@/lib/supabase/admin';

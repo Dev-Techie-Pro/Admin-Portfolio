@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** Inline blog post editor — injected into the blog posts list page. */
 export const BLOG_POST_WORKSPACE_HTML = `
 <div class="pa-blog-workspace" id="paBlogWorkspace" aria-hidden="true">

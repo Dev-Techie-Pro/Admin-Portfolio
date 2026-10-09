@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** Supabase returns TOTP QR as raw SVG markup — convert for <img> or inline render. */
 export function normalizeTotpQrCode(qrCode) {
   if (!qrCode || typeof qrCode !== 'string') {

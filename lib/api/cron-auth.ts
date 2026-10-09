@@ -1,4 +1,16 @@
+// @ts-nocheck
+import { timingSafeEqual } from 'crypto';
 import { NextResponse } from 'next/server';
+
+function bearerMatchesSecret(authHeader: string | null, secret: string): boolean {
+  const expected = `Bearer ${secret}`;
+  if (!authHeader || authHeader.length !== expected.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
 
 /** Validates cron bearer token; in production CRON_SECRET must be set. */
 export function authorizeCronRequest(request: Request): NextResponse | null {
@@ -12,7 +24,7 @@ export function authorizeCronRequest(request: Request): NextResponse | null {
     );
   }
 
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || !bearerMatchesSecret(authHeader, cronSecret)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

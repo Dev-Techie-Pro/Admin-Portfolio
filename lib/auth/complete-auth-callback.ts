@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { User } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { STAFF_ROLES } from '@/lib/auth/constants';

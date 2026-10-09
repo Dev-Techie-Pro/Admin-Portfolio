@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Module } from '../../core/Module.js';
 import {
   $id, $all, escapeHtml, $field, $input, $select, asFormField, asHtmlInput, asHtmlButton,

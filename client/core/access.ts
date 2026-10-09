@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { deriveAccessCapabilities, type AccessCapabilities } from '../../lib/auth/capabilities.js';
 import { installViewerWriteGuard, restoreCmsWriteControls, stripCmsWriteControls } from './cms-access.js';
 

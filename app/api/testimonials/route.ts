@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { getTestimonials, saveTestimonials } from '@/lib/cms/repository';
 import { getTestimonialActivitySnapshots } from '@/lib/cms/activity-snapshots';

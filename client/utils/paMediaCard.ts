@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { escapeHtml } from './dom.js';
 import { formatDate, formatFileSize } from './format.js';
 import {

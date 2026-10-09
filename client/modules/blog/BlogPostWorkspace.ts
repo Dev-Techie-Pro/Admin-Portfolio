@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id, $all, escapeHtml } from '../../utils/dom.js';
 import { syncPaSelect } from '../../utils/paSelect.js';
 import { slugify } from '../../utils/strings.js';

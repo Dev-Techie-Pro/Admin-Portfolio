@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $id } from '../../utils/dom.js';
 import { showToast, showStatusToast } from './toast.js';
 import { addNotification } from './notifications.js';

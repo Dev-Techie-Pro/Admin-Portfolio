@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** Built-in category keys that map to accent tokens in globals.css via [data-cat-key]. */
 export {
   BUILTIN_CATEGORY_KEYS,

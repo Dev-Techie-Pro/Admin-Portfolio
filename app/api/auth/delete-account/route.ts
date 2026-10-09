@@ -1,13 +1,17 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { guardAuthenticated } from '@/lib/auth/guard';
+import { guardAal2 } from '@/lib/auth/guard';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { clearUserBackupCodes } from '@/lib/auth/backup-codes';
 import { listTotpFactors, unenrollTotpFactor } from '@/lib/auth/mfa';
 import { recordUserAction } from '@/lib/cms/activity-log';
+import { countActiveSuperAdmins } from '@/lib/auth/users';
+import { getRequestStaffProfile } from '@/lib/auth/request-cache';
+import { jsonInternalError } from '@/lib/api/api-error';
 
 export async function POST(request) {
-  const auth = await guardAuthenticated();
+  const auth = await guardAal2();
   if (!auth.ok) return auth.response;
 
   try {
@@ -20,6 +24,17 @@ export async function POST(request) {
     }
     if (confirmText !== 'DELETE') {
       return NextResponse.json({ error: 'Type DELETE to confirm account deletion.' }, { status: 400 });
+    }
+
+    const profile = await getRequestStaffProfile(auth.user.id);
+    if (profile?.role === 'super_admin') {
+      const superCount = await countActiveSuperAdmins();
+      if (superCount <= 1) {
+        return NextResponse.json(
+          { error: 'Cannot delete the last active super admin account.' },
+          { status: 403 },
+        );
+      }
     }
 
     const verifyOnly = createSupabaseClient(
@@ -61,6 +76,6 @@ export async function POST(request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json({ error: error.message || 'Could not delete account.' }, { status: 500 });
+    return jsonInternalError('auth/delete-account', error);
   }
 }

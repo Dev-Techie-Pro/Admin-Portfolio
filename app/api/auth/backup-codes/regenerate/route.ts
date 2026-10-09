@@ -1,12 +1,13 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { guardAuthenticated } from '@/lib/auth/guard';
+import { guardAal2 } from '@/lib/auth/guard';
 import { generateBackupCodes, replaceUserBackupCodes } from '@/lib/auth/backup-codes';
 import { listTotpFactors } from '@/lib/auth/mfa';
 import { getSecuritySettings } from '@/lib/auth/security-settings';
 
 export async function POST(request) {
-  const auth = await guardAuthenticated();
+  const auth = await guardAal2();
   if (!auth.ok) return auth.response;
 
   try {

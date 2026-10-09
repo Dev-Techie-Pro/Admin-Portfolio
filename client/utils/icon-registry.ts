@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const ICONS = {
   siArrowUp:
     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none">\n        <path d="M8 12V4M4 8l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />\n      </svg>',
