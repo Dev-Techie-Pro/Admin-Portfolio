@@ -901,7 +901,7 @@ var CustomizationModule = class extends Module {
         <i class="ri-font-size-2" aria-hidden="true"></i>
         <div class="pa-media-upload-text">Click or drag a font file here</div>
         <div class="pa-media-upload-hint">WOFF, WOFF2, TTF, OTF \u2014 Max 2MB (up to ${MAX_CUSTOM_FONTS} fonts)</div>
-        <input type="file" id="customFontFileInput" accept=".woff,.woff2,.ttf,.otf,font/woff,font/woff2,font/ttf,font/otf" hidden />
+        <input type="file" id="customFontFileInput" name="customFontFileInput" accept=".woff,.woff2,.ttf,.otf,font/woff,font/woff2,font/ttf,font/otf" hidden aria-label="Upload custom font file" />
       </div>
       <div class="custom-font-upload-list" id="customFontUploadList" aria-live="polite"></div>`;
     const fontSizeGroup = typographyPanel.querySelector(".pa-form-group.mt-8");
@@ -1744,7 +1744,7 @@ function ensureHeaderSearchInput() {
   const wrap = document.createElement("div");
   wrap.id = "paGlobalSearchWrap";
   wrap.className = "pa-search pa-global-search";
-  wrap.innerHTML = '<i class="ri-search-line" aria-hidden="true"></i><input type="search" placeholder="Search CMS\u2026" aria-label="Search CMS">';
+  wrap.innerHTML = '<i class="ri-search-line" aria-hidden="true"></i><input type="search" id="paGlobalSearchInput" name="paGlobalSearchInput" placeholder="Search CMS\u2026" aria-label="Search CMS" autocomplete="off" />';
   left.appendChild(wrap);
 }
 function bindDocumentDismiss() {
@@ -2535,19 +2535,19 @@ async function loadPageModuleClass(page) {
     case "experience":
       return (await import("./chunks/ExperienceModule-KE4E6ZO7.js")).ExperienceModule;
     case "contact-messages":
-      return (await import("./chunks/ContactMessagesModule-M4W6YCGZ.js")).ContactMessagesModule;
+      return (await import("./chunks/ContactMessagesModule-4JA6RQOT.js")).ContactMessagesModule;
     case "blog-engagement":
-      return (await import("./chunks/BlogEngagementModule-BNNEEQEY.js")).BlogEngagementModule;
+      return (await import("./chunks/BlogEngagementModule-ZVHVKBKL.js")).BlogEngagementModule;
     case "access-requests":
       return (await import("./chunks/AccessRequestsModule-DASWSRBT.js")).AccessRequestsModule;
     case "users":
       return (await import("./chunks/UsersModule-N55E7BPE.js")).UsersModule;
     case "recent-activities":
-      return (await import("./chunks/RecentActivitiesModule-5V5UJYHG.js")).RecentActivitiesModule;
+      return (await import("./chunks/RecentActivitiesModule-4YGKVLNZ.js")).RecentActivitiesModule;
     case "settings":
-      return (await import("./chunks/SettingsModule-Y2LNX46A.js")).SettingsModule;
+      return (await import("./chunks/SettingsModule-4J45KRUI.js")).SettingsModule;
     case "login":
-      return (await import("./chunks/LoginModule-4H7EA2FW.js")).LoginModule;
+      return (await import("./chunks/LoginModule-3DTGXJHB.js")).LoginModule;
     case "forgot-password":
       return (await import("./chunks/ForgotPasswordModule-2BF2VNUJ.js")).ForgotPasswordModule;
     case "reset-password":

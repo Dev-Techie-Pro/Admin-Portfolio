@@ -258,7 +258,7 @@ class RecentActivitiesModule extends Module {
     const isSelected = a.id === this.store.get("selectedId");
     const bulkMode = this.bulkSelect.isSelectMode();
     const bulkSelected = this.bulkSelect.isSelected(a.id);
-    const checkboxCell = bulkMode ? `<td style="width:36px;"><input type="checkbox" class="pa-msg-bulk-checkbox" id="paActBulkCb-${escapeHtml(a.id)}" data-select-id="${escapeHtml(a.id)}" ${bulkSelected ? "checked" : ""} aria-label="Select activity ${escapeHtml(a.actionTitle)} for bulk actions" /></td>` : "";
+    const checkboxCell = bulkMode ? `<td style="width:36px;"><input type="checkbox" class="pa-msg-bulk-checkbox" id="paActBulkCb-${escapeHtml(a.id)}" name="paActBulkCb-${escapeHtml(a.id)}" data-select-id="${escapeHtml(a.id)}" ${bulkSelected ? "checked" : ""} aria-label="Select activity ${escapeHtml(a.actionTitle)} for bulk actions" /></td>` : "";
     return `<tr class="pa-act-row ${isSelected ? "selected" : ""}${bulkSelected ? " pa-selected" : ""}" data-act-id="${escapeHtml(a.id)}">
       ${checkboxCell}
       <td>

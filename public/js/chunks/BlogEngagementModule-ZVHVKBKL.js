@@ -218,7 +218,8 @@ var BlogEngagementModule = class extends Module {
     const status = String(c.status || "pending");
     const postTitle = String(c.postTitle || "Untitled");
     const body = snippet(String(c.body || ""));
-    const check = bulkMode ? `<div class="pa-beng-card-check"><input type="checkbox" class="pa-msg-bulk-checkbox" data-select-id="${escapeHtml(id)}" ${bulkSelected ? "checked" : ""} aria-label="Select comment" /></div>` : `<div class="pa-beng-card-avatar" style="background:${avatarColor(name)};">${escapeHtml(initials(name))}</div>`;
+    const selectFieldId = `blogCommentSelect_${String(id).replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+    const check = bulkMode ? `<div class="pa-beng-card-check"><input type="checkbox" class="pa-msg-bulk-checkbox" id="${selectFieldId}" name="${selectFieldId}" data-select-id="${escapeHtml(id)}" ${bulkSelected ? "checked" : ""} aria-label="Select comment" /></div>` : `<div class="pa-beng-card-avatar" style="background:${avatarColor(name)};">${escapeHtml(initials(name))}</div>`;
     const classes = [
       "pa-beng-card",
       isSelected ? "is-selected" : "",
@@ -689,4 +690,4 @@ var BlogEngagementModule = class extends Module {
 export {
   BlogEngagementModule
 };
-//# sourceMappingURL=BlogEngagementModule-BNNEEQEY.js.map
+//# sourceMappingURL=BlogEngagementModule-ZVHVKBKL.js.map

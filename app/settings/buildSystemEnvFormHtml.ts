@@ -45,6 +45,19 @@ function renderFieldLabel(def, { uppercase = false } = {}) {
     </label>`;
 }
 
+function renderFieldGroupHeading(def, { uppercase = false } = {}) {
+  const headingId = `${envFieldId(def.key)}_label`;
+  const titleClass = uppercase ? 'pa-env-field-title pa-env-field-title--caps' : 'pa-env-field-title';
+  const popover = renderFieldHelp(def);
+  return `<div class="pa-form-label pa-env-field-label" id="${headingId}">
+      <span class="pa-env-field-label-main">
+        <span class="${titleClass}">${def.label}</span>
+        ${renderFieldTip(def)}
+      </span>
+      ${popover}
+    </div>`;
+}
+
 function renderFieldHelp(def) {
   const parts: string[] = [];
   if (def.description) {
@@ -80,22 +93,23 @@ function renderToggleField(def) {
   const popover = renderFieldHelp(def);
   const control = `
                                     <div class="pa-toggle-wrap pa-env-toggle-wrap">
-                                        <div class="pa-env-toggle-label">
+                                        <label class="pa-env-toggle-label" for="${id}">
                                             <span class="pa-toggle-label">${def.label}</span>
                                             ${renderFieldTip(def)}
                                             ${popover}
-                                        </div>
-                                        <label class="pa-toggle-switch" aria-label="${def.label}">
-                                            <input type="checkbox" class="pa-env-toggle-checkbox" data-env-toggle-key="${def.key}" />
+                                        </label>
+                                        <label class="pa-toggle-switch" for="${id}">
+                                            <input type="checkbox" class="pa-env-toggle-checkbox" id="${id}" data-env-toggle-key="${def.key}" />
                                             <span class="pa-toggle-slider"></span>
                                         </label>
                                     </div>
-                                    <input type="hidden" id="${id}" name="${def.key}" value="" />`;
+                                    <input type="hidden" class="pa-env-toggle-value" name="${def.key}" value="" />`;
   return wrapEnvFieldRow(def, control);
 }
 
 function renderChipsField(def) {
-  const label = renderFieldLabel(def, { uppercase: true });
+  const label = renderFieldGroupHeading(def, { uppercase: true });
+  const headingId = `${envFieldId(def.key)}_label`;
   const chips = (def.options || [])
     .map((opt) => {
       const chipId = `${envFieldId(def.key)}_${opt.value || 'none'}`;
@@ -107,7 +121,7 @@ function renderChipsField(def) {
     })
     .join('');
   const control = `${label}
-                                    <div class="pa-env-chip-group pa-env-chip-group--segmented" role="radiogroup" aria-label="${def.label}">
+                                    <div class="pa-env-chip-group pa-env-chip-group--segmented" role="radiogroup" aria-labelledby="${headingId}">
                                         ${chips}
                                     </div>`;
   return wrapEnvFieldRow(def, control, ' pa-env-field-row--full pa-env-field-row--chips');
@@ -258,7 +272,7 @@ export function buildSystemEnvFormHtml(): string {
                         <button class="pa-btn pa-btn-secondary flex-0-auto" type="button" id="systemEnvStepPrevBtn" data-env-step-prev disabled><i class="ri-arrow-left-s-line"></i> Previous</button>
                         <button class="pa-btn pa-btn-secondary flex-0-auto" type="button" id="systemEnvStepNextBtn" data-env-step-next>Next <i class="ri-arrow-right-s-line"></i></button>
                         <button class="pa-btn pa-btn-secondary flex-0-auto" type="button" id="systemEnvReloadBtn" data-env-finalize-action hidden disabled><i class="ri-refresh-line"></i> Reload</button>
-                        <input type="file" id="systemEnvImportFile" hidden accept=".env,.txt,text/plain,.local" />
+                        <input type="file" id="systemEnvImportFile" name="systemEnvImportFile" hidden accept=".env,.txt,text/plain,.local" />
                         <button class="pa-btn pa-btn-secondary flex-0-auto" type="button" id="systemEnvImportBtn" data-env-finalize-action hidden disabled><i class="ri-upload-2-line"></i> Import from .env file</button>
                         <button class="pa-btn pa-env-save-btn" type="submit" id="systemEnvSaveBtn" data-env-finalize-action hidden disabled><i class="ri-check-line"></i> Save Settings</button>
                     </div>

@@ -105,12 +105,12 @@ export class LoginModule extends AuthModule {
         <label class="pa-form-label" for="paMfaCode">Authenticator code</label>
         <div class="pa-auth-input-wrap">
           <i class="ri-shield-keyhole-line pa-auth-input-icon" aria-hidden="true"></i>
-          <input class="pa-form-input" id="paMfaCode" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="Enter 6-digit code" />
+          <input class="pa-form-input" id="paMfaCode" name="totp" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="Enter 6-digit code" />
         </div>
         <div class="pa-form-hint"><i class="ri-information-line"></i> Open your authenticator app to get the verification code.</div>
       </div>
       <label class="pa-auth-check mt-8" for="paMfaUseBackup">
-        <input type="checkbox" id="paMfaUseBackup" />
+        <input type="checkbox" id="paMfaUseBackup" name="useBackup" />
         <span class="pa-auth-check-box"><i class="ri-check-line"></i></span>
         Use a backup code instead
       </label>

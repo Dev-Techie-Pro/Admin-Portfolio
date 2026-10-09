@@ -191,10 +191,11 @@ var ContactMessagesModule = class extends Module {
     const bulkMode = this.bulkSelect.isSelectMode();
     const bulkSelected = this.bulkSelect.isSelected(m.id);
     let cells = "";
+    const selectFieldId = `contactMsgSelect_${String(m.id).replace(/[^a-zA-Z0-9_-]/g, "_")}`;
     if (bulkMode) {
-      cells += `<td style="width:36px;"><input type="checkbox" class="pa-msg-bulk-checkbox" data-select-id="${m.id}" ${bulkSelected ? "checked" : ""} aria-label="Select message from ${escapeHtml(m.name)} for bulk actions" /></td>`;
+      cells += `<td style="width:36px;"><input type="checkbox" class="pa-msg-bulk-checkbox" id="${selectFieldId}" name="${selectFieldId}" data-select-id="${m.id}" ${bulkSelected ? "checked" : ""} aria-label="Select message from ${escapeHtml(m.name)} for bulk actions" /></td>`;
     } else {
-      cells += `<td style="width:36px;"><input type="checkbox" class="pa-msg-checkbox" data-msg-id="${m.id}" ${isSelected ? "checked" : ""} aria-label="Select message from ${escapeHtml(m.name)}" /></td>`;
+      cells += `<td style="width:36px;"><input type="checkbox" class="pa-msg-checkbox" id="${selectFieldId}" name="${selectFieldId}" data-msg-id="${m.id}" ${isSelected ? "checked" : ""} aria-label="Select message from ${escapeHtml(m.name)}" /></td>`;
     }
     cells += `<td><div class="pa-msg-from"><div class="pa-msg-avatar" style="background:${color};">${escapeHtml(initials)}</div><div style="min-width:0;"><div class="pa-msg-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(m.name)}</div><div class="pa-msg-email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(m.email)}</div></div></div></td>`;
     cells += `<td class="pa-msg-subject-col"><div class="pa-msg-subject">${escapeHtml(m.subject)}</div><div class="pa-msg-snippet">${escapeHtml(m.snippet)}</div></td>`;
@@ -947,4 +948,4 @@ var ContactMessagesModule = class extends Module {
 export {
   ContactMessagesModule
 };
-//# sourceMappingURL=ContactMessagesModule-M4W6YCGZ.js.map
+//# sourceMappingURL=ContactMessagesModule-4JA6RQOT.js.map

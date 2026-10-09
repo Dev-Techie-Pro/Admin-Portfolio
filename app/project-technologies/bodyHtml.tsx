@@ -22,7 +22,7 @@ export const BODY_HTML = `<div class="pa-toast-wrap" id="paToastWrap" role="stat
         <div class="pa-header-top-left">
           <div class="pa-search" id="paSearchWrap">
             <i class="ri-search-line"></i>
-            <input type="text" placeholder="Search technologies…" id="paSearchInput" aria-label="Search technologies" />
+            <input type="text" placeholder="Search technologies…" id="paSearchInput" aria-label="Search technologies" / name="paSearchInput">
             <button class="pa-search-clear" id="paSearchClear" aria-label="Clear search">
               <i class="ri-close-line"></i>
             </button>
@@ -156,12 +156,12 @@ export const BODY_HTML = `<div class="pa-toast-wrap" id="paToastWrap" role="stat
           <button class="pa-view-btn active" id="paGridViewBtn" title="Grid view" aria-label="Grid view"><i class="ri-layout-grid-fill"></i></button>
           <button class="pa-view-btn" id="paListViewBtn" title="List view" aria-label="List view"><i class="ri-list-unordered"></i></button>
         </div>
-        <select class="pa-filter-select" id="paProjTechUsageFilter" aria-label="Filter by usage">
+        <select class="pa-filter-select" id="paProjTechUsageFilter" aria-label="Filter by usage" name="paProjTechUsageFilter">
           <option value="all">All skills</option>
           <option value="used">Used on projects</option>
           <option value="unused">Unused</option>
         </select>
-        <select class="pa-filter-select" id="paProjTechSortFilter" aria-label="Sort technologies">
+        <select class="pa-filter-select" id="paProjTechSortFilter" aria-label="Sort technologies" name="paProjTechSortFilter">
           <option value="name">Name (A–Z)</option>
           <option value="count-desc">Most projects</option>
           <option value="count-asc">Fewest projects</option>

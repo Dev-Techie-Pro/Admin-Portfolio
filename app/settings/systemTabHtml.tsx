@@ -44,12 +44,12 @@ export const SYSTEM_TAB_HTML = `
                                 <div class="pa-bkp-table-toolbar">
                                     <div class="pa-search pa-bkp-table-search">
                                         <i class="ri-search-line"></i>
-                                        <input type="search" id="systemTableSearch" placeholder="Search tables…" aria-label="Search tables" autocomplete="off" />
+                                        <input type="search" id="systemTableSearch" name="systemTableSearch" placeholder="Search tables…" aria-label="Search tables" autocomplete="off" />
                                     </div>
-                                    <select class="pa-filter-select pa-bkp-size-filter" id="systemTableCategoryFilter" aria-label="Filter by category">
+                                    <select class="pa-filter-select pa-bkp-size-filter" id="systemTableCategoryFilter" name="systemTableCategoryFilter" aria-label="Filter by category">
                                         <option value="all">All Categories</option>
                                     </select>
-                                    <select class="pa-filter-select pa-bkp-size-filter" id="systemTableSizeFilter" aria-label="Filter by size">
+                                    <select class="pa-filter-select pa-bkp-size-filter" id="systemTableSizeFilter" name="systemTableSizeFilter" aria-label="Filter by size">
                                         <option value="all">All Sizes</option>
                                         <option value="small">Small (&lt; 100 KB)</option>
                                         <option value="medium">Medium (100 KB – 1 MB)</option>
@@ -74,7 +74,7 @@ export const SYSTEM_TAB_HTML = `
                                                 <tr>
                                                     <th class="pa-bkp-col-check" scope="col">
                                                         <label class="pa-bkp-table-picker-master">
-                                                            <input type="checkbox" class="pa-msg-bulk-checkbox" id="systemTableMasterCheck" aria-label="Select all visible tables" />
+                                                            <input type="checkbox" class="pa-msg-bulk-checkbox" id="systemTableMasterCheck" name="systemTableMasterCheck" aria-label="Select all visible tables" />
                                                         </label>
                                                     </th>
                                                     <th scope="col">Table Name</th>
@@ -93,7 +93,7 @@ export const SYSTEM_TAB_HTML = `
                                     <div class="pa-pagination pa-bkp-pagination">
                                         <div class="pa-bkp-page-size">
                                             <label class="pa-text-mute fs-sm" for="systemTablePageSize">Rows per page:</label>
-                                            <select class="pa-filter-select pa-bkp-page-size-select" id="systemTablePageSize" aria-label="Rows per page">
+                                            <select class="pa-filter-select pa-bkp-page-size-select" id="systemTablePageSize" name="systemTablePageSize" aria-label="Rows per page">
                                                 <option value="10" selected>10</option>
                                                 <option value="20">20</option>
                                                 <option value="50">50</option>

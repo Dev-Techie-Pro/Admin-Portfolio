@@ -64,7 +64,7 @@ export const PROJECT_WORKSPACE_HTML = `
 
       <div class="pa-form-group pa-blog-ws-field pa-blog-ws-content-field">
         <div class="pa-blog-ws-content-label-row">
-          <label class="pa-form-label">Full Description <span class="pa-form-required">*</span></label>
+          <label class="pa-form-label" for="projWsFullDesc">Full Description <span class="pa-form-required">*</span></label>
         </div>
         <div class="pa-blog-ws-preview-pane" id="paProjWsPreviewPane" hidden>
           <div class="pa-blog-ws-preview-inner pa-rte-body" id="paProjWsPreviewContent"></div>
@@ -128,7 +128,7 @@ export const PROJECT_WORKSPACE_HTML = `
         </button>
         <div class="pa-blog-ws-panel-body pa-collapse-panel" data-pa-collapse-panel>
           <div class="pa-form-group">
-            <label class="pa-form-label">Tools &amp; Technologies <span class="pa-form-required">*</span></label>
+            <label class="pa-form-label" for="projWsTechInput">Tools &amp; Technologies <span class="pa-form-required">*</span></label>
             <div class="pa-tech-suggest">
               <div class="pa-tech-input-wrap">
                 <input class="pa-tech-input" type="text" placeholder="Search tools and technologies…" id="projWsTechInput" autocomplete="off" />
@@ -140,7 +140,7 @@ export const PROJECT_WORKSPACE_HTML = `
             <div class="pa-form-error-msg" id="projWsTechError"><i class="ri-error-warning-line"></i> Add at least one tool or technology</div>
           </div>
           <div class="pa-form-group">
-            <label class="pa-form-label">Tags</label>
+            <label class="pa-form-label" for="projWsTagInput">Tags</label>
             <div class="pa-tech-input-wrap">
               <input class="pa-tech-input" type="text" placeholder="Add tags…" id="projWsTagInput" />
               <button class="pa-tech-add-btn" type="button" id="projWsTagAddBtn">+ Add</button>
@@ -158,14 +158,14 @@ export const PROJECT_WORKSPACE_HTML = `
         <div class="pa-blog-ws-panel-body pa-collapse-panel" data-pa-collapse-panel>
           <div class="pa-form-group">
             <div class="pa-form-label-row">
-              <label class="pa-form-label">Featured image</label>
+              <label class="pa-form-label" for="projWsFeaturedFile">Featured image</label>
               <button type="button" class="pa-btn pa-btn-cancel pa-btn-sm" id="projWsFeaturedPickBtn"><i class="ri-image-add-line"></i> Media library</button>
             </div>
             <div class="pa-media-upload" id="projWsMediaUpload">
               <i class="ri-upload-cloud-2-line"></i>
               <div class="pa-media-upload-text">Upload images or drag &amp; drop</div>
               <div class="pa-media-upload-hint">PNG, JPG, WebP up to 5MB</div>
-              <input type="file" id="projWsFeaturedFile" accept="image/png,image/jpeg,image/webp" />
+              <input type="file" id="projWsFeaturedFile" name="projWsFeaturedFile" accept="image/png,image/jpeg,image/webp" aria-label="Featured image upload" />
             </div>
             <div id="projWsFeaturedPreviewWrap"></div>
           </div>
@@ -175,14 +175,14 @@ export const PROJECT_WORKSPACE_HTML = `
           </div>
           <div class="pa-form-group">
             <div class="pa-form-label-row">
-              <label class="pa-form-label">Gallery images</label>
+              <label class="pa-form-label" for="projWsGalleryFile">Gallery images</label>
               <button type="button" class="pa-btn pa-btn-cancel pa-btn-sm" id="projWsGalleryPickBtn"><i class="ri-image-add-line"></i> Media library</button>
             </div>
             <div class="pa-media-upload" id="projWsGalleryUpload">
               <i class="ri-gallery-line"></i>
               <div class="pa-media-upload-text">Upload multiple screenshots</div>
               <div class="pa-media-upload-hint">PNG, JPG, WebP up to 5MB each</div>
-              <input type="file" id="projWsGalleryFile" accept="image/png,image/jpeg,image/webp" multiple />
+              <input type="file" id="projWsGalleryFile" name="projWsGalleryFile" accept="image/png,image/jpeg,image/webp" multiple aria-label="Gallery images upload" />
             </div>
             <div class="pa-gallery-grid" id="projWsGalleryGrid"></div>
           </div>

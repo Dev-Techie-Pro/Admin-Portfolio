@@ -140,7 +140,7 @@ class CustomizationModule extends Module {
         <i class="ri-font-size-2" aria-hidden="true"></i>
         <div class="pa-media-upload-text">Click or drag a font file here</div>
         <div class="pa-media-upload-hint">WOFF, WOFF2, TTF, OTF \u2014 Max 2MB (up to ${MAX_CUSTOM_FONTS} fonts)</div>
-        <input type="file" id="customFontFileInput" accept=".woff,.woff2,.ttf,.otf,font/woff,font/woff2,font/ttf,font/otf" hidden />
+        <input type="file" id="customFontFileInput" name="customFontFileInput" accept=".woff,.woff2,.ttf,.otf,font/woff,font/woff2,font/ttf,font/otf" hidden aria-label="Upload custom font file" />
       </div>
       <div class="custom-font-upload-list" id="customFontUploadList" aria-live="polite"></div>`;
     const fontSizeGroup = typographyPanel.querySelector(".pa-form-group.mt-8");

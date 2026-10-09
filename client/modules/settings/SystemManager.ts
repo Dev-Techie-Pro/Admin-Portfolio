@@ -683,10 +683,16 @@ export class SystemManager {
     this.focusTable(name);
   }
 
+  tableCheckboxDomId(tableName: string) {
+    const slug = String(tableName).replace(/[^a-zA-Z0-9_-]/g, '_');
+    return `systemTableSelect_${slug}`;
+  }
+
   renderTableCheckbox(tableName, selected, mode = 'grid') {
     const safeName = escapeHtml(tableName);
+    const inputId = this.tableCheckboxDomId(tableName);
     if (mode === 'list') {
-      return `<input type="checkbox" class="pa-msg-bulk-checkbox" data-table-select data-table-name="${safeName}" ${selected ? 'checked' : ''} aria-label="Include ${safeName}" />`;
+      return `<input type="checkbox" class="pa-msg-bulk-checkbox" id="${inputId}" name="${inputId}" data-table-select data-table-name="${safeName}" ${selected ? 'checked' : ''} aria-label="Include ${safeName}" />`;
     }
     return `<div class="pa-select-checkbox${selected ? ' selected' : ''}" data-table-select data-table-name="${safeName}" role="checkbox" aria-checked="${selected}" aria-label="Include ${safeName}" tabindex="0"><i class="${selected ? 'ri-checkbox-fill' : 'ri-checkbox-blank-line'}"></i></div>`;
   }
@@ -1247,7 +1253,16 @@ export class SystemManager {
   getEnvFormField(key) {
     const form = $id('systemEnvForm');
     if (!form) return null;
-    return form.querySelector(`[name="${key}"]`) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+    if (ENV_TOGGLE_KEYS.has(key)) {
+      return form.querySelector(
+        `input.pa-env-toggle-value[name="${key}"]`,
+      ) as HTMLInputElement | null;
+    }
+    return form.querySelector(`[name="${key}"]`) as
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | HTMLSelectElement
+      | null;
   }
 
   bindEnvTimeline(form: HTMLElement) {

@@ -81,7 +81,8 @@ function ensureHeaderSearchInput() {
   const wrap = document.createElement('div');
   wrap.id = 'paGlobalSearchWrap';
   wrap.className = 'pa-search pa-global-search';
-  wrap.innerHTML = '<i class="ri-search-line" aria-hidden="true"></i><input type="search" placeholder="Search CMS…" aria-label="Search CMS">';
+  wrap.innerHTML =
+    '<i class="ri-search-line" aria-hidden="true"></i><input type="search" id="paGlobalSearchInput" name="paGlobalSearchInput" placeholder="Search CMS…" aria-label="Search CMS" autocomplete="off" />';
   left.appendChild(wrap);
 }
 

@@ -223,8 +223,9 @@ export class BlogEngagementModule extends Module {
     const postTitle = String(c.postTitle || 'Untitled');
     const body = snippet(String(c.body || ''));
 
+    const selectFieldId = `blogCommentSelect_${String(id).replace(/[^a-zA-Z0-9_-]/g, '_')}`;
     const check = bulkMode
-      ? `<div class="pa-beng-card-check"><input type="checkbox" class="pa-msg-bulk-checkbox" data-select-id="${escapeHtml(id)}" ${bulkSelected ? 'checked' : ''} aria-label="Select comment" /></div>`
+      ? `<div class="pa-beng-card-check"><input type="checkbox" class="pa-msg-bulk-checkbox" id="${selectFieldId}" name="${selectFieldId}" data-select-id="${escapeHtml(id)}" ${bulkSelected ? 'checked' : ''} aria-label="Select comment" /></div>`
       : `<div class="pa-beng-card-avatar" style="background:${avatarColor(name)};">${escapeHtml(initials(name))}</div>`;
 
     const classes = [

@@ -36,7 +36,7 @@ export const BLOG_POST_WORKSPACE_HTML = `
 
       <div class="pa-form-group pa-blog-ws-field pa-blog-ws-content-field">
         <div class="pa-blog-ws-content-label-row">
-          <label class="pa-form-label">Content <span class="pa-form-required">*</span></label>
+          <label class="pa-form-label" for="blogWsContent">Content <span class="pa-form-required">*</span></label>
         </div>
         <div class="pa-blog-ws-preview-pane" id="paBlogWsPreviewPane" hidden>
           <div class="pa-blog-ws-preview-inner pa-rte-body" id="paBlogWsPreviewContent"></div>
@@ -109,7 +109,7 @@ export const BLOG_POST_WORKSPACE_HTML = `
             <input class="pa-form-input" type="number" min="0" id="blogWsSortOrder" placeholder="0" />
           </div>
           <div class="pa-form-group">
-            <label class="pa-form-label">Portfolio preview</label>
+            <span class="pa-form-label">Portfolio preview</span>
             <p class="pa-text-mute fs-sm mb-8">Signed link for draft posts (expires in 1 hour). Use on your portfolio site via <code>GET /api/public/preview?token=…</code>.</p>
             <button type="button" class="pa-btn pa-btn-secondary pa-btn-sm w-full" id="paBlogWsCopyPreviewLinkBtn"><i class="ri-link"></i> Copy preview API URL</button>
           </div>
@@ -133,7 +133,7 @@ export const BLOG_POST_WORKSPACE_HTML = `
             <div class="pa-form-error-msg" id="blogWsExcerptError"><i class="ri-error-warning-line"></i> Excerpt is required</div>
           </div>
           <div class="pa-form-group">
-            <label class="pa-form-label">Tags</label>
+            <label class="pa-form-label" for="blogWsTagInput">Tags</label>
             <div class="pa-tech-input-wrap">
               <input class="pa-tech-input" type="text" placeholder="Add tags…" id="blogWsTagInput" />
               <button class="pa-tech-add-btn" type="button" id="blogWsTagAddBtn">+ Add</button>
@@ -151,14 +151,14 @@ export const BLOG_POST_WORKSPACE_HTML = `
         <div class="pa-blog-ws-panel-body pa-collapse-panel" data-pa-collapse-panel>
           <div class="pa-form-group">
             <div class="pa-form-label-row">
-              <label class="pa-form-label">Featured image</label>
+              <label class="pa-form-label" for="blogWsImageFileInput">Featured image</label>
               <button type="button" class="pa-btn pa-btn-cancel pa-btn-sm" id="blogWsFeaturedPickBtn"><i class="ri-image-add-line"></i> Media library</button>
             </div>
             <div class="pa-media-upload" id="blogWsImageDropzone">
               <i class="ri-upload-cloud-2-line"></i>
               <div class="pa-media-upload-text">Upload images or drag &amp; drop</div>
               <div class="pa-media-upload-hint">PNG, JPG, WebP up to 5MB</div>
-              <input type="file" id="blogWsImageFileInput" accept="image/png,image/jpeg,image/webp" />
+              <input type="file" id="blogWsImageFileInput" name="blogWsImageFileInput" accept="image/png,image/jpeg,image/webp" aria-label="Featured image upload" />
             </div>
             <div class="pa-media-preview" id="blogWsImagePreviewWrap" style="display:none;">
               <img id="blogWsImagePreviewImg" src="" alt="" />
