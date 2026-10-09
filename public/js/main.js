@@ -2545,7 +2545,7 @@ async function loadPageModuleClass(page) {
     case "recent-activities":
       return (await import("./chunks/RecentActivitiesModule-5V5UJYHG.js")).RecentActivitiesModule;
     case "settings":
-      return (await import("./chunks/SettingsModule-A27ENEXX.js")).SettingsModule;
+      return (await import("./chunks/SettingsModule-SM4XRDZ3.js")).SettingsModule;
     case "login":
       return (await import("./chunks/LoginModule-4H7EA2FW.js")).LoginModule;
     case "forgot-password":

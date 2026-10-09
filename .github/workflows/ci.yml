@@ -8,8 +8,6 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    env:
-      NODE_ENV: development
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

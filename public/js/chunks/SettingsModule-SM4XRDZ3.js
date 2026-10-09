@@ -944,7 +944,7 @@ var SystemManager = class {
         { ok: ops.migrationPublicApiHardening, label: "Public API hardening migration (rate limits + contact API)" },
         { ok: ops.cronSecretConfigured, label: "CRON_SECRET configured (host env)" },
         { ok: ops.portfolioOriginsConfigured, label: "PORTFOLIO_PUBLIC_ORIGINS or portfolio URL (host env)" },
-        { ok: ops.previewTokenSecretConfigured, label: "PREVIEW_TOKEN_SECRET or CRON_SECRET (host env)" },
+        { ok: ops.previewTokenSecretConfigured, label: "PREVIEW_TOKEN_SECRET (host env, required in production)" },
         { ok: ops.turnstileConfigured, label: "Turnstile keys (System \u2192 Environment)" }
       ];
       const checkHtml = checks.map((row) => {
@@ -2968,4 +2968,4 @@ var SettingsModule = class extends Module {
 export {
   SettingsModule
 };
-//# sourceMappingURL=SettingsModule-A27ENEXX.js.map
+//# sourceMappingURL=SettingsModule-SM4XRDZ3.js.map
