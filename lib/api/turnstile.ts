@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { warmRuntimeSettings, getRuntimeSettingSync } from '@/lib/config/runtime-settings';
 
 export async function verifyTurnstileToken(token: string | null | undefined, remoteIp?: string | null) {

@@ -1,13 +1,13 @@
-// @ts-nocheck
 import { publicCorsJson, publicCorsOptions } from '@/lib/api/public-cors';
 import { checkRateLimit, rateLimitResponse } from '@/lib/api/rate-limit';
 import { togglePublicLike } from '@/lib/cms/blog-engagement';
+import { publicRouteError } from '@/lib/api/public-route-error';
 
-export async function OPTIONS(request) {
+export async function OPTIONS(request: Request) {
   return publicCorsOptions(request);
 }
 
-export async function POST(request, { params }) {
+export async function POST(request: Request, { params }: { params: { slug?: string } }) {
   const limit = await checkRateLimit(request, 'public_blog_like', params?.slug);
   if (!limit.allowed) {
     const { status, headers } = rateLimitResponse(limit.retryAfterSec);
@@ -27,6 +27,6 @@ export async function POST(request, { params }) {
     }
     return publicCorsJson(request, result);
   } catch (error) {
-    return publicCorsJson(request, { error: error.message }, { status: 500 });
+    return publicRouteError(request, 'public/blog/likes', error);
   }
 }

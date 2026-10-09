@@ -23,6 +23,9 @@
     "lib/auth/backup-codes.ts",
     "lib/validation/uuid.ts",
     "lib/validation/contact.ts",
+    "lib/validation/sanitize-html.ts",
+    "lib/api/public-route-error.ts",
+    "lib/api/api-error.ts",
     "lib/auth/request-cache.tsx",
     "lib/auth/guard.ts",
     "lib/site-url.ts",
@@ -31,6 +34,11 @@
     "app/api/public/config/route.ts",
     "app/api/public/sitemap/route.ts",
     "app/api/public/rss/route.ts",
+    "app/api/admin/environment/route.ts",
+    "app/api/admin/environment/import-env/route.ts",
+    "app/api/public/blog/[slug]/comments/route.ts",
+    "app/api/public/blog/[slug]/engagement/route.ts",
+    "app/api/public/blog/[slug]/likes/route.ts",
     "middleware.ts"
   ]
 }

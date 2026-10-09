@@ -1,13 +1,13 @@
-// @ts-nocheck
 import { publicCorsJson, publicCorsJsonCached, publicCorsOptions } from '@/lib/api/public-cors';
 import { getPublicEngagementBySlug } from '@/lib/cms/blog-engagement';
 import { getCached, PUBLIC_CACHE_MAX_AGE_SEC, PUBLIC_CACHE_TTL } from '@/lib/cms/server-cache';
+import { publicRouteError } from '@/lib/api/public-route-error';
 
-export async function OPTIONS(request) {
+export async function OPTIONS(request: Request) {
   return publicCorsOptions(request);
 }
 
-export async function GET(request, { params }) {
+export async function GET(request: Request, { params }: { params: { slug?: string } }) {
   try {
     const slug = decodeURIComponent(params.slug || '').trim();
     if (!slug) {
@@ -28,6 +28,6 @@ export async function GET(request, { params }) {
       PUBLIC_CACHE_MAX_AGE_SEC.publicEngagement,
     );
   } catch (error) {
-    return publicCorsJson(request, { error: error.message }, { status: 500 });
+    return publicRouteError(request, 'public/blog/engagement', error);
   }
 }

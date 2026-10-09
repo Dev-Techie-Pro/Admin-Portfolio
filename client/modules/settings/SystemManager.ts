@@ -579,6 +579,7 @@ export class SystemManager {
         { ok: ops.portfolioOriginsConfigured, label: 'PORTFOLIO_PUBLIC_ORIGINS or portfolio URL (host env)' },
         { ok: ops.previewTokenSecretConfigured, label: 'PREVIEW_TOKEN_SECRET (host env, required in production)' },
         { ok: ops.turnstileConfigured, label: 'Turnstile keys (System → Environment)' },
+        { ok: ops.kvRestConfigured, label: 'KV_REST_API_* (host env, recommended at scale)' },
       ];
       const checkHtml = checks.map((row) => {
         const icon = row.ok ? 'ri-checkbox-circle-fill pa-system-ops-ok' : 'ri-error-warning-fill pa-system-ops-warn';

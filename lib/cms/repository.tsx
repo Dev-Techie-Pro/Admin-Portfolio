@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'crypto';
 import { cache } from 'react';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isUuid } from '@/lib/validation/uuid';
+import { sanitizeCmsHtml } from '@/lib/validation/sanitize-html';
 import { SITE_ID, legacyUuid } from './constants';
 import {
   recentActivityRetentionCutoffIso,
@@ -1140,7 +1141,7 @@ function blogFromDb(row, tags = []) {
     title: row.title,
     slug: row.slug,
     excerpt: row.excerpt,
-    content: row.content,
+    content: sanitizeCmsHtml(row.content),
     category: row.category_key,
     tags: mapBlogTagRows(tags),
     status: row.status,
@@ -1252,7 +1253,15 @@ async function saveBlogPostsLegacy(records) {
   }
 }
 
+function sanitizeBlogPostRecords(records) {
+  return (records || []).map((p) => ({
+    ...p,
+    content: sanitizeCmsHtml(p.content),
+  }));
+}
+
 export async function saveBlogPosts(records, { reconcileMedia = true } = {}) {
+  const safeRecords = sanitizeBlogPostRecords(records);
   const sb = supabase();
   const { data: existing, error: fetchError } = await sb
     .from('blog_posts')
@@ -1261,13 +1270,13 @@ export async function saveBlogPosts(records, { reconcileMedia = true } = {}) {
   if (fetchError) throw fetchError;
 
   if (!(await cmsBatchWritesEnabled())) {
-    await saveBlogPostsLegacy(records);
+    await saveBlogPostsLegacy(safeRecords);
   } else {
-    await saveBlogPostsBatch(records, existing || []);
+    await saveBlogPostsBatch(safeRecords, existing || []);
   }
 
   if (reconcileMedia) {
-    await reconcileEntityMediaForRefs(collectBlogMediaRefs(records));
+    await reconcileEntityMediaForRefs(collectBlogMediaRefs(safeRecords));
   }
   invalidateCmsReadCaches();
 }

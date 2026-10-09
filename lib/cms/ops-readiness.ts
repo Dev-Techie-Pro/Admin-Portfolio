@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { warmRuntimeSettings, getRuntimeSettingSync } from '@/lib/config/runtime-settings';
@@ -10,6 +9,7 @@ export type OpsReadinessReport = {
   portfolioOriginsConfigured: boolean;
   previewTokenSecretConfigured: boolean;
   turnstileConfigured: boolean;
+  kvRestConfigured: boolean;
   warnings: string[];
 };
 
@@ -99,6 +99,15 @@ export async function getOpsReadinessReport(): Promise<OpsReadinessReport> {
     warnings.push('Turnstile keys are not set in System → Environment (recommended for public forms).');
   }
 
+  const kvRestConfigured = Boolean(
+    process.env.KV_REST_API_URL?.trim() && process.env.KV_REST_API_TOKEN?.trim(),
+  );
+  if (process.env.NODE_ENV === 'production' && !kvRestConfigured) {
+    warnings.push(
+      'KV_REST_API_URL / KV_REST_API_TOKEN are not set — per-instance cache only (consider Upstash/Vercel KV at scale).',
+    );
+  }
+
   return {
     migrationPublicApiHardening,
     contactMessagesAnonInsertBlocked,
@@ -106,6 +115,7 @@ export async function getOpsReadinessReport(): Promise<OpsReadinessReport> {
     portfolioOriginsConfigured,
     previewTokenSecretConfigured,
     turnstileConfigured,
+    kvRestConfigured,
     warnings,
   };
 }

@@ -12,6 +12,26 @@ const CLIENT_ROOT = path.resolve('client');
 const OUT_DIR = path.resolve('public/js');
 const CHUNKS_DIR = path.join(OUT_DIR, 'chunks');
 const MAIN_ENTRY = path.join(CLIENT_ROOT, 'main.ts');
+const VENDOR_DIR = path.join(OUT_DIR, 'vendor');
+
+/** Browser vendor assets (not bundled into ESM chunks). */
+const VENDOR_COPIES = [
+  {
+    from: path.resolve('node_modules/apexcharts/dist/apexcharts.min.js'),
+    to: path.join(VENDOR_DIR, 'apexcharts.min.js'),
+  },
+];
+
+function copyVendorAssets() {
+  fs.mkdirSync(VENDOR_DIR, { recursive: true });
+  for (const { from, to } of VENDOR_COPIES) {
+    if (!fs.existsSync(from)) {
+      console.error(`Missing vendor source: ${from} (run npm install)`);
+      process.exit(1);
+    }
+    fs.copyFileSync(from, to);
+  }
+}
 
 /** esbuild code-splitting uses content hashes; without cleanup, old chunks accumulate and can ship stale module code. */
 const cleanSplitChunksPlugin = {
@@ -58,6 +78,8 @@ if (!allTs.length) {
 }
 
 async function buildAll() {
+  copyVendorAssets();
+
   if (standaloneEntries.length) {
     await esbuild.build({
       ...SHARED_BUILD,

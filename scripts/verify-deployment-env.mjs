@@ -24,6 +24,8 @@ const prodRecommended = [
   'PREVIEW_TOKEN_SECRET',
 ];
 
+const prodScaleRecommended = ['KV_REST_API_URL', 'KV_REST_API_TOKEN'];
+
 const warnings = [];
 const errors = [];
 
@@ -45,6 +47,30 @@ if (isProd) {
   if (!process.env.CRON_SECRET?.trim()) {
     errors.push('CRON_SECRET is required in production for /api/cron/*');
   }
+  if (!process.env.PREVIEW_TOKEN_SECRET?.trim()) {
+    if (strict) errors.push('PREVIEW_TOKEN_SECRET is required when VERIFY_DEPLOYMENT_STRICT=1');
+    else warnings.push('Recommended in production: PREVIEW_TOKEN_SECRET');
+  }
+  const portfolioOk = Boolean(
+    process.env.PORTFOLIO_PUBLIC_ORIGINS?.trim() || process.env.NEXT_PUBLIC_PORTFOLIO_URL?.trim(),
+  );
+  if (!portfolioOk) {
+    if (strict) {
+      errors.push('PORTFOLIO_PUBLIC_ORIGINS or NEXT_PUBLIC_PORTFOLIO_URL is required in strict production checks');
+    }
+  }
+  const kvUrl = process.env.KV_REST_API_URL?.trim();
+  const kvToken = process.env.KV_REST_API_TOKEN?.trim();
+  if (!kvUrl || !kvToken) {
+    const msg = 'KV_REST_API_URL and KV_REST_API_TOKEN (shared cache across serverless instances)';
+    if (strict) warnings.push(`Recommended for production scale: ${msg}`);
+    else warnings.push(`Optional at low traffic; recommended at scale: ${msg}`);
+  }
+}
+
+const vendorApex = path.join(root, 'public', 'js', 'vendor', 'apexcharts.min.js');
+if (!fs.existsSync(vendorApex)) {
+  warnings.push('public/js/vendor/apexcharts.min.js is missing — run npm run build:client');
 }
 
 const checklist = path.join(root, 'docs', 'DEPLOYMENT_CHECKLIST.md');

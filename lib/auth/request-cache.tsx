@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -68,7 +67,7 @@ export const getRequestUser = cache(async () => {
 });
 
 /** Deduplicate staff profile lookup within a single server request. */
-export const getRequestStaffProfile = cache(async (userId) => {
+export const getRequestStaffProfile = cache(async (userId: string) => {
   await reconcileExpiredElevation(userId);
   const { data: profile, error } = await createAdminClient()
     .from('profiles')
@@ -108,7 +107,7 @@ export async function guardAuthenticated(): Promise<GuardFailure | GuardAuthSucc
   return { ok: true as const, user: session.user, supabase: session.supabase };
 }
 
-export function getAuthenticatedSessionMeta(user) {
+export function getAuthenticatedSessionMeta(user: User) {
   const deadlineMs = getSessionDeadlineMs(user);
   return {
     sessionExpiresAt: deadlineMs != null ? new Date(deadlineMs).toISOString() : null,
@@ -164,8 +163,11 @@ export async function guardAal2(): Promise<GuardFailure | GuardAuthSuccess> {
   try {
     const aal = await getMfaAssuranceLevel(auth.supabase);
     if (!needsMfaVerification(aal)) return auth;
-  } catch {
-    return auth;
+  } catch (err) {
+    console.error('[guardAal2] MFA AAL lookup failed:', (err as Error).message);
+    return guardFail(
+      NextResponse.json({ error: 'MFA verification required.', needsMfa: true }, { status: 403 }),
+    );
   }
 
   const cookieStore = await cookies();

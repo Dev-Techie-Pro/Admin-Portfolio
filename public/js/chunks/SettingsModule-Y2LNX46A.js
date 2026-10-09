@@ -945,7 +945,8 @@ var SystemManager = class {
         { ok: ops.cronSecretConfigured, label: "CRON_SECRET configured (host env)" },
         { ok: ops.portfolioOriginsConfigured, label: "PORTFOLIO_PUBLIC_ORIGINS or portfolio URL (host env)" },
         { ok: ops.previewTokenSecretConfigured, label: "PREVIEW_TOKEN_SECRET (host env, required in production)" },
-        { ok: ops.turnstileConfigured, label: "Turnstile keys (System \u2192 Environment)" }
+        { ok: ops.turnstileConfigured, label: "Turnstile keys (System \u2192 Environment)" },
+        { ok: ops.kvRestConfigured, label: "KV_REST_API_* (host env, recommended at scale)" }
       ];
       const checkHtml = checks.map((row) => {
         const icon = row.ok ? "ri-checkbox-circle-fill pa-system-ops-ok" : "ri-error-warning-fill pa-system-ops-warn";
@@ -2968,4 +2969,4 @@ var SettingsModule = class extends Module {
 export {
   SettingsModule
 };
-//# sourceMappingURL=SettingsModule-SM4XRDZ3.js.map
+//# sourceMappingURL=SettingsModule-Y2LNX46A.js.map

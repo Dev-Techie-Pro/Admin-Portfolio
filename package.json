@@ -18,7 +18,7 @@
     "test:escape-html": "node scripts/test-escape-html.mjs",
     "test:is-uuid": "node scripts/test-is-uuid.mjs",
     "test:rls": "node scripts/test-rls-security.mjs",
-    "test:ci": "node scripts/test-api-guards.mjs && node scripts/test-prefetch-sync.mjs && node scripts/verify-deployment-env.mjs && node scripts/test-preview-token.mjs && node scripts/test-guard-smoke.mjs && node scripts/test-public-api-hardening.mjs && node scripts/test-mfa-aal.mjs && node scripts/test-safe-redirect.mjs && node scripts/test-blog-public-visibility.mjs && node scripts/test-innerhtml-sinks.mjs && node scripts/test-public-api-prefixes.mjs && node scripts/test-runtime-config-mask.mjs && node scripts/test-escape-html.mjs && node scripts/test-is-uuid.mjs && node scripts/test-rls-security.mjs",
+    "test:ci": "node scripts/test-api-guards.mjs && node scripts/test-prefetch-sync.mjs && node scripts/verify-deployment-env.mjs && node scripts/test-preview-token.mjs && node scripts/test-guard-smoke.mjs && node scripts/test-public-api-hardening.mjs && node scripts/test-mfa-aal.mjs && node scripts/test-safe-redirect.mjs && node scripts/test-blog-public-visibility.mjs && node scripts/test-innerhtml-sinks.mjs && node scripts/test-public-api-prefixes.mjs && node scripts/test-runtime-config-mask.mjs && node scripts/test-sanitize-html.mjs && node scripts/test-escape-html.mjs && node scripts/test-is-uuid.mjs && node scripts/test-rls-security.mjs",
     "typecheck:client": "tsc -p client/tsconfig.json --noEmit",
     "db:push": "supabase db push",
     "db:status": "supabase migration list",

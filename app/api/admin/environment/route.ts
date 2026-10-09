@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { guardSuperAdmin } from '@/lib/auth/guard';
+import { guardAal2, guardSuperAdmin } from '@/lib/auth/guard';
 import { jsonGet, jsonOk } from '@/lib/api/json-response';
 import { getRuntimeConfigForApi, saveRuntimeConfig } from '@/lib/config/runtime-settings';
 import { recordUserAction } from '@/lib/cms/activity-log';
@@ -12,13 +11,16 @@ export async function GET() {
     const config = await getRuntimeConfigForApi();
     return jsonGet(config);
   } catch (error) {
-    return jsonOk({ error: error.message || 'Could not load environment configuration.' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Could not load environment configuration.';
+    return jsonOk({ error: message }, { status: 500 });
   }
 }
 
-export async function PUT(request) {
+export async function PUT(request: Request) {
   const auth = await guardSuperAdmin();
   if (!auth.ok) return auth.response;
+  const aal = await guardAal2();
+  if (!aal.ok) return aal.response;
 
   try {
     const body = await request.json();
@@ -40,11 +42,12 @@ export async function PUT(request) {
       ...config,
     });
   } catch (error) {
-    const status = error.validationErrors?.length ? 400 : 500;
+    const err = error as Error & { validationErrors?: unknown[] };
+    const status = err.validationErrors?.length ? 400 : 500;
     return jsonOk(
       {
-        error: error.message || 'Could not save environment configuration.',
-        validationErrors: error.validationErrors || undefined,
+        error: err.message || 'Could not save environment configuration.',
+        validationErrors: err.validationErrors || undefined,
       },
       { status },
     );

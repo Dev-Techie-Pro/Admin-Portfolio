@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { guardSuperAdmin } from '@/lib/auth/guard';
+import { guardAal2, guardSuperAdmin } from '@/lib/auth/guard';
 import { jsonOk } from '@/lib/api/json-response';
 import {
   getRuntimeConfigForApi,
@@ -9,7 +8,11 @@ import { recordUserAction } from '@/lib/cms/activity-log';
 
 const MAX_ENV_IMPORT_BYTES = 256 * 1024;
 
-async function readImportPayload(request: Request) {
+type ImportPayloadResult =
+  | { error: string }
+  | { content: string; fileName: string; onlyIfEmpty: boolean };
+
+async function readImportPayload(request: Request): Promise<ImportPayloadResult> {
   const contentType = request.headers.get('content-type') || '';
 
   if (contentType.includes('multipart/form-data')) {
@@ -45,16 +48,19 @@ async function readImportPayload(request: Request) {
 export async function POST(request: Request) {
   const auth = await guardSuperAdmin();
   if (!auth.ok) return auth.response;
+  const aal = await guardAal2();
+  if (!aal.ok) return aal.response;
 
   try {
     const payload = await readImportPayload(request);
-    if (payload.error) {
+    if ('error' in payload) {
       return jsonOk({ error: payload.error }, { status: 400 });
     }
 
-    const result = await importRuntimeConfigFromEnvContent(auth.user.id, payload.content, {
-      onlyIfEmpty: payload.onlyIfEmpty,
-      fileName: payload.fileName,
+    const { content, fileName, onlyIfEmpty } = payload;
+    const result = await importRuntimeConfigFromEnvContent(auth.user.id, content, {
+      onlyIfEmpty,
+      fileName,
     });
     const config = await getRuntimeConfigForApi();
 
@@ -62,9 +68,9 @@ export async function POST(request: Request) {
       await recordUserAction({
         userId: auth.user.id,
         actionTitle: 'Runtime settings imported',
-        actionDescription: `Imported runtime settings from uploaded file (${payload.fileName})`,
+        actionDescription: `Imported runtime settings from uploaded file (${fileName})`,
         status: 'success',
-        metadata: { action: 'runtime_settings.imported', keys: result.keys, fileName: payload.fileName },
+        metadata: { action: 'runtime_settings.imported', keys: result.keys, fileName },
         request,
       });
     }
@@ -78,6 +84,7 @@ export async function POST(request: Request) {
         : (result.reason || 'Nothing to import.'),
     });
   } catch (error) {
-    return jsonOk({ error: error.message || 'Import failed.' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Import failed.';
+    return jsonOk({ error: message }, { status: 500 });
   }
 }
