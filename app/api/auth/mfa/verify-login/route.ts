@@ -110,7 +110,7 @@ export async function POST(request) {
     });
     applySessionDeadlineCookie(response);
     if (useBackupCode) {
-      setMfaStepUpCookie(response, user.id);
+      await setMfaStepUpCookie(response, user.id);
     }
     return response;
   } catch (error) {

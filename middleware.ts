@@ -92,7 +92,7 @@ export async function middleware(request) {
     } catch {
       needsMfa = false;
     }
-    if (needsMfa && readMfaStepUpCookie(request.cookies.get(MFA_STEPUP_COOKIE)?.value, user.id)) {
+    if (needsMfa && await readMfaStepUpCookie(request.cookies.get(MFA_STEPUP_COOKIE)?.value, user.id)) {
       needsMfa = false;
     }
   }
@@ -104,10 +104,10 @@ export async function middleware(request) {
 
   if (user && !needsMfa) {
     let adminMfaBlock: string | null = null;
-    if (!readAdminMfaOkCookie(request, user.id)) {
+    if (!await readAdminMfaOkCookie(request, user.id)) {
       adminMfaBlock = await adminMustCompleteMfa(supabase, user.id);
       if (!adminMfaBlock) {
-        setAdminMfaOkCookie(supabaseResponse, user.id);
+        await setAdminMfaOkCookie(supabaseResponse, user.id);
       }
     }
     if (adminMfaBlock && !mfaAllowedPath) {

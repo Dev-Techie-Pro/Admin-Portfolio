@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createHmac, timingSafeEqual } from 'crypto';
+const textEncoder = new TextEncoder();
 
 function signingSecret(): string {
   const secret = process.env.SESSION_SIGNING_SECRET?.trim()
@@ -10,28 +10,62 @@ function signingSecret(): string {
   return secret || 'dev-only-insecure-signing-key';
 }
 
-export function signCookieValue(payload: string): string {
-  const sig = createHmac('sha256', signingSecret()).update(payload).digest('base64url');
+let cachedHmacKey: CryptoKey | null = null;
+let cachedHmacSecret: string | null = null;
+
+async function hmacKey(): Promise<CryptoKey> {
+  const secret = signingSecret();
+  if (cachedHmacKey && cachedHmacSecret === secret) {
+    return cachedHmacKey;
+  }
+  cachedHmacSecret = secret;
+  cachedHmacKey = await crypto.subtle.importKey(
+    'raw',
+    textEncoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  return cachedHmacKey;
+}
+
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function timingSafeEqualUtf8(a: string, b: string): boolean {
+  const ab = textEncoder.encode(a);
+  const bb = textEncoder.encode(b);
+  if (ab.length !== bb.length) return false;
+  let diff = 0;
+  for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i];
+  return diff === 0;
+}
+
+async function hmacSha256Base64Url(payload: string): Promise<string> {
+  const key = await hmacKey();
+  const sig = await crypto.subtle.sign('HMAC', key, textEncoder.encode(payload));
+  return bytesToBase64Url(new Uint8Array(sig));
+}
+
+export async function signCookieValue(payload: string): Promise<string> {
+  const sig = await hmacSha256Base64Url(payload);
   return `${payload}.${sig}`;
 }
 
-export function verifySignedCookieValue(
+export async function verifySignedCookieValue(
   raw: string | undefined | null,
   maxAgeSec: number,
-): { subject: string; issuedAt: number } | null {
+): Promise<{ subject: string; issuedAt: number } | null> {
   if (!raw) return null;
   const lastDot = raw.lastIndexOf('.');
   if (lastDot <= 0) return null;
   const payload = raw.slice(0, lastDot);
   const sig = raw.slice(lastDot + 1);
-  const expected = createHmac('sha256', signingSecret()).update(payload).digest('base64url');
-  try {
-    const a = Buffer.from(sig);
-    const b = Buffer.from(expected);
-    if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  } catch {
-    return null;
-  }
+  const expected = await hmacSha256Base64Url(payload);
+  if (!timingSafeEqualUtf8(sig, expected)) return null;
 
   const parts = payload.split(':');
   if (parts.length !== 2) return null;
@@ -41,15 +75,15 @@ export function verifySignedCookieValue(
   return { subject: parts[0], issuedAt };
 }
 
-export function buildSignedUserPayload(userId: string): string {
+export async function buildSignedUserPayload(userId: string): Promise<string> {
   return signCookieValue(`${userId}:${Date.now()}`);
 }
 
-export function readSignedUserCookie(
+export async function readSignedUserCookie(
   raw: string | undefined | null,
   expectedUserId: string,
   maxAgeSec: number,
-): boolean {
-  const parsed = verifySignedCookieValue(raw, maxAgeSec);
+): Promise<boolean> {
+  const parsed = await verifySignedCookieValue(raw, maxAgeSec);
   return Boolean(parsed && parsed.subject === expectedUserId);
 }

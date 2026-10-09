@@ -169,7 +169,7 @@ export async function guardAal2(): Promise<GuardFailure | GuardAuthSuccess> {
   }
 
   const cookieStore = await cookies();
-  const stepUp = readMfaStepUpCookie(
+  const stepUp = await readMfaStepUpCookie(
     cookieStore.get(MFA_STEPUP_COOKIE)?.value,
     auth.user.id,
   );

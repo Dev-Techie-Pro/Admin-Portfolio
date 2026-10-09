@@ -8,12 +8,12 @@ export const MFA_STEPUP_COOKIE = 'pa_mfa_stepup_ok';
 
 const MAX_AGE_SEC = SESSION_LIFETIME_SECONDS;
 
-export function readMfaStepUpCookie(cookieValue: string | undefined, userId: string): boolean {
+export async function readMfaStepUpCookie(cookieValue: string | undefined, userId: string): Promise<boolean> {
   return readSignedUserCookie(cookieValue, userId, MAX_AGE_SEC);
 }
 
-export function setMfaStepUpCookie(response: NextResponse, userId: string) {
-  response.cookies.set(MFA_STEPUP_COOKIE, buildSignedUserPayload(userId), {
+export async function setMfaStepUpCookie(response: NextResponse, userId: string) {
+  response.cookies.set(MFA_STEPUP_COOKIE, await buildSignedUserPayload(userId), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
