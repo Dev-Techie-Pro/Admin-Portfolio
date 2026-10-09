@@ -16,6 +16,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build:client
+        env:
+          NODE_ENV: development
       - run: git diff --exit-code -- public/js
       - run: npm run test:ci
       - run: npm run lint:css

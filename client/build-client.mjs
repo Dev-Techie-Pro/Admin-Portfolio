@@ -24,7 +24,9 @@ const cleanSplitChunksPlugin = {
   },
 };
 
-const isProd = process.env.NODE_ENV === 'production';
+// Committed public/js is checked in CI with `git diff --exit-code`. Deploy runners often set
+// NODE_ENV=production, which would change chunk hashes and fail that check — minify only when asked.
+const isProd = process.env.CLIENT_BUILD_MINIFY === '1';
 
 const SHARED_BUILD = {
   format: 'esm',
