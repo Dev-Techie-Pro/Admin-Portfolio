@@ -1,9 +1,18 @@
 // @ts-nocheck
 import { createAdminClient } from '@/lib/supabase/admin';
 import { SITE_ID } from './constants';
+import { isBlogPostPubliclyVisible } from './blog-public-visibility';
 
 function admin() {
   return createAdminClient();
+}
+
+/** Client-supplied like identity (not authentication); rate limits apply per IP. */
+export function normalizeVisitorKey(visitorKey: string | null | undefined): string | null {
+  const key = visitorKey?.trim();
+  if (!key || key.length < 8 || key.length > 128) return null;
+  if (!/^[a-zA-Z0-9_-]+$/.test(key)) return null;
+  return key;
 }
 
 export type BlogCommentStatus = 'pending' | 'approved' | 'spam' | 'rejected';
@@ -42,13 +51,13 @@ export async function getPublishedPostEngagementMetaBySlug(slug: string) {
   const sb = admin();
   const { data: post, error } = await sb
     .from('blog_posts')
-    .select('id, slug, legacy_id, comments_enabled, likes_enabled, comments_auto_approve, status')
+    .select('id, slug, legacy_id, comments_enabled, likes_enabled, comments_auto_approve, status, published_at')
     .eq('site_id', SITE_ID)
     .eq('slug', slug)
     .is('deleted_at', null)
     .maybeSingle();
   if (error) throw error;
-  if (!post || post.status !== 'Published') return null;
+  if (!post || !isBlogPostPubliclyVisible(post)) return null;
   return post;
 }
 
@@ -159,8 +168,8 @@ export async function togglePublicLike(slug: string, visitorKey: string) {
   if (!post || !post.likes_enabled) {
     return { ok: false as const, error: 'Likes are not available for this post.', status: 404 };
   }
-  const key = visitorKey?.trim();
-  if (!key || key.length < 8 || key.length > 128) {
+  const key = normalizeVisitorKey(visitorKey);
+  if (!key) {
     return { ok: false as const, error: 'Invalid visitor key.', status: 400 };
   }
 

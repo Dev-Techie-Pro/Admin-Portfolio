@@ -2,6 +2,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { SITE_ID } from '@/lib/cms/constants';
 import { getPortfolioPublicBaseUrl } from '@/lib/site-url';
+import { publicBlogVisibilityCutoff } from '@/lib/cms/blog-public-visibility';
 
 function xmlEscape(value: string) {
   return value
@@ -15,13 +16,16 @@ export async function buildSitemapXml(portfolioBaseUrl?: string) {
   const base = (portfolioBaseUrl || getPortfolioPublicBaseUrl()).replace(/\/$/, '');
   const sb = createAdminClient();
 
+  const nowIso = publicBlogVisibilityCutoff();
   const [blogs, projects] = await Promise.all([
     sb
       .from('blog_posts')
       .select('slug, updated_at, published_at')
       .eq('site_id', SITE_ID)
       .is('deleted_at', null)
-      .eq('status', 'Published')
+      .neq('status', 'Draft')
+      .not('published_at', 'is', null)
+      .lte('published_at', nowIso)
       .order('published_at', { ascending: false })
       .limit(500),
     sb
@@ -59,12 +63,15 @@ ${urls.join('\n')}
 export async function buildBlogRssXml(portfolioBaseUrl?: string) {
   const base = (portfolioBaseUrl || getPortfolioPublicBaseUrl()).replace(/\/$/, '');
   const sb = createAdminClient();
+  const nowIso = publicBlogVisibilityCutoff();
   const { data: posts } = await sb
     .from('blog_posts')
     .select('title, slug, excerpt, published_at, updated_at')
     .eq('site_id', SITE_ID)
     .is('deleted_at', null)
-    .eq('status', 'Published')
+    .neq('status', 'Draft')
+    .not('published_at', 'is', null)
+    .lte('published_at', nowIso)
     .order('published_at', { ascending: false })
     .limit(50);
 

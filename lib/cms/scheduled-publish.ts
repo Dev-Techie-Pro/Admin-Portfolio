@@ -6,7 +6,7 @@ import { firePublishWebhooks } from '@/lib/cms/publish-webhook';
 
 export async function publishScheduledBlogPosts() {
   const sb = createAdminClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const nowIso = new Date().toISOString();
 
   const { data: due, error: selectError } = await sb
     .from('blog_posts')
@@ -15,7 +15,7 @@ export async function publishScheduledBlogPosts() {
     .is('deleted_at', null)
     .neq('status', 'Published')
     .not('published_at', 'is', null)
-    .lte('published_at', today);
+    .lte('published_at', nowIso);
 
   if (selectError) throw selectError;
   if (!due?.length) return { published: 0, posts: [] as { id: string; title: string | null }[] };

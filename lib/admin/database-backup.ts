@@ -11,6 +11,9 @@ import {
 
 const SCHEMA_VERSION = '2.0.0';
 const PAGE_SIZE = 1000;
+/** Serverless guard: cap rows per table in a single export. */
+const MAX_ROWS_PER_TABLE = 50_000;
+const MAX_EXPORT_BYTES = 24 * 1024 * 1024;
 const EXCLUDED_TABLES = new Set([
   'dashboard_stats',
   'site_runtime_config',
@@ -117,6 +120,11 @@ async function fetchAllRows(admin, table) {
 
     if (!data?.length) break;
     rows.push(...data);
+    if (rows.length >= MAX_ROWS_PER_TABLE) {
+      throw new Error(
+        `Table "${table}" exceeds the export limit (${MAX_ROWS_PER_TABLE} rows). Export fewer tables or use a direct DB dump.`,
+      );
+    }
     if (data.length < PAGE_SIZE) break;
     offset += PAGE_SIZE;
   }
@@ -238,6 +246,11 @@ export async function generateSqlBackup({ tables, userId }) {
 
   const filename = `backup-data-${exportTimestamp()}.sql`;
   const sizeBytes = Buffer.byteLength(sql, 'utf8');
+  if (sizeBytes > MAX_EXPORT_BYTES) {
+    throw new Error(
+      `Export is too large (${Math.round(sizeBytes / (1024 * 1024))}MB). Maximum is ${MAX_EXPORT_BYTES / (1024 * 1024)}MB per download.`,
+    );
+  }
 
   await recordExportAudit({
     userId,

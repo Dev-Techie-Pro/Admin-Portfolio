@@ -54,7 +54,17 @@ function teardownLegacyApp() {
  * Re-boots on every Next.js route change so the dashboard loads data correctly.
  */
 
-export default function LegacyBoot({ authBody = false, standaloneBody = false, needsCanvasJs = false }) {
+type LegacyBootProps = {
+  authBody?: boolean;
+  standaloneBody?: boolean;
+  needsCanvasJs?: boolean;
+};
+
+export default function LegacyBoot({
+  authBody = false,
+  standaloneBody = false,
+  needsCanvasJs = false,
+}: LegacyBootProps): null {
   const pathname = usePathname();
   const bootIdRef = useRef(0);
 

@@ -13,14 +13,15 @@ export type PreviewTokenPayload = {
 const DEFAULT_TTL_SEC = 3600;
 
 function getPreviewSecret(): string {
-  const secret = process.env.PREVIEW_TOKEN_SECRET?.trim() || process.env.CRON_SECRET?.trim();
-  if (!secret) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('PREVIEW_TOKEN_SECRET (or CRON_SECRET) must be set for draft preview.');
+  const dedicated = process.env.PREVIEW_TOKEN_SECRET?.trim();
+  if (process.env.NODE_ENV === 'production') {
+    if (!dedicated) {
+      throw new Error('PREVIEW_TOKEN_SECRET must be set in production for draft preview (do not reuse CRON_SECRET).');
     }
-    return 'dev-preview-token-secret';
+    return dedicated;
   }
-  return secret;
+  const fallback = dedicated || process.env.CRON_SECRET?.trim();
+  return fallback || 'dev-preview-token-secret';
 }
 
 function sign(body: string): string {

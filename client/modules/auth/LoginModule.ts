@@ -2,6 +2,7 @@
 import { AuthModule } from './AuthModule.js';
 import { $id } from '../../utils/dom.js';
 import { authService } from '../../core/AuthService.js';
+import { sanitizeRedirectPath } from '../../utils/safeRedirectPath.js';
 
 const SENSITIVE_QUERY_KEYS = ['email', 'password', 'passwd', 'pass'];
 
@@ -249,7 +250,7 @@ export class LoginModule extends AuthModule {
       }
       this.showSuccessToast('Login successful! Redirecting...');
       const params = new URLSearchParams(window.location.search);
-      const redirect = params.get('redirect') || '/';
+      const redirect = sanitizeRedirectPath(params.get('redirect'));
       setTimeout(() => {
         window.location.href = redirect;
       }, 600);
@@ -275,7 +276,7 @@ export class LoginModule extends AuthModule {
       });
       this.showSuccessToast('Verification successful! Redirecting...');
       const params = new URLSearchParams(window.location.search);
-      const redirect = params.get('redirect') || '/';
+      const redirect = sanitizeRedirectPath(params.get('redirect'));
       setTimeout(() => {
         window.location.href = redirect;
       }, 600);

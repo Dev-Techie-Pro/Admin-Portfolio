@@ -37,6 +37,10 @@ function deadlineFromLastSignIn(user: Pick<User, 'last_sign_in_at'>) {
   return new Date(user.last_sign_in_at).getTime() + SESSION_LIFETIME_MS;
 }
 
+/**
+ * Session deadline is stored in an httpOnly cookie set only by the server on sign-in.
+ * Clients cannot extend the dashboard session; a missing/invalid cookie falls back to last_sign_in_at + lifetime.
+ */
 export function getSessionDeadlineMs(
   user: Pick<User, 'last_sign_in_at'>,
   deadlineCookieValue?: string | null,

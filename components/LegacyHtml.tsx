@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef } from 'react';
 
 /** Stable key so React remounts legacy markup on client-side route changes. */
-export function legacyPageKey(html) {
+export function legacyPageKey(html: string): string {
   if (html.includes('id="paBody"') && html.includes('pa-dash-stats-grid')) {
     return 'dashboard';
   }
@@ -20,8 +20,10 @@ export function legacyPageKey(html) {
  * Injects legacy page HTML. Uses a route key to force a clean swap on
  * client navigation, and useLayoutEffect to sync innerHTML when the prop changes.
  */
-export default function LegacyHtml({ html }) {
-  const ref = useRef(null);
+type LegacyHtmlProps = { html: string };
+
+export default function LegacyHtml({ html }: LegacyHtmlProps) {
+  const ref = useRef<HTMLDivElement | null>(null);
   const pageKey = legacyPageKey(html);
 
   useLayoutEffect(() => {

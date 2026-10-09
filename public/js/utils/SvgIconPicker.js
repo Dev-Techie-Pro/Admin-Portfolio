@@ -1,4 +1,4 @@
-import { $id } from "./dom.js";
+import { $id, escapeHtml } from "./dom.js";
 import {
   loadRegistry,
   filterRegistryIcons,
@@ -146,7 +146,7 @@ function createIconButton(icon) {
   btn.title = icon.title;
   btn.setAttribute("role", "option");
   btn.setAttribute("aria-label", icon.title);
-  btn.innerHTML = `<i class="${icon.slug}" aria-hidden="true"></i>`;
+  btn.innerHTML = `<i class="${escapeHtml(icon.slug)}" aria-hidden="true"></i>`;
   btn.addEventListener("click", () => selectIcon(icon.slug));
   return btn;
 }

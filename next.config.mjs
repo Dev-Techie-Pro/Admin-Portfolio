@@ -3,6 +3,19 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+function cspImgSrc() {
+  const parts = ["'self'", 'data:', 'blob:'];
+  const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  if (supabase) {
+    try {
+      parts.push(new URL(supabase).origin);
+    } catch {
+      /* ignore invalid URL */
+    }
+  }
+  return parts.join(' ');
+}
+
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
@@ -50,9 +63,10 @@ const nextConfig = {
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com data:",
-        "img-src 'self' data: blob: https:",
+        `img-src ${cspImgSrc()}`,
         "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
         "frame-src https://challenges.cloudflare.com",
+        "frame-ancestors 'none'",
         "base-uri 'self'",
         "object-src 'none'",
         "form-action 'self'",
@@ -88,6 +102,18 @@ const nextConfig = {
           key: 'Cache-Control',
           value: isProd ? 'public, max-age=3600, must-revalidate' : 'public, max-age=0, must-revalidate',
         }],
+      },
+      {
+        source: '/js/core/:path*',
+        headers: [{ key: 'Cache-Control', value: staticCache }],
+      },
+      {
+        source: '/js/modules/:path*',
+        headers: [{ key: 'Cache-Control', value: staticCache }],
+      },
+      {
+        source: '/js/utils/:path*',
+        headers: [{ key: 'Cache-Control', value: staticCache }],
       },
     ];
   },

@@ -6,7 +6,7 @@ import {
   notifyCredentialsEmailStatus,
   populateStaffRoleSelect,
   showUserCredentialsPanel
-} from "./chunks/chunk-CEM6I6OL.js";
+} from "./chunks/chunk-OAKF3NT4.js";
 import {
   debounce
 } from "./chunks/chunk-NGJCAR7D.js";
@@ -23,7 +23,7 @@ import {
   previewUserAvatar,
   showNavFlyout,
   syncSidebarGroupNav
-} from "./chunks/chunk-RUREDZSG.js";
+} from "./chunks/chunk-2QNVQJS4.js";
 import {
   initPasswordToggles
 } from "./chunks/chunk-HSBA7GYU.js";
@@ -70,7 +70,7 @@ import {
   renderNotifications,
   requestLogout,
   storage
-} from "./chunks/chunk-4FUL3ZJX.js";
+} from "./chunks/chunk-3TY7DIYN.js";
 import {
   $all,
   $id,
@@ -2490,58 +2490,68 @@ function initCollapseMotion(root = document) {
   startCollapseObserver();
 }
 
+// client/utils/focusMain.ts
+function focusMainContent() {
+  if (typeof document === "undefined") return;
+  const main = document.getElementById("pa-main-content") || document.querySelector("main") || document.querySelector(".pa-main");
+  if (main) {
+    if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+    main.focus({ preventScroll: true });
+  }
+}
+
 // client/main.ts
 var AUTH_PAGES = /* @__PURE__ */ new Set(["login", "forgot-password", "reset-password"]);
 var PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
 async function loadPageModuleClass(page) {
   switch (page) {
     case "dashboard":
-      return (await import("./chunks/DashboardModule-WQV2JGDK.js")).DashboardModule;
+      return (await import("./chunks/DashboardModule-MVYIMSR4.js")).DashboardModule;
     case "projects":
-      return (await import("./chunks/ProjectsModule-Q6M6ISUX.js")).ProjectsModule;
+      return (await import("./chunks/ProjectsModule-52AIFJG6.js")).ProjectsModule;
     case "categories":
-      return (await import("./chunks/CategoriesModule-KJO63XO5.js")).CategoriesModule;
+      return (await import("./chunks/CategoriesModule-KAPUMWGN.js")).CategoriesModule;
     case "project-tags":
     case "tags":
-      return (await import("./chunks/TagsModule-3DEGUVDG.js")).TagsModule;
+      return (await import("./chunks/TagsModule-HQYBZ6GT.js")).TagsModule;
     case "project-technologies":
-      return (await import("./chunks/ProjectTechnologiesModule-NARGHBTY.js")).ProjectTechnologiesModule;
+      return (await import("./chunks/ProjectTechnologiesModule-ZBAPLBI3.js")).ProjectTechnologiesModule;
     case "blog-tags":
-      return (await import("./chunks/BlogTagsModule-ZYK7H7NG.js")).BlogTagsModule;
+      return (await import("./chunks/BlogTagsModule-SZ45EE5X.js")).BlogTagsModule;
     case "technologies":
-      return (await import("./chunks/TechnologiesModule-HGMUA2BM.js")).TechnologiesModule;
+      return (await import("./chunks/TechnologiesModule-C3RUHXME.js")).TechnologiesModule;
     case "tool-categories":
-      return (await import("./chunks/ToolCategoriesModule-ZNZ35NCI.js")).ToolCategoriesModule;
+      return (await import("./chunks/ToolCategoriesModule-OON2LXFJ.js")).ToolCategoriesModule;
     case "blog-categories":
-      return (await import("./chunks/BlogCategoriesModule-SCUJMX53.js")).BlogCategoriesModule;
+      return (await import("./chunks/BlogCategoriesModule-E7MCZKVN.js")).BlogCategoriesModule;
     case "tools":
-      return (await import("./chunks/ToolsModule-XRPVWOSD.js")).ToolsModule;
+      return (await import("./chunks/ToolsModule-QMZ5G3ZA.js")).ToolsModule;
     case "media":
-      return (await import("./chunks/MediaModule-NXEQTNXC.js")).MediaModule;
+      return (await import("./chunks/MediaModule-OBLBN662.js")).MediaModule;
     case "testimonials":
-      return (await import("./chunks/TestimonialsModule-KNJPLGFW.js")).TestimonialsModule;
+      return (await import("./chunks/TestimonialsModule-JPGWBESA.js")).TestimonialsModule;
     case "blogposts":
-      return (await import("./chunks/BlogModule-JOVE7ZKR.js")).BlogModule;
+      return (await import("./chunks/BlogModule-AVOX43RC.js")).BlogModule;
     case "experience":
-      return (await import("./chunks/ExperienceModule-C7DNKCI5.js")).ExperienceModule;
+      return (await import("./chunks/ExperienceModule-KE4E6ZO7.js")).ExperienceModule;
     case "contact-messages":
-      return (await import("./chunks/ContactMessagesModule-IQTPJQHS.js")).ContactMessagesModule;
+      return (await import("./chunks/ContactMessagesModule-M4W6YCGZ.js")).ContactMessagesModule;
     case "blog-engagement":
-      return (await import("./chunks/BlogEngagementModule-YZIYOWJ3.js")).BlogEngagementModule;
+      return (await import("./chunks/BlogEngagementModule-BNNEEQEY.js")).BlogEngagementModule;
     case "access-requests":
-      return (await import("./chunks/AccessRequestsModule-U646LFWD.js")).AccessRequestsModule;
+      return (await import("./chunks/AccessRequestsModule-DASWSRBT.js")).AccessRequestsModule;
     case "users":
-      return (await import("./chunks/UsersModule-K5VOP5C5.js")).UsersModule;
+      return (await import("./chunks/UsersModule-N55E7BPE.js")).UsersModule;
     case "recent-activities":
-      return (await import("./chunks/RecentActivitiesModule-FVYFDX6G.js")).RecentActivitiesModule;
+      return (await import("./chunks/RecentActivitiesModule-5V5UJYHG.js")).RecentActivitiesModule;
     case "settings":
-      return (await import("./chunks/SettingsModule-Z4T5PFKD.js")).SettingsModule;
+      return (await import("./chunks/SettingsModule-A27ENEXX.js")).SettingsModule;
     case "login":
-      return (await import("./chunks/LoginModule-NPNTHM4V.js")).LoginModule;
+      return (await import("./chunks/LoginModule-4H7EA2FW.js")).LoginModule;
     case "forgot-password":
-      return (await import("./chunks/ForgotPasswordModule-TZNZQT3J.js")).ForgotPasswordModule;
+      return (await import("./chunks/ForgotPasswordModule-2BF2VNUJ.js")).ForgotPasswordModule;
     case "reset-password":
-      return (await import("./chunks/ResetPasswordModule-WADKGZXQ.js")).ResetPasswordModule;
+      return (await import("./chunks/ResetPasswordModule-I5I7NU6H.js")).ResetPasswordModule;
     default:
       return null;
   }
@@ -2566,7 +2576,7 @@ function bindGlobalPanelChrome() {
 var quickAddModule = null;
 async function bindQuickAddButton(pageModule) {
   if (quickAddModule) return;
-  const { QuickAddModule } = await import("./chunks/QuickAddModule-NSLI7RDQ.js");
+  const { QuickAddModule } = await import("./chunks/QuickAddModule-KEQL5CHN.js");
   quickAddModule = new QuickAddModule(pageModule);
   quickAddModule.bindEvents();
 }
@@ -2638,6 +2648,7 @@ async function bootAppPage(ModuleClass, page) {
   initAppChrome();
   activePageModule = pageModule;
   window.__paDebug = { pageModule, page };
+  focusMainContent();
   if (bootstrapPending) {
     void storage.waitForBootstrap().then(() => {
       if (activePageModule === pageModule && typeof pageModule.render === "function") {

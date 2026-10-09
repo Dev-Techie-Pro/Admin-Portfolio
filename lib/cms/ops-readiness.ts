@@ -85,11 +85,9 @@ export async function getOpsReadinessReport(): Promise<OpsReadinessReport> {
     'Confirm Supabase Auth → Email → “Enable sign ups” is OFF for invite-only staff access.',
   );
 
-  const previewTokenSecretConfigured = Boolean(
-    process.env.PREVIEW_TOKEN_SECRET?.trim() || process.env.CRON_SECRET?.trim(),
-  );
+  const previewTokenSecretConfigured = Boolean(process.env.PREVIEW_TOKEN_SECRET?.trim());
   if (process.env.NODE_ENV === 'production' && !previewTokenSecretConfigured) {
-    warnings.push('PREVIEW_TOKEN_SECRET (or CRON_SECRET) is not set for draft preview tokens.');
+    warnings.push('PREVIEW_TOKEN_SECRET must be set in production for draft preview tokens (separate from CRON_SECRET).');
   }
 
   await warmRuntimeSettings();

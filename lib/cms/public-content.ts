@@ -2,6 +2,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { SITE_ID } from './constants';
 import { getCached, PUBLIC_CACHE_TTL } from './server-cache';
+import { publicBlogVisibilityCutoff } from './blog-public-visibility';
 
 export type PublicContentResource = 'projects' | 'blog' | 'testimonials' | 'experience';
 
@@ -24,12 +25,15 @@ export async function getPublicContentItems(resource: PublicContentResource, lim
     }
 
     if (resource === 'blog') {
+      const nowIso = publicBlogVisibilityCutoff();
       const { data, error } = await sb
         .from('blog_posts')
         .select('legacy_id, title, slug, status, excerpt, featured_image_url, published_at, meta_title, meta_description')
         .eq('site_id', SITE_ID)
         .is('deleted_at', null)
-        .eq('status', 'Published')
+        .neq('status', 'Draft')
+        .not('published_at', 'is', null)
+        .lte('published_at', nowIso)
         .order('published_at', { ascending: false })
         .limit(limit);
       if (error) throw error;

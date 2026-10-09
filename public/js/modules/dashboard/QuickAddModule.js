@@ -697,7 +697,7 @@ class QuickAddModule extends Module {
           onPreview: (previewUrl) => {
             setImg({ url: previewUrl, name: file.name });
             if (wrap) {
-              wrap.innerHTML = `<div class="pa-media-preview"><img src="${previewUrl}" alt="${file.name}" /><button type="button" class="pa-media-preview-remove" aria-label="Remove"><i class="ri-close-line"></i></button></div>`;
+              wrap.innerHTML = `<div class="pa-media-preview"><img src="${escapeHtml(previewUrl)}" alt="${escapeHtml(file.name)}" /><button type="button" class="pa-media-preview-remove" aria-label="Remove"><i class="ri-close-line"></i></button></div>`;
               wrap.querySelector(".pa-media-preview-remove")?.addEventListener("click", () => {
                 setImg(null);
                 wrap.innerHTML = "";
@@ -709,7 +709,7 @@ class QuickAddModule extends Module {
         });
         setImg({ url: uploaded.url, name: uploaded.fileName || file.name });
         if (wrap) {
-          wrap.innerHTML = `<div class="pa-media-preview"><img src="${uploaded.url}" alt="${uploaded.fileName || file.name}" /><button type="button" class="pa-media-preview-remove" aria-label="Remove"><i class="ri-close-line"></i></button></div>`;
+          wrap.innerHTML = `<div class="pa-media-preview"><img src="${escapeHtml(uploaded.url)}" alt="${escapeHtml(uploaded.fileName || file.name)}" /><button type="button" class="pa-media-preview-remove" aria-label="Remove"><i class="ri-close-line"></i></button></div>`;
           wrap.querySelector(".pa-media-preview-remove")?.addEventListener("click", () => {
             setImg(null);
             wrap.innerHTML = "";

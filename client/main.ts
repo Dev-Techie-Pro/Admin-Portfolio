@@ -41,6 +41,7 @@ import { initCollapseMotion } from './utils/collapse-motion.js';
 import { initPasswordToggles } from './utils/password-toggle.js';
 
 import { applyCapabilityGatedElements, getAccessCapabilities } from './core/access.js';
+import { focusMainContent } from './utils/focusMain.js';
 
 
 
@@ -384,7 +385,7 @@ async function bootAppPage(ModuleClass: PageModuleClass, page: string) {
 
   window.__paDebug = { pageModule, page };
 
-
+  focusMainContent();
 
   if (bootstrapPending) {
 

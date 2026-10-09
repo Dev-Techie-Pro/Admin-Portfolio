@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createMiddlewareClient } from '@/lib/supabase/middleware';
 import { AUTH_ROUTES, PUBLIC_API_PREFIXES, SESSION_DEADLINE_COOKIE } from '@/lib/auth/constants';
 import {
@@ -14,8 +14,10 @@ import {
 } from '@/lib/auth/admin-mfa-cookie';
 import { MFA_STEPUP_COOKIE, readMfaStepUpCookie } from '@/lib/auth/mfa-stepup-cookie';
 import { stripSensitiveAuthQueryParams } from '@/lib/auth/sensitive-query-params';
+import { needsMfaFromAal, NEEDS_MFA_ON_AAL_ERROR } from '@/lib/auth/mfa-aal';
+import { sanitizeRedirectPath } from '@/lib/auth/safe-redirect-path';
 
-function isPublicPath(pathname) {
+function isPublicPath(pathname: string) {
   if (pathname.startsWith('/auth/callback')) return true;
   if (pathname.startsWith('/reset-password')) return true;
   if (PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return true;
@@ -27,11 +29,11 @@ function isPublicPath(pathname) {
 }
 
 
-function isAuthPage(pathname) {
+function isAuthPage(pathname: string) {
   return AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }
 
-export async function middleware(request) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isAuthPage(pathname)) {
@@ -54,14 +56,15 @@ export async function middleware(request) {
   }
 
   const { supabase, supabaseResponse } = createMiddlewareClient(request);
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+  let user = authUser;
   if (
     authError
     && (authError.code === 'refresh_token_not_found'
       || /refresh token/i.test(authError.message || ''))
   ) {
     await supabase.auth.signOut();
-    return supabaseResponse;
+    user = null;
   }
 
   if (user) {
@@ -88,9 +91,10 @@ export async function middleware(request) {
   if (user) {
     try {
       const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-      needsMfa = aal?.nextLevel === 'aal2' && aal?.currentLevel !== 'aal2';
-    } catch {
-      needsMfa = false;
+      needsMfa = needsMfaFromAal(aal);
+    } catch (err) {
+      console.error('[middleware] MFA AAL lookup failed:', (err as Error).message);
+      needsMfa = NEEDS_MFA_ON_AAL_ERROR;
     }
     if (needsMfa && await readMfaStepUpCookie(request.cookies.get(MFA_STEPUP_COOKIE)?.value, user.id)) {
       needsMfa = false;
@@ -137,7 +141,7 @@ export async function middleware(request) {
     }
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    url.searchParams.set('redirect', pathname);
+    url.searchParams.set('redirect', sanitizeRedirectPath(pathname));
     return NextResponse.redirect(url);
   }
 

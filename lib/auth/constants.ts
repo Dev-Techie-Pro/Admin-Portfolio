@@ -13,6 +13,7 @@ export function getCreatableRoles(actorRole) {
 }
 
 export const AUTH_ROUTES = ['/login', '/forget-password'];
+/** Must end with `/` so `startsWith` does not expose sibling routes (e.g. `/api/public` vs `/api/public-admin`). */
 export const PUBLIC_API_PREFIXES = [
   '/api/auth/',
   '/api/health/',
@@ -30,4 +31,4 @@ export const SESSION_DEADLINE_COOKIE = 'pa_sess_deadline';
 export const ELEVATION_DEFAULT_HOURS = 3;
 export const ELEVATION_MAX_HOURS = 72;
 export const ELEVATION_DURATION_MS = ELEVATION_DEFAULT_HOURS * 60 * 60 * 1000;
-
+

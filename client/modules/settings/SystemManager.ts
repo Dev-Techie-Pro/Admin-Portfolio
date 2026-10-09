@@ -577,7 +577,7 @@ export class SystemManager {
         { ok: ops.migrationPublicApiHardening, label: 'Public API hardening migration (rate limits + contact API)' },
         { ok: ops.cronSecretConfigured, label: 'CRON_SECRET configured (host env)' },
         { ok: ops.portfolioOriginsConfigured, label: 'PORTFOLIO_PUBLIC_ORIGINS or portfolio URL (host env)' },
-        { ok: ops.previewTokenSecretConfigured, label: 'PREVIEW_TOKEN_SECRET or CRON_SECRET (host env)' },
+        { ok: ops.previewTokenSecretConfigured, label: 'PREVIEW_TOKEN_SECRET (host env, required in production)' },
         { ok: ops.turnstileConfigured, label: 'Turnstile keys (System → Environment)' },
       ];
       const checkHtml = checks.map((row) => {

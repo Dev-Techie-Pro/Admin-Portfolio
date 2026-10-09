@@ -25,5 +25,6 @@ jobs:
       - run: npm run typecheck:audit
       - run: npm run typecheck
       - run: npm run typecheck:client
+      - run: npm run build
       - run: npm audit --omit=dev --audit-level=high
         continue-on-error: true

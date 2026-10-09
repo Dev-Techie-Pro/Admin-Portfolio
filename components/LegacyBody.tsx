@@ -6,7 +6,19 @@ import LegacyHtml from './LegacyHtml';
  * boots the vanilla module system via LegacyBoot (client-only).
  */
 
-export default function LegacyBody({ html, authBody = false, standaloneBody = false, needsCanvasJs = false }) {
+type LegacyBodyProps = {
+  html: string;
+  authBody?: boolean;
+  standaloneBody?: boolean;
+  needsCanvasJs?: boolean;
+};
+
+export default function LegacyBody({
+  html,
+  authBody = false,
+  standaloneBody = false,
+  needsCanvasJs = false,
+}: LegacyBodyProps) {
   return (
     <>
       <LegacyHtml html={html} />
