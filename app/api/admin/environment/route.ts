@@ -1,11 +1,11 @@
-import { guardAal2, guardSuperAdmin } from '@/lib/auth/guard';
+import { guardAal2, guardSuperAdmin, isGuardFailure } from '@/lib/auth/guard';
 import { jsonGet, jsonOk } from '@/lib/api/json-response';
 import { getRuntimeConfigForApi, saveRuntimeConfig } from '@/lib/config/runtime-settings';
 import { recordUserAction } from '@/lib/cms/activity-log';
 
 export async function GET() {
   const auth = await guardSuperAdmin();
-  if (!auth.ok) return auth.response;
+  if (isGuardFailure(auth)) return auth.response;
 
   try {
     const config = await getRuntimeConfigForApi();
@@ -18,9 +18,9 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   const auth = await guardSuperAdmin();
-  if (!auth.ok) return auth.response;
+  if (isGuardFailure(auth)) return auth.response;
   const aal = await guardAal2();
-  if (!aal.ok) return aal.response;
+  if (isGuardFailure(aal)) return aal.response;
 
   try {
     const body = await request.json();

@@ -1,4 +1,4 @@
-import { guardAal2, guardSuperAdmin } from '@/lib/auth/guard';
+import { guardAal2, guardSuperAdmin, isGuardFailure } from '@/lib/auth/guard';
 import { jsonOk } from '@/lib/api/json-response';
 import {
   getRuntimeConfigForApi,
@@ -47,9 +47,9 @@ async function readImportPayload(request: Request): Promise<ImportPayloadResult>
 
 export async function POST(request: Request) {
   const auth = await guardSuperAdmin();
-  if (!auth.ok) return auth.response;
+  if (isGuardFailure(auth)) return auth.response;
   const aal = await guardAal2();
-  if (!aal.ok) return aal.response;
+  if (isGuardFailure(aal)) return aal.response;
 
   try {
     const payload = await readImportPayload(request);
