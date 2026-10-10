@@ -20,6 +20,8 @@ const allowlist = new Set([
   'cron/purge-activities/route.tsx',
   'cron/prune-sessions/route.tsx',
   'cron/publish-scheduled/route.tsx',
+  'cron/deliver-webhooks/route.tsx',
+  'v1/public/content/[resource]/route.ts',
 ]);
 
 function walk(dir, acc = []) {

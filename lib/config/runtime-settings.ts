@@ -1,4 +1,5 @@
-// @ts-nocheck
+import 'server-only';
+
 import { SITE_ID } from '@/lib/cms/constants';
 import { getCached, invalidateCache } from '@/lib/cms/server-cache';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -12,6 +13,12 @@ import {
   parseEnvFile,
   validateEnvUpdates,
 } from '@/lib/admin/env-config';
+import {
+  decryptRuntimeSecret,
+  encryptRuntimeSecret,
+  isEncryptedSecretValue,
+  runtimeSecretsEncryptionKey,
+} from '@/lib/config/runtime-secrets-crypto';
 const CACHE_KEY = `runtime-config:${SITE_ID}`;
 const MAX_ENV_IMPORT_BYTES = 256 * 1024;
 const CACHE_TTL_MS = 45_000;
@@ -52,15 +59,37 @@ function jsonRecord(value: unknown): Record<string, string> {
   return out;
 }
 
+function decryptSecretsMap(secrets: Record<string, string>): Record<string, string> {
+  const encKey = runtimeSecretsEncryptionKey();
+  if (!encKey) return secrets;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(secrets)) {
+    out[k] = isEncryptedSecretValue(v) ? decryptRuntimeSecret(v, encKey) : v;
+  }
+  return out;
+}
+
+function encryptSecretsForStorage(secrets: Record<string, string>): Record<string, string> {
+  const encKey = runtimeSecretsEncryptionKey();
+  if (!encKey) return secrets;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(secrets)) {
+    if (!v) continue;
+    out[k] = isEncryptedSecretValue(v) ? v : encryptRuntimeSecret(v, encKey);
+  }
+  return out;
+}
+
 function mergeResolved(
   settings: Record<string, string>,
   secrets: Record<string, string>,
 ): Record<string, string> {
   const merged: Record<string, string> = {};
+  const plainSecrets = decryptSecretsMap(secrets);
   for (const key of RUNTIME_CONFIG_KEYS) {
     let value = '';
     if (isSecretKey(key)) {
-      value = secrets[key] ?? '';
+      value = plainSecrets[key] ?? '';
     } else {
       value = settings[key] ?? '';
     }
@@ -89,7 +118,7 @@ export function invalidateRuntimeConfigCache() {
 }
 
 export function runtimeUpdatesFromEnvFileContent(content: string) {
-  const parsed = parseEnvFile(content);
+  const parsed = parseEnvFile(content) as Record<string, string>;
   const updates: Record<string, string> = {};
   for (const key of RUNTIME_CONFIG_KEYS) {
     const value = (parsed[key] ?? '').trim();
@@ -184,11 +213,12 @@ export async function saveRuntimeConfig(updates: Record<string, unknown>, userId
   }
 
   const sb = createAdminClient();
+  const storedSecrets = encryptSecretsForStorage(secrets);
   const { error } = await sb
     .from('site_runtime_config')
     .update({
       settings,
-      secrets,
+      secrets: storedSecrets,
       updated_by: userId,
     })
     .eq('site_id', SITE_ID);

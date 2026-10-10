@@ -2,6 +2,7 @@ import { publicCorsJson, publicCorsOptions } from '@/lib/api/public-cors';
 import { checkRateLimit, rateLimitResponse } from '@/lib/api/rate-limit';
 import { togglePublicLike } from '@/lib/cms/blog-engagement';
 import { publicRouteError } from '@/lib/api/public-route-error';
+import { getClientIp } from '@/lib/auth/request-meta';
 
 export async function OPTIONS(request: Request) {
   return publicCorsOptions(request);
@@ -21,7 +22,7 @@ export async function POST(request: Request, { params }: { params: { slug?: stri
     }
     const body = await request.json();
     const visitorKey = typeof body?.visitorKey === 'string' ? body.visitorKey : '';
-    const result = await togglePublicLike(slug, visitorKey);
+    const result = await togglePublicLike(slug, visitorKey, getClientIp(request));
     if (!result.ok) {
       return publicCorsJson(request, { error: result.error }, { status: result.status });
     }

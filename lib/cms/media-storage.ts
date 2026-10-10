@@ -133,6 +133,44 @@ export function assertBufferMatchesImageMime(buffer: Buffer, declaredMime: strin
   }
 }
 
+export const VERCEL_PROXY_UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
+
+export async function createSignedMediaUpload({
+  mimeType,
+  fileName,
+  folder = 'general',
+  sizeBytes,
+}: {
+  mimeType: string;
+  fileName: string;
+  folder?: string;
+  sizeBytes: number;
+}) {
+  const { mime, folder: resolvedFolder } = assertAllowedUpload({
+    mimeType,
+    sizeBytes,
+    folder,
+    mode: 'image',
+  });
+  const safeFolder = normalizeUploadFolder(resolvedFolder);
+  const safeName = sanitizeFileName(fileName);
+  const storagePath = `${SITE_ID}/${safeFolder}/${randomUUID()}-${safeName}`;
+
+  const admin = createAdminClient();
+  const { data, error } = await admin.storage.from(MEDIA_BUCKET).createSignedUploadUrl(storagePath);
+  if (error || !data?.signedUrl) throw new Error(error?.message || 'Could not create upload URL.');
+
+  return {
+    signedUrl: data.signedUrl,
+    token: data.token,
+    storagePath,
+    publicUrl: getMediaPublicUrl(storagePath),
+    fileName: safeName,
+    mimeType: mime,
+    folder: safeFolder,
+  };
+}
+
 export async function uploadMediaBuffer({
   buffer,
   mimeType,

@@ -2,15 +2,26 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { ADMIN_ROLES } from '@/lib/auth/constants';
-import { warmRuntimeSettings, getRuntimeSettingSync } from '@/lib/config/runtime-settings';
 import { listTotpFactors } from '@/lib/auth/mfa';
+
+async function requireMfaForAdminsEnabled(): Promise<boolean> {
+  if (process.env.REQUIRE_MFA_ADMINS === 'true') return true;
+  try {
+    const { warmRuntimeSettings, getRuntimeSettingSync } = await import(
+      '@/lib/config/runtime-settings'
+    );
+    await warmRuntimeSettings();
+    return getRuntimeSettingSync('REQUIRE_MFA_ADMINS') === 'true';
+  } catch {
+    return false;
+  }
+}
 
 export async function adminMustCompleteMfa(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<string | null> {
-  await warmRuntimeSettings();
-  if (getRuntimeSettingSync('REQUIRE_MFA_ADMINS') !== 'true') return null;
+  if (!await requireMfaForAdminsEnabled()) return null;
 
   const { data: profile } = await createAdminClient()
     .from('profiles')

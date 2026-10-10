@@ -40,7 +40,7 @@ import {
 import {
   handleFileValidation,
   uploadCmsFileWithPreview
-} from "./chunks/chunk-VKZENHZA.js";
+} from "./chunks/chunk-SGO64PK4.js";
 import {
   PAGE,
   getCurrentPage,
@@ -462,7 +462,7 @@ function registerCustomFonts(customFonts = []) {
 async function buildCustomFontFromFile(file) {
   const error = validateFontFile(file);
   if (error) throw new Error(error);
-  const { uploadCustomFontFile } = await import("./chunks/media-upload-IOWCA2X3.js");
+  const { uploadCustomFontFile } = await import("./chunks/media-upload-WCEZSQ3S.js");
   const uploaded = await uploadCustomFontFile(file);
   const url = uploaded.url;
   const name = deriveFontName(file);
@@ -2506,9 +2506,9 @@ var PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
 async function loadPageModuleClass(page) {
   switch (page) {
     case "dashboard":
-      return (await import("./chunks/DashboardModule-MVYIMSR4.js")).DashboardModule;
+      return (await import("./chunks/DashboardModule-226M2EPA.js")).DashboardModule;
     case "projects":
-      return (await import("./chunks/ProjectsModule-52AIFJG6.js")).ProjectsModule;
+      return (await import("./chunks/ProjectsModule-3FJE2JG3.js")).ProjectsModule;
     case "categories":
       return (await import("./chunks/CategoriesModule-KAPUMWGN.js")).CategoriesModule;
     case "project-tags":
@@ -2527,15 +2527,15 @@ async function loadPageModuleClass(page) {
     case "tools":
       return (await import("./chunks/ToolsModule-QMZ5G3ZA.js")).ToolsModule;
     case "media":
-      return (await import("./chunks/MediaModule-OBLBN662.js")).MediaModule;
+      return (await import("./chunks/MediaModule-UAIWT6RZ.js")).MediaModule;
     case "testimonials":
-      return (await import("./chunks/TestimonialsModule-JPGWBESA.js")).TestimonialsModule;
+      return (await import("./chunks/TestimonialsModule-LKPBCEON.js")).TestimonialsModule;
     case "blogposts":
-      return (await import("./chunks/BlogModule-AVOX43RC.js")).BlogModule;
+      return (await import("./chunks/BlogModule-MU6SG7AE.js")).BlogModule;
     case "experience":
       return (await import("./chunks/ExperienceModule-KE4E6ZO7.js")).ExperienceModule;
     case "contact-messages":
-      return (await import("./chunks/ContactMessagesModule-4JA6RQOT.js")).ContactMessagesModule;
+      return (await import("./chunks/ContactMessagesModule-NIJBCCSJ.js")).ContactMessagesModule;
     case "blog-engagement":
       return (await import("./chunks/BlogEngagementModule-ZVHVKBKL.js")).BlogEngagementModule;
     case "access-requests":
@@ -2545,7 +2545,7 @@ async function loadPageModuleClass(page) {
     case "recent-activities":
       return (await import("./chunks/RecentActivitiesModule-4YGKVLNZ.js")).RecentActivitiesModule;
     case "settings":
-      return (await import("./chunks/SettingsModule-4J45KRUI.js")).SettingsModule;
+      return (await import("./chunks/SettingsModule-ALYTTF3M.js")).SettingsModule;
     case "login":
       return (await import("./chunks/LoginModule-3DTGXJHB.js")).LoginModule;
     case "forgot-password":
@@ -2576,7 +2576,7 @@ function bindGlobalPanelChrome() {
 var quickAddModule = null;
 async function bindQuickAddButton(pageModule) {
   if (quickAddModule) return;
-  const { QuickAddModule } = await import("./chunks/QuickAddModule-KEQL5CHN.js");
+  const { QuickAddModule } = await import("./chunks/QuickAddModule-WKN5O2JC.js");
   quickAddModule = new QuickAddModule(pageModule);
   quickAddModule.bindEvents();
 }

@@ -562,7 +562,7 @@ Used for **automated checks** and **database tooling** (see `package.json`: `tes
 
 ## Deployment
 
-See [docs/DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md) for a full production checklist.
+See [docs/DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md) for a full production checklist. For Vercel region pinning, secrets encryption, and CSP flags see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 This is a standard Next.js 14 application. Deploy to any Node-compatible host (e.g. Vercel, Railway, Docker):
 

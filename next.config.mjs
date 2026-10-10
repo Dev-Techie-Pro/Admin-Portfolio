@@ -3,18 +3,19 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-function cspImgSrc() {
-  const parts = ["'self'", 'data:', 'blob:'];
-  const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  if (supabase) {
-    try {
-      parts.push(new URL(supabase).origin);
-    } catch {
-      /* ignore invalid URL */
-    }
+function supabaseOrigins() {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  if (!raw) return [];
+  try {
+    const url = new URL(raw);
+    const ws = url.origin.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
+    return [url.origin, ws];
+  } catch {
+    return [];
   }
-  return parts.join(' ');
 }
+
+const noCacheJs = 'public, max-age=0, must-revalidate';
 
 /** @type {import('next').NextConfig} */
 
@@ -56,22 +57,6 @@ const nextConfig = {
         value: 'max-age=63072000; includeSubDomains; preload',
       });
     }
-    securityHeaders.push({
-      key: 'Content-Security-Policy',
-      value: [
-        "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-        "font-src 'self' https://fonts.gstatic.com data:",
-        `img-src ${cspImgSrc()}`,
-        "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
-        "frame-src https://challenges.cloudflare.com",
-        "frame-ancestors 'none'",
-        "base-uri 'self'",
-        "object-src 'none'",
-        "form-action 'self'",
-      ].join('; '),
-    });
     return [
       {
         source: '/:path*',
@@ -91,17 +76,11 @@ const nextConfig = {
       },
       {
         source: '/js/main.js',
-        headers: [{
-          key: 'Cache-Control',
-          value: isProd ? 'public, max-age=3600, must-revalidate' : 'public, max-age=0, must-revalidate',
-        }],
+        headers: [{ key: 'Cache-Control', value: noCacheJs }],
       },
       {
         source: '/js/:file(boot-prefetch|prefetch-config|body-loader-template).js',
-        headers: [{
-          key: 'Cache-Control',
-          value: isProd ? 'public, max-age=3600, must-revalidate' : 'public, max-age=0, must-revalidate',
-        }],
+        headers: [{ key: 'Cache-Control', value: noCacheJs }],
       },
       {
         source: '/js/core/:path*',

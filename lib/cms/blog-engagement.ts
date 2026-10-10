@@ -163,12 +163,17 @@ export async function submitPublicComment(
   };
 }
 
-export async function togglePublicLike(slug: string, visitorKey: string) {
+export async function togglePublicLike(
+  slug: string,
+  visitorKey: string,
+  clientIp?: string | null,
+) {
   const post = await getPublishedPostEngagementMetaBySlug(slug);
   if (!post || !post.likes_enabled) {
     return { ok: false as const, error: 'Likes are not available for this post.', status: 404 };
   }
-  const key = normalizeVisitorKey(visitorKey);
+  const { derivePublicLikeVisitorKey } = await import('@/lib/cms/visitor-identity');
+  const key = derivePublicLikeVisitorKey(visitorKey, clientIp) ?? normalizeVisitorKey(visitorKey);
   if (!key) {
     return { ok: false as const, error: 'Invalid visitor key.', status: 400 };
   }

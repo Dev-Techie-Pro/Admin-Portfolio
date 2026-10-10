@@ -118,6 +118,8 @@ async function prepareImageBlob(
   return { blob, mimeType };
 }
 
+const DIRECT_UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
+
 async function postUploadForm(form: FormData) {
   const res = await fetch('/api/media/upload', {
     method: 'POST',
@@ -187,6 +189,61 @@ export async function uploadCmsFile(file: File, options: UploadOptions = {}) {
     uploadMime,
     willReencode,
   );
+
+  if (uploadBlob.size > DIRECT_UPLOAD_MAX_BYTES) {
+    const signRes = await fetch('/api/media/upload/sign', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        folder,
+        mimeType: uploadMime,
+        fileName: uploadName,
+        sizeBytes: uploadBlob.size,
+      }),
+    });
+    if (signRes.status === 401) {
+      window.location.href = '/login';
+      throw new MediaUploadError('Session expired. Please sign in again.');
+    }
+    const signed = await signRes.json();
+    if (!signRes.ok || !signed.signedUrl) {
+      throw new MediaUploadError(signed.error || 'Could not start direct upload.');
+    }
+    const putRes = await fetch(signed.signedUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': uploadMime },
+      body: uploadBlob,
+    });
+    if (!putRes.ok) {
+      throw new MediaUploadError('Direct upload to storage failed.');
+    }
+    const completeRes = await fetch('/api/media/upload/complete', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        storagePath: signed.storagePath,
+        mimeType: uploadMime,
+        fileName: signed.fileName || uploadName,
+        folder: signed.folder || folder,
+        sizeBytes: uploadBlob.size,
+      }),
+    });
+    const payload = await completeRes.json();
+    if (!completeRes.ok) {
+      throw new MediaUploadError(payload.error || 'Upload registration failed.');
+    }
+    if (!payload.url) throw new MediaUploadError('Upload did not return a URL.');
+    return {
+      url: payload.url as string,
+      storagePath: payload.storagePath || signed.storagePath || '',
+      fileName: payload.fileName || uploadName,
+      size: Number(payload.size) || uploadBlob.size,
+      mimeType: payload.mimeType || uploadMime,
+      folder: payload.folder || folder,
+    };
+  }
 
   form.append('file', uploadBlob, uploadName);
 

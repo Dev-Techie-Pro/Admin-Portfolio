@@ -86,8 +86,8 @@
   --pa-radius-md: 14px;
   --pa-radius-lg: 25px;
 
-  --pa-font-display: "Outfit", sans-serif;
-  --pa-font-body:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --pa-font-display: var(--font-outfit), "Outfit", sans-serif;
+  --pa-font-body: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --pa-font-mono:    "JetBrains Mono", monospace;
 
   --pa-fs-xm: 10px;

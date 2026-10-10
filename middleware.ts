@@ -16,6 +16,12 @@ import { MFA_STEPUP_COOKIE, readMfaStepUpCookie } from '@/lib/auth/mfa-stepup-co
 import { stripSensitiveAuthQueryParams } from '@/lib/auth/sensitive-query-params';
 import { needsMfaFromAal, NEEDS_MFA_ON_AAL_ERROR } from '@/lib/auth/mfa-aal';
 import { sanitizeRedirectPath } from '@/lib/auth/safe-redirect-path';
+import { resolveMiddlewareUser } from '@/lib/auth/middleware-session';
+import {
+  applyDocumentSecurityHeaders,
+  createNonce,
+  nextWithNonceHeaders,
+} from '@/lib/security/middleware-headers';
 
 function isPublicPath(pathname: string) {
   if (pathname.startsWith('/auth/callback')) return true;
@@ -33,18 +39,25 @@ function isAuthPage(pathname: string) {
   return AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }
 
+function withCsp(request: NextRequest, response: NextResponse, nonce: string) {
+  if (request.nextUrl.pathname.startsWith('/api/')) return response;
+  return applyDocumentSecurityHeaders(request, response, nonce);
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const nonce = createNonce();
+  const nonceNextInit = nextWithNonceHeaders(request, nonce);
 
   if (isAuthPage(pathname)) {
     const cleanUrl = request.nextUrl.clone();
     if (stripSensitiveAuthQueryParams(cleanUrl)) {
-      return NextResponse.redirect(cleanUrl, 303);
+      return withCsp(request, NextResponse.redirect(cleanUrl, 303), nonce);
     }
   }
 
   if (isPublicPath(pathname)) {
-    return NextResponse.next();
+    return withCsp(request, NextResponse.next(nonceNextInit), nonce);
   }
 
   const redirects = await getRuntimeRedirects();
@@ -52,20 +65,15 @@ export async function middleware(request: NextRequest) {
   if (redirectHit) {
     const url = request.nextUrl.clone();
     url.pathname = redirectHit.to;
-    return NextResponse.redirect(url, redirectHit.permanent ? 308 : 307);
+    return withCsp(
+      request,
+      NextResponse.redirect(url, redirectHit.permanent ? 308 : 307),
+      nonce,
+    );
   }
 
-  const { supabase, supabaseResponse } = createMiddlewareClient(request);
-  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-  let user = authUser;
-  if (
-    authError
-    && (authError.code === 'refresh_token_not_found'
-      || /refresh token/i.test(authError.message || ''))
-  ) {
-    await supabase.auth.signOut();
-    user = null;
-  }
+  const { supabase, supabaseResponse } = createMiddlewareClient(request, nonceNextInit);
+  const user = await resolveMiddlewareUser(supabase, pathname);
 
   if (user) {
     const deadlineCookie = request.cookies.get(SESSION_DEADLINE_COOKIE)?.value;
@@ -83,7 +91,7 @@ export async function middleware(request: NextRequest) {
         : NextResponse.redirect(loginUrl);
       mergeResponseCookies(supabaseResponse, redirect);
       clearSessionDeadlineCookie(redirect);
-      return redirect;
+      return withCsp(request, redirect, nonce);
     }
   }
 
@@ -121,7 +129,7 @@ export async function middleware(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = '/login';
       url.searchParams.set('mfa', 'required');
-      return NextResponse.redirect(url);
+      return withCsp(request, NextResponse.redirect(url), nonce);
     }
   }
 
@@ -132,7 +140,7 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('mfa', '1');
-    return NextResponse.redirect(url);
+    return withCsp(request, NextResponse.redirect(url), nonce);
   }
 
   if (!user && !isAuthPage(pathname)) {
@@ -142,16 +150,16 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('redirect', sanitizeRedirectPath(pathname));
-    return NextResponse.redirect(url);
+    return withCsp(request, NextResponse.redirect(url), nonce);
   }
 
   if (user && isAuthPage(pathname) && !needsMfa) {
     const url = request.nextUrl.clone();
     url.pathname = '/';
-    return NextResponse.redirect(url);
+    return withCsp(request, NextResponse.redirect(url), nonce);
   }
 
-  return supabaseResponse;
+  return withCsp(request, supabaseResponse, nonce);
 }
 
 export const config = {

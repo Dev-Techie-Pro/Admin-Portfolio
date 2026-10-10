@@ -1,5 +1,23 @@
-// @ts-nocheck
 import './globals.css';
+import { Inter, Outfit } from 'next/font/google';
+import { clientScriptUrl } from '@/lib/security/client-bundle';
+import { getDocumentScriptNonce, scriptNonceProps } from '@/lib/security/request-nonce';
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '600', '700'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-outfit',
+  display: 'swap',
+});
+
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'Portfolio Admin',
@@ -11,32 +29,34 @@ export const metadata = {
   manifest: '/images/site.webmanifest',
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const nonceProps = scriptNonceProps(getDocumentScriptNonce());
+  const mainJs = clientScriptUrl('/js/main.js');
+  const prefetchConfig = clientScriptUrl('/js/prefetch-config.js');
+  const bootPrefetch = clientScriptUrl('/js/boot-prefetch.js');
+  const bodyLoader = clientScriptUrl('/js/body-loader-template.js');
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${outfit.variable}`}>
       <head>
         {process.env.NODE_ENV === 'development' && (
           <script
+            suppressHydrationWarning
             dangerouslySetInnerHTML={{
               __html:
                 'window.addEventListener("pageshow",function(e){if(e.persisted)window.location.reload();});',
             }}
           />
         )}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
-        />
-        <link rel="modulepreload" href="/js/main.js" />
-        {/* Static public scripts — plain tags avoid Next.js preload warnings */}
-        <script src="/js/prefetch-config.js" defer />
-        <script src="/js/boot-prefetch.js" defer />
-        <script src="/js/body-loader-template.js" defer />
+        <link rel="modulepreload" href={mainJs} />
+        <script src={prefetchConfig} defer suppressHydrationWarning {...nonceProps} />
+        <script src={bootPrefetch} defer suppressHydrationWarning {...nonceProps} />
+        <script src={bodyLoader} defer suppressHydrationWarning {...nonceProps} />
       </head>
       <body suppressHydrationWarning>
         <script
+          suppressHydrationWarning
+          {...nonceProps}
           dangerouslySetInnerHTML={{
             __html: `(function(){var p=location.pathname;if(/\\/(login|forget-password|reset-password)(\\/|$)/.test(p)){document.documentElement.classList.add('pa-auth-route');}})();`,
           }}

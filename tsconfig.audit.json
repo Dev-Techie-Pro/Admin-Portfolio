@@ -14,6 +14,8 @@
     "lib/api/rate-limit.ts",
     "lib/api/public-cors.ts",
     "lib/config/redirects.ts",
+    "lib/config/runtime-settings.ts",
+    "lib/supabase/middleware.ts",
     "lib/auth/mfa-aal.ts",
     "lib/auth/safe-redirect-path.ts",
     "lib/auth/admin-mfa-policy.ts",

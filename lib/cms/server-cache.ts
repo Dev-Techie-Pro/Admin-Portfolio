@@ -85,6 +85,6 @@ export const PUBLIC_CACHE_TTL = {
 
 /** HTTP Cache-Control max-age for public JSON responses (seconds). */
 export const PUBLIC_CACHE_MAX_AGE_SEC = {
-  publicContent: 120,
+  publicContent: 60,
   publicEngagement: 20,
 };

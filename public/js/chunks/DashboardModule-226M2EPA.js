@@ -1,13 +1,13 @@
 import {
   CATEGORY_META_PROJECTS
-} from "./chunk-55AIKIDG.js";
+} from "./chunk-HX2FHGI7.js";
 import "./chunk-GTVQDK27.js";
 import "./chunk-CLCJCM2M.js";
 import "./chunk-JGHNOGAK.js";
 import {
   syncPaSelect
 } from "./chunk-WJJ4NSHA.js";
-import "./chunk-VKZENHZA.js";
+import "./chunk-SGO64PK4.js";
 import {
   GROUP_META,
   LEVEL_META
@@ -1137,4 +1137,4 @@ var DashboardModule = class extends Module {
 export {
   DashboardModule
 };
-//# sourceMappingURL=DashboardModule-MVYIMSR4.js.map
+//# sourceMappingURL=DashboardModule-226M2EPA.js.map

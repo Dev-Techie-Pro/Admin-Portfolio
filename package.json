@@ -2,6 +2,9 @@
   "name": "admin-dashboard-nextjs",
   "version": "1.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "npm run build:client && next dev",
     "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev",
@@ -18,7 +21,9 @@
     "test:escape-html": "node scripts/test-escape-html.mjs",
     "test:is-uuid": "node scripts/test-is-uuid.mjs",
     "test:rls": "node scripts/test-rls-security.mjs",
-    "test:ci": "node scripts/test-api-guards.mjs && node scripts/test-prefetch-sync.mjs && node scripts/verify-deployment-env.mjs && node scripts/test-preview-token.mjs && node scripts/test-guard-smoke.mjs && node scripts/test-public-api-hardening.mjs && node scripts/test-mfa-aal.mjs && node scripts/test-safe-redirect.mjs && node scripts/test-blog-public-visibility.mjs && node scripts/test-innerhtml-sinks.mjs && node scripts/test-public-api-prefixes.mjs && node scripts/test-runtime-config-mask.mjs && node scripts/test-sanitize-html.mjs && node scripts/test-escape-html.mjs && node scripts/test-is-uuid.mjs && node scripts/test-rls-security.mjs",
+    "test:ts-nocheck-ratchet": "node scripts/count-ts-nocheck.mjs",
+    "test:e2e": "playwright test",
+    "test:ci": "node scripts/count-ts-nocheck.mjs && node scripts/test-effective-role.mjs && node scripts/test-csp.mjs && node scripts/test-api-guards.mjs && node scripts/test-prefetch-sync.mjs && node scripts/verify-deployment-env.mjs && node scripts/test-preview-token.mjs && node scripts/test-guard-smoke.mjs && node scripts/test-public-api-hardening.mjs && node scripts/test-mfa-aal.mjs && node scripts/test-safe-redirect.mjs && node scripts/test-blog-public-visibility.mjs && node scripts/test-innerhtml-sinks.mjs && node scripts/test-public-api-prefixes.mjs && node scripts/test-runtime-config-mask.mjs && node scripts/test-sanitize-html.mjs && node scripts/test-escape-html.mjs && node scripts/test-is-uuid.mjs && node scripts/test-rls-security.mjs",
     "typecheck:client": "tsc -p client/tsconfig.json --noEmit",
     "db:push": "supabase db push",
     "db:status": "supabase migration list",
@@ -28,16 +33,20 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.6",
     "@supabase/supabase-js": "^2.115.0",
+    "@tanstack/react-query": "^5.104.1",
     "apexcharts": "^3.49.0",
     "motion": "^12.43.0",
     "next": "14.2.35",
     "nodemailer": "^10.0.10",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "remixicon": "^4.6.0"
+    "remixicon": "^4.6.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
+    "@playwright/test": "^1.64.0",
     "@types/node": "^26.6.2",
     "@types/nodemailer": "^8.0.2",
     "@types/react": "^18.3.0",

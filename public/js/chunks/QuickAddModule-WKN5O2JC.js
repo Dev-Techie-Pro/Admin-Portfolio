@@ -2,7 +2,7 @@ import {
   CATEGORY_META_PROJECTS,
   bindTechnologySuggest,
   pickSceneForCategory
-} from "./chunk-55AIKIDG.js";
+} from "./chunk-HX2FHGI7.js";
 import {
   addChip,
   addProjectCategoryChip,
@@ -21,7 +21,7 @@ import {
   handleFileValidation,
   uploadCmsFile,
   uploadCmsFileWithPreview
-} from "./chunk-VKZENHZA.js";
+} from "./chunk-SGO64PK4.js";
 import "./chunk-FRUJZYET.js";
 import {
   isValidSlug,
@@ -923,4 +923,4 @@ var QuickAddModule = class extends Module {
 export {
   QuickAddModule
 };
-//# sourceMappingURL=QuickAddModule-KEQL5CHN.js.map
+//# sourceMappingURL=QuickAddModule-WKN5O2JC.js.map
