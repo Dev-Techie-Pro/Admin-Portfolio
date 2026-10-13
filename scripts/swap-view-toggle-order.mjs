@@ -32,6 +32,20 @@ function buildReplacements(gridId, listId, escaped = false) {
   return `<button class=\\"pa-view-btn\\" id=\\"${listId}\\"$2><i class=\\"ri-list-unordered\\"></i></button>\\n          <button class=\\"pa-view-btn active\\" id=\\"${gridId}\\"$1><i class=\\"ri-layout-grid-fill\\"></i></button>`;
 }
 
+/** Default view is grid: strip active from list, ensure grid is active (idempotent). */
+function normalizeViewToggleActive(html, gridId, listId) {
+  let next = html;
+  for (const [from, to] of [
+    [`class="pa-view-btn active" id="${listId}"`, `class="pa-view-btn" id="${listId}"`],
+    [`class=\\"pa-view-btn active\\" id=\\"${listId}\\"`, `class=\\"pa-view-btn\\" id=\\"${listId}\\"`],
+    [`class="pa-view-btn" id="${gridId}"`, `class="pa-view-btn active" id="${gridId}"`],
+    [`class=\\"pa-view-btn\\" id=\\"${gridId}\\"`, `class=\\"pa-view-btn active\\" id=\\"${gridId}\\"`],
+  ]) {
+    next = next.replaceAll(from, to);
+  }
+  return next;
+}
+
 let count = 0;
 for (const file of files) {
   const original = fs.readFileSync(file, 'utf8');
@@ -40,6 +54,7 @@ for (const file of files) {
     const [plain, escaped] = buildPatterns(gridId, listId);
     next = next.replace(plain, buildReplacements(gridId, listId, false));
     next = next.replace(escaped, buildReplacements(gridId, listId, true));
+    next = normalizeViewToggleActive(next, gridId, listId);
   }
   if (next !== original) {
     fs.writeFileSync(file, next);

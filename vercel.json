@@ -11,10 +11,6 @@
     {
       "path": "/api/cron/publish-scheduled",
       "schedule": "0 4 * * *"
-    },
-    {
-      "path": "/api/cron/deliver-webhooks",
-      "schedule": "*/30 * * * *"
     }
   ]
 }

@@ -571,10 +571,11 @@ This is a standard Next.js 14 application. Deploy to any Node-compatible host (e
 3. Set `NEXT_PUBLIC_SITE_URL` to your production admin URL.
 4. Set `PORTFOLIO_PUBLIC_ORIGINS` (or `NEXT_PUBLIC_PORTFOLIO_URL`) so your live portfolio site can call `/api/public/blog/*`.
 5. Configure runtime retention and SMTP under **Settings → System → Environment** (stored in `site_runtime_config`).
-6. Configure `CRON_SECRET` and schedule (see `vercel.json`):
+6. Configure `CRON_SECRET` and schedule (see `vercel.json` — all entries are **once per day**, compatible with Vercel Hobby):
    - `/api/cron/purge-activities` for activity retention
    - `/api/cron/prune-sessions` for old session and login-activity rows
-   - `/api/cron/publish-scheduled` for due blog `published_at` dates
+   - `/api/cron/publish-scheduled` for due blog `published_at` dates and publish-webhook outbox retries
+   - Optional on Pro: add `/api/cron/deliver-webhooks` with a sub-daily schedule for faster webhook retries
 7. Build and start:
 
 ```bash

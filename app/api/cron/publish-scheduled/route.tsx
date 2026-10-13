@@ -2,10 +2,12 @@
 import { NextResponse } from 'next/server';
 import { authorizeCronRequest } from '@/lib/api/cron-auth';
 import { publishScheduledBlogPosts } from '@/lib/cms/scheduled-publish';
+import { deliverWebhookOutboxBatch } from '@/lib/cms/publish-webhook';
 
 /**
  * Publishes blog posts whose published_at date is today or earlier.
- * Schedule daily via platform cron with Authorization: Bearer CRON_SECRET
+ * Also drains the publish webhook outbox (retries). Schedule daily on Vercel Hobby+.
+ * Authorization: Bearer CRON_SECRET
  */
 export async function GET(request: Request) {
   const denied = authorizeCronRequest(request);
@@ -13,7 +15,8 @@ export async function GET(request: Request) {
 
   try {
     const result = await publishScheduledBlogPosts();
-    return NextResponse.json({ ok: true, ...result });
+    const webhooks = await deliverWebhookOutboxBatch(30);
+    return NextResponse.json({ ok: true, ...result, webhooks });
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
