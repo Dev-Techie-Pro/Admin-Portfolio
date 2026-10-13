@@ -575,7 +575,7 @@ This is a standard Next.js 14 application. Deploy to any Node-compatible host (e
    - `/api/cron/purge-activities` for activity retention
    - `/api/cron/prune-sessions` for old session and login-activity rows
    - `/api/cron/publish-scheduled` for due blog `published_at` dates and publish-webhook outbox retries
-   - Optional on Pro: add `/api/cron/deliver-webhooks` with a sub-daily schedule for faster webhook retries
+   - Optional sub-daily webhook retries: Supabase `pg_cron` + Vault (see [supabase/README.md](supabase/README.md#publish-webhook-retries-vercel-hobby)), or Vercel Pro cron on `/api/cron/deliver-webhooks`
 7. Build and start:
 
 ```bash

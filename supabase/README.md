@@ -303,8 +303,47 @@ Store the public URL in `media_assets.url` and the bucket object path in `media_
 | `pa_admin_public_tables()` | List public tables for SQL export UI |
 | `pa_admin_public_table_stats()` | Row counts and on-disk size per table |
 | `pa_admin_foreign_key_edges()` | FK graph for ordered SQL dumps |
+| `pa_cron_deliver_webhooks()` | HTTP invoke admin `/api/cron/deliver-webhooks` (pg_net + Vault; optional) |
 
 Activity retention for `recent_activities` is handled in app code and `/api/cron/purge-activities` (see root README).
+
+### Publish webhook retries (Vercel Hobby)
+
+Vercel Hobby cron schedules must run **at most once per day** (`vercel.json`). The app drains the publish webhook outbox daily in `/api/cron/publish-scheduled` and immediately on manual/scheduled publish via `firePublishWebhooks`.
+
+For **sub-daily retries** (failed webhook deliveries) without upgrading Vercel:
+
+1. Enable **pg_cron** and **pg_net** in Supabase Dashboard → **Database → Extensions** (you do **not** need a `supabase_vault` row there on most cloud projects).
+2. Apply migration `20261014160000_pg_cron_webhook_invoke.sql` (`npm run db:push`).
+3. In **SQL Editor**, insert the singleton config (same `CRON_SECRET` as Vercel env; admin URL = `NEXT_PUBLIC_SITE_URL`):
+
+```sql
+insert into private.pa_cron_invoke_config (id, base_url, bearer_secret)
+values (
+  1,
+  'https://YOUR_ADMIN_HOST',
+  'YOUR_CRON_SECRET'
+)
+on conflict (id) do update set
+  base_url = excluded.base_url,
+  bearer_secret = excluded.bearer_secret,
+  updated_at = now();
+```
+
+This schedules `pa_cron_deliver_webhooks()` every 15 minutes, which calls `GET /api/cron/deliver-webhooks` on your admin deployment.
+
+**Optional — Supabase Vault (encrypted secrets):** Vault is often **already enabled** on hosted Supabase and may not appear in the Extensions list. You can use **SQL Editor → Vault** helpers or:
+
+```sql
+create extension if not exists supabase_vault with schema vault;
+
+select vault.create_secret('https://YOUR_ADMIN_HOST', 'portfolio_admin_url', 'Admin base URL');
+select vault.create_secret('YOUR_CRON_SECRET', 'portfolio_cron_secret', 'CRON bearer');
+```
+
+If both Vault secrets and `private.pa_cron_invoke_config` exist, Vault is tried first; the private table is the fallback.
+
+On **Vercel Pro**, you can instead add a sub-daily entry for `/api/cron/deliver-webhooks` in `vercel.json` and skip Vault setup.
 
 ---
 
