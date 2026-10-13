@@ -14,6 +14,7 @@ import {
 } from '@/lib/auth/admin-mfa-cookie';
 import { MFA_STEPUP_COOKIE, readMfaStepUpCookie } from '@/lib/auth/mfa-stepup-cookie';
 import { stripSensitiveAuthQueryParams } from '@/lib/auth/sensitive-query-params';
+import { getMfaAssuranceLevel } from '@/lib/auth/mfa';
 import { needsMfaFromAal, NEEDS_MFA_ON_AAL_ERROR } from '@/lib/auth/mfa-aal';
 import { sanitizeRedirectPath } from '@/lib/auth/safe-redirect-path';
 import { resolveMiddlewareUser } from '@/lib/auth/middleware-session';
@@ -98,7 +99,7 @@ export async function middleware(request: NextRequest) {
   let needsMfa = false;
   if (user) {
     try {
-      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      const aal = await getMfaAssuranceLevel(supabase);
       needsMfa = needsMfaFromAal(aal);
     } catch (err) {
       console.error('[middleware] MFA AAL lookup failed:', (err as Error).message);

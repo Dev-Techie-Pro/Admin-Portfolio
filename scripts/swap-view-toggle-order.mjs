@@ -27,9 +27,9 @@ function buildPatterns(gridId, listId) {
 
 function buildReplacements(gridId, listId, escaped = false) {
   if (!escaped) {
-    return `<button class="pa-view-btn" id="${listId}"$2><i class="ri-list-unordered"></i></button><button class="pa-view-btn" id="${gridId}"$1><i class="ri-layout-grid-fill"></i></button>`;
+    return `<button class="pa-view-btn" id="${listId}"$2><i class="ri-list-unordered"></i></button><button class="pa-view-btn active" id="${gridId}"$1><i class="ri-layout-grid-fill"></i></button>`;
   }
-  return `<button class=\\"pa-view-btn\\" id=\\"${listId}\\"$2><i class=\\"ri-list-unordered\\"></i></button>\\n          <button class=\\"pa-view-btn\\" id=\\"${gridId}\\"$1><i class=\\"ri-layout-grid-fill\\"></i></button>`;
+  return `<button class=\\"pa-view-btn\\" id=\\"${listId}\\"$2><i class=\\"ri-list-unordered\\"></i></button>\\n          <button class=\\"pa-view-btn active\\" id=\\"${gridId}\\"$1><i class=\\"ri-layout-grid-fill\\"></i></button>`;
 }
 
 let count = 0;

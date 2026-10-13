@@ -21,7 +21,12 @@ export function normalizeTotpQrCode(qrCode) {
 }
 
 export async function getMfaAssuranceLevel(supabase) {
-  const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  const accessToken = sessionData.session?.access_token;
+  const { data, error } = accessToken
+    ? await supabase.auth.mfa.getAuthenticatorAssuranceLevel(accessToken)
+    : await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (error) throw error;
   return data;
 }
