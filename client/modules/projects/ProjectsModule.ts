@@ -22,6 +22,12 @@ import {
   withNormalizedProjectCategories,
 } from '../../utils/projectCategories.js';
 import { requestDelete } from '../../modules/shell/confirm.js';
+import {
+  bindDefaultViewChanged,
+  effectiveViewMode,
+  hydratePageViewMode,
+  setPageViewOverride,
+} from '../../utils/listGridView.js';
 import { closeAllCardMenus, toggleCardMenu } from '../../modules/shell/cardMenu.js';
 import { ProjectWorkspace } from './ProjectWorkspace.js';
 import { PAGE } from '../../core/router.js';
@@ -151,6 +157,13 @@ export class ProjectsModule extends Module {
       this.store.set('records', prev);
       this.statusToast('Could not delete projects. Please try again.', 'danger');
     }
+  }
+
+  async init() {
+    await hydratePageViewMode('projects', (mode) => this.store.set('viewMode', mode));
+    await this.load();
+    this.render();
+    this.bindEvents();
   }
 
   async load() {
@@ -358,7 +371,7 @@ export class ProjectsModule extends Module {
   }
 
   setViewModeFromStore() {
-    const mode = this.store.get('viewMode') || 'grid';
+    const mode = effectiveViewMode(this.store.get('viewMode'));
     
     const gridBtn = $id('paGridViewBtn');
     const listBtn = $id('paListViewBtn');
@@ -984,10 +997,11 @@ export class ProjectsModule extends Module {
       const parent = gridBtn.parentNode;
       const newGridBtn = gridBtn.cloneNode(true);
       parent.replaceChild(newGridBtn, gridBtn);
-      this.on(newGridBtn, 'click', () => { 
-        this.store.set('viewMode', 'grid'); 
+      this.on(newGridBtn, 'click', () => {
+        setPageViewOverride('projects', 'grid');
+        this.store.set('viewMode', 'grid');
         this.setViewModeFromStore();
-        this.render(); 
+        this.render();
       });
     }
     
@@ -995,12 +1009,23 @@ export class ProjectsModule extends Module {
       const parent = listBtn.parentNode;
       const newListBtn = listBtn.cloneNode(true);
       parent.replaceChild(newListBtn, listBtn);
-      this.on(newListBtn, 'click', () => { 
-        this.store.set('viewMode', 'list'); 
+      this.on(newListBtn, 'click', () => {
+        setPageViewOverride('projects', 'list');
+        this.store.set('viewMode', 'list');
         this.setViewModeFromStore();
-        this.render(); 
+        this.render();
       });
     }
+
+    bindDefaultViewChanged(
+      'projects',
+      (event, handler) => this.onBus(event, handler),
+      (mode) => this.store.set('viewMode', mode),
+      () => {
+        this.setViewModeFromStore();
+        this.render();
+      },
+    );
 
     this.onBus('confirm:confirmed', ({ id, type }) => { 
       if (type === 'project') this.deleteById(id); 

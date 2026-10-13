@@ -22,7 +22,7 @@ export const PAGE_KEYS = {
   settings: ['pa_settings', 'pa_recent_activities', 'pa_notification_preferences'],
 };
 
-export const GLOBAL_KEYS = ['pa_notifications'];
+export const GLOBAL_KEYS = ['pa_notifications', 'pa_settings'];
 
 export function resolvePage(path) {
   if (path.includes('/project-tags')) return 'project-tags';
@@ -47,5 +47,10 @@ export function resolvePage(path) {
 }
 
 export function getKeysForPage(page) {
-  return PAGE_KEYS[page] || [];
+  const pageKeys = PAGE_KEYS[page] || [];
+  const merged = [...GLOBAL_KEYS];
+  pageKeys.forEach((key) => {
+    if (!merged.includes(key)) merged.push(key);
+  });
+  return merged;
 }

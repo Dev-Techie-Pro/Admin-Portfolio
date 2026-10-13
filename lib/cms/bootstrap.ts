@@ -97,6 +97,15 @@ async function fetchPageData(page, auth) {
     }
   }
 
+  if (!data.pa_settings) {
+    try {
+      data.pa_settings = await getSettings(auth);
+    } catch (err) {
+      console.error('[bootstrap] failed to load "pa_settings":', err);
+      data.pa_settings = null;
+    }
+  }
+
   return data;
 }
 

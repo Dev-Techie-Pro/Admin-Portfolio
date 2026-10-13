@@ -153,8 +153,7 @@ export const BODY_HTML = `<div class="pa-toast-wrap" id="paToastWrap" role="stat
 
       <div class="pa-toolbar pa-cat-toolbar">
         <div class="pa-view-toggle pa-cat-view-toggle" role="group" aria-label="View mode">
-          <button class="pa-view-btn active" id="paGridViewBtn" title="Grid view" aria-label="Grid view"><i class="ri-layout-grid-fill"></i></button>
-          <button class="pa-view-btn" id="paListViewBtn" title="List view" aria-label="List view"><i class="ri-list-unordered"></i></button>
+          <button class="pa-view-btn" id="paListViewBtn" title="List view" aria-label="List view"><i class="ri-list-unordered"></i></button><button class="pa-view-btn" id="paGridViewBtn" title="Grid view" aria-label="Grid view"><i class="ri-layout-grid-fill"></i></button>
         </div>
         <select class="pa-filter-select" id="paProjTechUsageFilter" aria-label="Filter by usage" name="paProjTechUsageFilter">
           <option value="all">All skills</option>

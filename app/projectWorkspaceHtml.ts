@@ -15,7 +15,7 @@ export const PROJECT_WORKSPACE_HTML = `
         <button type="button" class="pa-view-btn active" id="paProjWsEditBtn" data-ws-mode="edit" title="Edit project"><i class="ri-edit-line"></i> Edit</button>
         <button type="button" class="pa-view-btn" id="paProjWsPreviewBtn" data-ws-mode="preview" title="Preview description"><i class="ri-eye-line"></i> Preview</button>
       </div>
-      <button type="button" class="pa-btn pa-btn-cancel" id="paProjWsDeleteBtn"><i class="ri-delete-bin-line"></i> Delete</button>
+      <button type="button" class="pa-btn pa-btn-cancel" id="paProjWsDeleteBtn" hidden><i class="ri-delete-bin-line"></i> Delete</button>
       <button type="button" class="pa-btn pa-btn-primary" id="paProjWsSaveBtn">
         <span class="pa-spinner"></span>
         <span class="pa-btn-label"><i class="ri-save-line"></i> Save changes</span>

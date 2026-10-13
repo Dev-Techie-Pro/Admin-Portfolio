@@ -1,6 +1,12 @@
 import { Module } from "../../core/Module.js";
 import { escapeHtml, $id, $all, $input } from "../../utils/dom.js";
 import { storage } from "../../core/StorageService.js";
+import {
+  bindDefaultViewChanged,
+  effectiveViewMode,
+  hydratePageViewMode,
+  setPageViewOverride
+} from "../../utils/listGridView.js";
 import { setStatValue } from "../../utils/pageStats.js";
 import {
   applyListGridClasses,
@@ -28,6 +34,12 @@ class ProjectTechnologiesModule extends Module {
         filters: { usage: "all", sort: "name" }
       }
     });
+  }
+  async init() {
+    await hydratePageViewMode("project-technologies", (mode) => this.store.set("viewMode", mode));
+    await this.load();
+    this.render();
+    this.bindEvents();
   }
   async load() {
     const records = await storage.get(this.storageKey, []);
@@ -187,6 +199,7 @@ class ProjectTechnologiesModule extends Module {
     }
   }
   setViewMode(mode) {
+    setPageViewOverride("project-technologies", mode);
     this.store.set("viewMode", mode);
     const gridBtn = $id("paGridViewBtn");
     const listBtn = $id("paListViewBtn");
@@ -221,7 +234,7 @@ class ProjectTechnologiesModule extends Module {
     if (page !== this.store.get("page")) this.store.set("page", page);
     const start = (page - 1) * PAGE_SIZE;
     const pageItems = all.slice(start, start + PAGE_SIZE);
-    const isList = this.store.get("viewMode") === "list";
+    const isList = effectiveViewMode(this.store.get("viewMode")) === "list";
     const resultCount = $id("paProjTechResultCount");
     if (resultCount) {
       resultCount.textContent = all.length === total ? `${total} total` : `${all.length} of ${total}`;
@@ -285,6 +298,12 @@ class ProjectTechnologiesModule extends Module {
     }
     this.on($id("paGridViewBtn"), "click", () => this.setViewMode("grid"));
     this.on($id("paListViewBtn"), "click", () => this.setViewMode("list"));
+    bindDefaultViewChanged(
+      "project-technologies",
+      (event, handler) => this.onBus(event, handler),
+      (mode) => this.store.set("viewMode", mode),
+      () => this.render()
+    );
   }
 }
 export {

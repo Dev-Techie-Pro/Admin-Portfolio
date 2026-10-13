@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { CrudCardModule } from '../../core/CrudCardModule.js';
+import { effectiveViewMode } from '../../utils/listGridView.js';
 import { sortByNewestFirst } from '../../utils/format.js';
 import { renderPaCatListRow } from '../../utils/paCatCard.js';
 import {
@@ -295,7 +296,7 @@ export class BlogCategoriesModule extends CrudCardModule {
   renderPagination() { }
 
   setViewModeFromStore() {
-    const mode = this.store.get('viewMode') || 'grid';
+    const mode = effectiveViewMode(this.store.get('viewMode'));
     const gridBtn = $id('paBlogCatGridViewBtn') || $id('paGridViewBtn');
     const listBtn = $id('paBlogCatListViewBtn') || $id('paListViewBtn');
     if (gridBtn) gridBtn.classList.toggle('active', mode === 'grid');
@@ -539,21 +540,13 @@ export class BlogCategoriesModule extends CrudCardModule {
       const parent = gridBtn.parentNode;
       const newGridBtn = gridBtn.cloneNode(true);
       parent.replaceChild(newGridBtn, gridBtn);
-      this.on(newGridBtn, 'click', () => {
-        this.store.set('viewMode', 'grid');
-        this.setViewModeFromStore();
-        this.render();
-      });
+      this.on(newGridBtn, 'click', () => { this._setViewMode('grid'); });
     }
     if (listBtn) {
       const parent = listBtn.parentNode;
       const newListBtn = listBtn.cloneNode(true);
       parent.replaceChild(newListBtn, listBtn);
-      this.on(newListBtn, 'click', () => {
-        this.store.set('viewMode', 'list');
-        this.setViewModeFromStore();
-        this.render();
-      });
+      this.on(newListBtn, 'click', () => { this._setViewMode('list'); });
     }
   }
 }

@@ -22,6 +22,8 @@
     settings: ['pa_settings', 'pa_recent_activities', 'pa_notification_preferences'],
   };
 
+  const GLOBAL_KEYS = ['pa_notifications', 'pa_settings'];
+
   const ROUTE_BY_KEY = {
     pa_projects: '/api/projects',
     pa_category_meta: '/api/categories',
@@ -67,9 +69,20 @@
     return 'dashboard';
   }
 
+  function getKeysForPage(page) {
+    const pageKeys = PAGE_KEYS[page] || [];
+    const merged = GLOBAL_KEYS.slice();
+    pageKeys.forEach(function (key) {
+      if (merged.indexOf(key) === -1) merged.push(key);
+    });
+    return merged;
+  }
+
   global.__paPrefetchConfig = {
     PAGE_KEYS,
+    GLOBAL_KEYS,
     ROUTE_BY_KEY,
     resolvePage,
+    getKeysForPage,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

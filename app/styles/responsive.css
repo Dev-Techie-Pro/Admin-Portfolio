@@ -499,7 +499,7 @@
   }
 
   .pa-sidebar.collapsed .pa-sidebar-rail {
-    border-right: 1px solid var(--pa-border);
+    border-right: none;
   }
 }
 @media (max-width: 860px) {
@@ -1126,4 +1126,20 @@
     filter: none !important;
     transform: none !important;
   }
+}
+
+/* Sidebar: no outer vertical line between nav and main (expanded or collapsed) */
+.pa-shell > .pa-sidebar,
+#paSidebar.pa-sidebar {
+  border: none !important;
+  border-right: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.pa-shell > .pa-sidebar > .pa-sidebar-panel,
+.pa-shell > .pa-sidebar > .pa-sidebar-rail {
+  border: none !important;
+  border-right: none !important;
+  box-shadow: none !important;
 }

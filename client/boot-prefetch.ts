@@ -211,8 +211,18 @@
     }
   }
 
+  var GLOBAL_KEYS = config.GLOBAL_KEYS || ['pa_notifications', 'pa_settings'];
+  var getKeysForPage = config.getKeysForPage || function (p) {
+    var pageKeys = PAGE_KEYS[p] || [];
+    var merged = GLOBAL_KEYS.slice();
+    pageKeys.forEach(function (key) {
+      if (merged.indexOf(key) === -1) merged.push(key);
+    });
+    return merged;
+  };
+
   function prefetchPageKeys(page, bag, fetchOpts) {
-    var keys = PAGE_KEYS[page] || [];
+    var keys = getKeysForPage(page);
     keys.forEach(function (key) {
       if (bag[key]) return;
       var route = ROUTE_BY_KEY[key];

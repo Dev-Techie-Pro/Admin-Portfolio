@@ -30,7 +30,7 @@
   padding: 14px 0 12px;
   gap: var(--pa-card-gap);
   background: color-mix(in srgb, var(--pa-bg-raised) 72%, transparent);
-  border-right: 1px solid var(--pa-bg-chip);
+  border-right: none;
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   z-index: 2;
@@ -150,7 +150,9 @@
   display: flex;
   flex-direction: column;
   background: var(--pa-bg-raised);
-  border-right: 1px solid var(--pa-border);
+  border: none;
+  border-right: none;
+  box-shadow: none;
   height: 100vh;
   overflow: hidden;
 }
@@ -710,8 +712,8 @@ a.pa-sidebar-brand.pa-logo-link,
 .pa-nav-item.active {
   color: var(--pa-text);
   background: var(--pa-orange-dim);
-  border-left-color: var(--pa-orange);
-  box-shadow: none;
+  border-left-color: transparent;
+  box-shadow: inset 3px 0 0 var(--pa-orange);
 }
 
 .pa-nav-item.active i {
@@ -872,7 +874,8 @@ a.pa-sidebar-brand.pa-logo-link,
 
 .pa-sidebar-panel .pa-nav-subitem.active {
   background: var(--pa-orange-dim);
-  border-left: 3px solid var(--pa-orange);
+  border-left: 3px solid transparent;
+  box-shadow: inset 3px 0 0 var(--pa-orange);
 }
 
 .pa-sidebar-panel .pa-nav-subitem.active i {
@@ -884,7 +887,8 @@ a.pa-sidebar-brand.pa-logo-link,
 }
 
 .pa-nav-group.open .pa-nav-item--parent.active {
-  border-left-color: var(--pa-orange);
+  border-left-color: transparent;
+  box-shadow: inset 3px 0 0 var(--pa-orange);
 }
 .pa-nav-group.open{
   border-bottom: 1px solid var(--pa-bg-chip);
@@ -929,8 +933,8 @@ a.pa-sidebar-brand.pa-logo-link,
 }
 
 .pa-nav-group[data-nav-group] .pa-nav-subitem.active::before,
-.pa-nav-group[data-nav-group] .pa-nav-subitem.active::after{
-  border-color: var(--pa-orange-dim);
+.pa-nav-group[data-nav-group] .pa-nav-subitem.active::after {
+  border-color: color-mix(in srgb, var(--pa-text-mute) 35%, transparent);
 }
 
 .pa-sidebar-footer {

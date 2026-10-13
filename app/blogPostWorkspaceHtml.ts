@@ -15,7 +15,7 @@ export const BLOG_POST_WORKSPACE_HTML = `
         <button type="button" class="pa-view-btn active" id="paBlogWsEditBtn" data-ws-mode="edit" title="Edit post"><i class="ri-edit-line"></i> Edit</button>
         <button type="button" class="pa-view-btn" id="paBlogWsPreviewBtn" data-ws-mode="preview" title="Preview"><i class="ri-eye-line"></i> Preview</button>
       </div>
-      <button type="button" class="pa-btn pa-btn-cancel" id="paBlogWsDeleteBtn"><i class="ri-delete-bin-line"></i> Delete</button>
+      <button type="button" class="pa-btn pa-btn-cancel" id="paBlogWsDeleteBtn" hidden><i class="ri-delete-bin-line"></i> Delete</button>
       <button type="button" class="pa-btn pa-btn-primary" id="paBlogWsSaveBtn">
         <span class="pa-spinner"></span>
         <span class="pa-btn-label"><i class="ri-save-line"></i> Save changes</span>

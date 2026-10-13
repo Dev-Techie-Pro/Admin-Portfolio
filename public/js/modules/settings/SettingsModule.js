@@ -32,6 +32,12 @@ import { getAccessCapabilities } from "../../core/access.js";
 import { canAccessSettingsTab } from "../../../lib/auth/capabilities.js";
 import { eventBus } from "../../core/EventBus.js";
 import { initRoleRequestCard } from "./roleRequest.js";
+import {
+  clearAllPageViewOverrides,
+  emitDefaultViewChanged,
+  normalizeViewMode,
+  persistSiteDefaultView
+} from "../../utils/listGridView.js";
 class SettingsModule extends Module {
   constructor() {
     super({
@@ -53,9 +59,50 @@ class SettingsModule extends Module {
       getProfile: async () => this.store.get("profile") || authService.getProfile().catch(() => null)
     });
   }
+  async saveRecords(data, { feedback = true } = {}) {
+    if (!getAccessCapabilities().canManageSiteSettings) {
+      if (feedback) {
+        showToast("Only administrators can change site settings.", "danger");
+      }
+      return;
+    }
+    if (feedback) showStatusToast("Saving changes\u2026", "info", 12e4);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(data)
+      });
+      if (res.status === 401) {
+        window.location.href = "/login";
+        throw new Error("Session expired");
+      }
+      const raw = await res.text();
+      if (!res.ok) {
+        let detail = raw;
+        try {
+          const parsed = JSON.parse(raw);
+          detail = parsed.error || raw;
+        } catch {
+        }
+        throw new Error(detail || "Could not save settings.");
+      }
+      storage.invalidate("pa_recent_activities");
+      storage.invalidate("pa_notifications");
+    } catch (err) {
+      console.error("[Settings] save failed:", err);
+      if (feedback) {
+        showStatusToast(err?.message || "Could not save settings.", "danger");
+      }
+      throw err;
+    }
+  }
   async load() {
     const saved = await this.loadRecords(() => ({}));
     this.store.set("settings", saved);
+    const loadedDefault = normalizeViewMode(saved?.defaultView);
+    if (saved?.defaultView != null) persistSiteDefaultView(loadedDefault);
     this.wireGeneralFormFields();
     this.hydrateFromSettings();
     await Promise.all([
@@ -161,9 +208,10 @@ class SettingsModule extends Module {
     };
   }
   collectOtherSettings() {
+    const rawDefault = $field("defaultView")?.value || "list";
     return {
       itemsPerPage: $field("itemsPerPage")?.value || "12",
-      defaultView: $field("defaultView")?.value || "grid",
+      defaultView: normalizeViewMode(rawDefault),
       language: $field("language")?.value || "en",
       maintenanceMode: !!$input("maintenanceMode")?.checked
     };
@@ -502,7 +550,7 @@ class SettingsModule extends Module {
     this.setSelectValue(
       "defaultView",
       s.defaultView === "list" || String(s.defaultView).toLowerCase().includes("list") ? "list" : "grid",
-      "grid"
+      "list"
     );
     this.setSelectValue("language", s.language, "en");
     setCheck("maintenanceMode", s.maintenanceMode);
@@ -805,16 +853,14 @@ class SettingsModule extends Module {
     }
     const settings = {
       ...this.store.get("settings") || {},
-      ...this.collectOtherSettings(),
       ...general
     };
     this.store.set("settings", settings);
     const saveBtn = asHtmlButton(document.querySelector('[data-save="general"]'));
     if (saveBtn) saveBtn.disabled = true;
     try {
-      await this.persist();
-      storage.invalidate("pa_settings");
-      await storage.set("pa_settings", settings);
+      await this.saveRecords(general);
+      await storage.persistLocal("pa_settings", settings);
       showStatusToast("General settings saved successfully!", "success");
       addNotification("General settings were updated", "ri-settings-3-line", {
         category: "system_alerts",
@@ -826,23 +872,41 @@ class SettingsModule extends Module {
       if (saveBtn) saveBtn.disabled = false;
     }
   }
+  validateOtherSettings(payload) {
+    const items = parseInt(String(payload.itemsPerPage ?? "").replace(/[^\d]/g, ""), 10);
+    if (!Number.isFinite(items) || items < 1) {
+      return "Please choose a valid items per page value.";
+    }
+    const view = normalizeViewMode(payload.defaultView);
+    if (view !== "list" && view !== "grid") {
+      return "Please choose a valid default view.";
+    }
+    return null;
+  }
   async saveOtherSettings() {
     if (!getAccessCapabilities().canManageSiteSettings) {
       showToast("Only administrators can change site settings.", "danger");
       return;
     }
+    const other = this.collectOtherSettings();
+    const otherValidationError = this.validateOtherSettings(other);
+    if (otherValidationError) {
+      showToast(otherValidationError, "danger");
+      return;
+    }
+    const prevSettings = this.store.get("settings") || {};
     const settings = {
-      ...this.store.get("settings") || {},
-      ...this.collectGeneralSettings(),
-      ...this.collectOtherSettings()
+      ...prevSettings,
+      ...other
     };
     this.store.set("settings", settings);
     const saveBtn = asHtmlButton(document.querySelector('[data-save="other"]'));
     if (saveBtn) saveBtn.disabled = true;
     try {
-      await this.persist();
-      storage.invalidate("pa_settings");
-      await storage.set("pa_settings", settings);
+      await this.saveRecords(other, { feedback: false });
+      await storage.persistLocal("pa_settings", settings);
+      clearAllPageViewOverrides();
+      emitDefaultViewChanged(normalizeViewMode(other.defaultView));
       showStatusToast("Other settings saved successfully!", "success");
       addNotification("Dashboard preferences were updated", "ri-settings-3-line", {
         category: "system_alerts",

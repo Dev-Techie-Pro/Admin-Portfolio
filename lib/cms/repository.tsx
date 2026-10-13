@@ -1790,6 +1790,13 @@ function parseDefaultView(value, fallback = 'grid') {
   return fallback;
 }
 
+/** Omit empty strings for date columns; undefined means "leave existing row value". */
+function nullableDateForDb(value, existingValue) {
+  if (value === undefined) return existingValue ?? null;
+  if (value === '' || value == null) return null;
+  return value;
+}
+
 export async function saveSettings(settings) {
   const existing = await fetchSiteSettingsRow();
   const row = {
@@ -1816,7 +1823,7 @@ export async function saveSettings(settings) {
     profile_username: settings.username ?? existing?.profile_username ?? null,
     profile_role: settings.role ?? existing?.profile_role ?? null,
     profile_phone: settings.phone ?? existing?.profile_phone ?? null,
-    profile_dob: settings.dob ?? existing?.profile_dob ?? null,
+    profile_dob: nullableDateForDb(settings.dob, existing?.profile_dob),
     profile_bio: settings.bio ?? existing?.profile_bio ?? null,
     profile_location: settings.location ?? existing?.profile_location ?? null,
     profile_website: settings.website ?? existing?.profile_website ?? null,

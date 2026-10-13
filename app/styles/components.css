@@ -402,8 +402,7 @@
   color: var(--pa-text);
   border: none;
   border-radius: var(--pa-radius);
-  padding: 0 18px;
-  height: 38px;
+  padding: 10px 18px;
   font-size: var(--pa-fs-xmd);
   font-weight: var(--pa-fw-lg);
   cursor: pointer;
@@ -2604,7 +2603,7 @@ select.pa-filter-select:not(.pa-select-native):focus {
   background: var(--pa-bg-card);
   border: 1px solid var(--pa-border);
   border-radius: var(--pa-radius);
-  box-shadow: 0 16px 40px color-mix(in srgb, var(--pa-bg) 30%, transparent);
+  box-shadow: 0 8px 10px -5px var(--pa-overlay-faint), 0 16px 24px 2px var(--pa-orange-glow), 0 6px 30px 5px rgb(0 0 0 / 10%);
   font-size: var(--pa-fs-sm);
   color: var(--pa-text-mute);
 }
@@ -10846,6 +10845,9 @@ select.pa-act-sort-select:not(.pa-select-native) {
 }
 .pa-act-table-scroll {
   overflow-x: auto;
+}
+#paActListCard .pa-act-table-scroll{
+  overflow: hidden;
 }
 
 .pa-act-table {

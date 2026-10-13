@@ -22,6 +22,12 @@ import { openPanel, closePanels, registerPanel } from "../../modules/shell/panel
 import { PAGE } from "../../core/router.js";
 import { storage } from "../../core/StorageService.js";
 import { canManageContent } from "../../core/cms-access.js";
+import {
+  bindDefaultViewChanged,
+  effectiveViewMode,
+  hydratePageViewMode,
+  setPageViewOverride
+} from "../../utils/listGridView.js";
 const MEDIA_PROPAGATION_KEYS = [
   "pa_projects",
   "pa_blog_posts",
@@ -116,6 +122,12 @@ class MediaModule extends Module {
     this.editPendingImage = null;
     this.editOriginalImage = null;
     this._entityByUrl = null;
+  }
+  async init() {
+    await hydratePageViewMode("media-library", (mode) => this.store.set("viewMode", mode));
+    await this.load();
+    this.render();
+    this.bindEvents();
   }
   async load() {
     const records = await this.loadRecords(() => []);
@@ -516,7 +528,7 @@ class MediaModule extends Module {
     this.setViewModeFromStore();
   }
   setViewModeFromStore() {
-    const mode = this.store.get("viewMode") || "grid";
+    const mode = effectiveViewMode(this.store.get("viewMode"));
     const gridBtn = $id("paGridViewBtn");
     const listBtn = $id("paListViewBtn");
     if (gridBtn) {
@@ -1165,6 +1177,7 @@ class MediaModule extends Module {
       const newGridBtn = gridBtn.cloneNode(true);
       parent.replaceChild(newGridBtn, gridBtn);
       this.on(newGridBtn, "click", () => {
+        setPageViewOverride("media-library", "grid");
         this.store.set("viewMode", "grid");
         this.setViewModeFromStore();
         this.render();
@@ -1175,11 +1188,21 @@ class MediaModule extends Module {
       const newListBtn = listBtn.cloneNode(true);
       parent.replaceChild(newListBtn, listBtn);
       this.on(newListBtn, "click", () => {
+        setPageViewOverride("media-library", "list");
         this.store.set("viewMode", "list");
         this.setViewModeFromStore();
         this.render();
       });
     }
+    bindDefaultViewChanged(
+      "media-library",
+      (event, handler) => this.onBus(event, handler),
+      (mode) => this.store.set("viewMode", mode),
+      () => {
+        this.setViewModeFromStore();
+        this.render();
+      }
+    );
     const selectModeBtn = $id("paSelectModeBtn");
     if (selectModeBtn) {
       this.on(selectModeBtn, "click", () => this.toggleSelectMode());

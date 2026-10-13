@@ -349,6 +349,12 @@ export class StorageService {
     return this._fetchRemote(key, route, fallback, { background: false });
   }
 
+  /** Synchronous read of an in-memory cached value (no network). */
+  peek(key) {
+    if (this._cache.has(key)) return this._cache.get(key);
+    return null;
+  }
+
   clearCache() {
     this._cache.clear();
     this._meta.clear();

@@ -15,6 +15,12 @@ import {
 } from '../utils/listDataTable.js';
 import { arrangeForLayout, renderGroupedCards } from '../utils/groupLayout.js';
 import { canManageContent } from './cms-access.js';
+import {
+  bindDefaultViewChanged,
+  effectiveViewMode,
+  hydratePageViewMode,
+  setPageViewOverride,
+} from '../utils/listGridView.js';
 
 /**
  * CrudCardModule — generic engine behind every "grid of cards with
@@ -68,6 +74,7 @@ export type CrudCardModuleConfig = {
   menuActions?: Record<string, (this: CrudCardModule, id: unknown) => void>;
   buildDuplicate?: (this: CrudCardModule, record: unknown, nextId: number) => unknown;
   page?: string;
+  pageKey?: string;
   addFocusId?: string;
   editFocusId?: string;
   tabGroup?: string | null;
@@ -170,6 +177,19 @@ export class CrudCardModule extends Module {
 
   onAfterRender() {}
 
+  getViewPageKey() {
+    return this.config.pageKey || this.config.page || null;
+  }
+
+  async init() {
+    const pageKey = this.getViewPageKey();
+    if (pageKey) {
+      await hydratePageViewMode(pageKey, (mode) => this.store.set('viewMode', mode));
+    }
+    await this.load();
+    this.render();
+    this.bindEvents();
+  }
 
   async load() {
     const records = await this.loadRecords(() => this.seedData());
@@ -265,10 +285,23 @@ export class CrudCardModule extends Module {
         if (page === PAGE) this.openAddPanel();
       });
     }
+
+    const pageKey = this.getViewPageKey();
+    if (pageKey) {
+      bindDefaultViewChanged(
+        pageKey,
+        (event, handler) => this.onBus(event, handler),
+        (mode) => this.store.set('viewMode', mode),
+        () => {
+          this.setViewModeFromStore();
+          this.render();
+        },
+      );
+    }
   }
 
   setViewModeFromStore() {
-    const mode = this.store.get('viewMode') || 'grid';
+    const mode = effectiveViewMode(this.store.get('viewMode'));
     
     const gridBtn = $id('paGridViewBtn');
     const listBtn = $id('paListViewBtn');
@@ -292,6 +325,8 @@ export class CrudCardModule extends Module {
   }
 
   _setViewMode(mode) {
+    const pageKey = this.getViewPageKey();
+    if (pageKey) setPageViewOverride(pageKey, mode);
     this.store.set('viewMode', mode);
     
     const gridBtn = $id('paGridViewBtn');

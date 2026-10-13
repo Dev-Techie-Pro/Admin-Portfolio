@@ -1,4 +1,5 @@
 import { CrudCardModule } from "../../core/CrudCardModule.js";
+import { effectiveViewMode } from "../../utils/listGridView.js";
 import { escapeHtml, $id, $all, $field, $input, $select } from "../../utils/dom.js";
 import { storage } from "../../core/StorageService.js";
 import { setStatTrend, setStatValue } from "../../utils/pageStats.js";
@@ -313,7 +314,7 @@ class TagsModule extends CrudCardModule {
     </div>`;
   }
   setViewModeFromStore() {
-    const mode = this.store.get("viewMode") || "grid";
+    const mode = effectiveViewMode(this.store.get("viewMode"));
     const gridBtn = $id("paTagGridViewBtn");
     const listBtn = $id("paTagListViewBtn");
     if (gridBtn) gridBtn.classList.toggle("active", mode === "grid");
@@ -450,9 +451,7 @@ class TagsModule extends CrudCardModule {
       const newGridBtn = gridBtn.cloneNode(true);
       parent.replaceChild(newGridBtn, gridBtn);
       this.on(newGridBtn, "click", () => {
-        this.store.set("viewMode", "grid");
-        this.setViewModeFromStore();
-        this.render();
+        this._setViewMode("grid");
       });
     }
     if (listBtn) {
@@ -460,9 +459,7 @@ class TagsModule extends CrudCardModule {
       const newListBtn = listBtn.cloneNode(true);
       parent.replaceChild(newListBtn, listBtn);
       this.on(newListBtn, "click", () => {
-        this.store.set("viewMode", "list");
-        this.setViewModeFromStore();
-        this.render();
+        this._setViewMode("list");
       });
     }
   }

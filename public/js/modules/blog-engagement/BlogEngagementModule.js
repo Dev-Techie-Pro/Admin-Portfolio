@@ -7,6 +7,13 @@ import { syncPaSelect } from "../../utils/paSelect.js";
 import { BulkSelectController } from "../../core/BulkSelectController.js";
 import { requestDelete } from "../shell/confirm.js";
 import { getAccessCapabilities } from "../../core/access.js";
+import {
+  bindDefaultViewChanged,
+  effectiveViewMode,
+  hydratePageViewMode,
+  setPageViewOverride
+} from "../../utils/listGridView.js";
+const LIKES_VIEW_PAGE_KEY = "blog-engagement-likes";
 const PAGE_SIZE = 8;
 const LIKES_PAGE_SIZE = 12;
 const AVATAR_COLORS = ["#e5484d", "#f0c040", "#22c55e", "#38bdf8", "#a78bfa", "#f472b6", "#ff6600", "#2dd4bf"];
@@ -78,6 +85,18 @@ class BlogEngagementModule extends Module {
         deleteBtn: "paBlogEngBulkSpamBtn"
       }
     });
+  }
+  getViewPageKey() {
+    return LIKES_VIEW_PAGE_KEY;
+  }
+  getViewModeStateKey() {
+    return "likesViewMode";
+  }
+  async init() {
+    await hydratePageViewMode(LIKES_VIEW_PAGE_KEY, (mode) => this.store.set("likesViewMode", mode));
+    await this.load();
+    this.render();
+    this.bindEvents();
   }
   async load() {
     if (!getAccessCapabilities().canAccessBlogEngagement) {
@@ -444,7 +463,7 @@ class BlogEngagementModule extends Module {
     });
   }
   setLikesViewModeFromStore() {
-    const mode = this.store.get("likesViewMode") || "grid";
+    const mode = effectiveViewMode(this.store.get("likesViewMode"));
     const gridBtn = $id("paBlogEngLikesGridViewBtn");
     const listBtn = $id("paBlogEngLikesListViewBtn");
     gridBtn?.classList.toggle("active", mode === "grid");
@@ -484,7 +503,7 @@ class BlogEngagementModule extends Module {
     const grid = $id("paBlogEngLikesGrid");
     if (!grid) return;
     this.setLikesViewModeFromStore();
-    const viewMode = this.store.get("likesViewMode") || "grid";
+    const viewMode = effectiveViewMode(this.store.get("likesViewMode"));
     const items = this.store.get("likes") || [];
     const total = this.store.get("likesTotal") || 0;
     if (!total) {
@@ -597,16 +616,24 @@ class BlogEngagementModule extends Module {
     const likesListBtn = $id("paBlogEngLikesListViewBtn");
     if (likesGridBtn) {
       this.on(likesGridBtn, "click", () => {
+        setPageViewOverride(LIKES_VIEW_PAGE_KEY, "grid");
         this.store.set("likesViewMode", "grid");
         this.renderLikesTable();
       });
     }
     if (likesListBtn) {
       this.on(likesListBtn, "click", () => {
+        setPageViewOverride(LIKES_VIEW_PAGE_KEY, "list");
         this.store.set("likesViewMode", "list");
         this.renderLikesTable();
       });
     }
+    bindDefaultViewChanged(
+      LIKES_VIEW_PAGE_KEY,
+      (event, handler) => this.onBus(event, handler),
+      (mode) => this.store.set("likesViewMode", mode),
+      () => this.renderLikesTable()
+    );
     $all("#paBlogEngPaneComments .pa-beng-chip[data-status]").forEach((tab) => {
       this.on(tab, "click", () => {
         const status = tab.getAttribute("data-status") || "all";

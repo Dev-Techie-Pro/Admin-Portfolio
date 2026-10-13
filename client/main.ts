@@ -42,16 +42,23 @@ import { initPasswordToggles } from './utils/password-toggle.js';
 
 import { applyCapabilityGatedElements, getAccessCapabilities } from './core/access.js';
 import { focusMainContent } from './utils/focusMain.js';
+import {
+  clearLegacyPersistedViewOverrides,
+  syncModuleViewModeFromSettings,
+} from './utils/listGridView.js';
 
 
 
 const AUTH_PAGES = new Set(['login', 'forgot-password', 'reset-password']);
 
-const PREFETCH_BY_PAGE = window.__paPrefetchConfig?.PAGE_KEYS || {};
+const PREFETCH_CONFIG = window.__paPrefetchConfig || {};
+const PREFETCH_BY_PAGE = PREFETCH_CONFIG.PAGE_KEYS || {};
+const getPrefetchKeysForPage = PREFETCH_CONFIG.getKeysForPage
+  || ((p: string) => PREFETCH_BY_PAGE[p] || []);
 
 
 
-type PageModuleClass = new () => {
+type PageModuleInstance = {
 
   load: () => Promise<void>;
 
@@ -59,9 +66,15 @@ type PageModuleClass = new () => {
 
   bindEvents: () => void;
 
+  init?: () => Promise<void>;
+
+  setViewModeFromStore?: () => void;
+
   destroy?: () => void;
 
 };
+
+type PageModuleClass = new () => PageModuleInstance;
 
 
 
@@ -172,7 +185,7 @@ async function loadPageModuleClass(page: string): Promise<PageModuleClass | null
 
 
 
-let activePageModule: InstanceType<PageModuleClass> | null = null;
+let activePageModule: PageModuleInstance | null = null;
 
 let shellInstance: ShellModule | null = null;
 
@@ -226,9 +239,21 @@ async function bindQuickAddButton(pageModule: InstanceType<PageModuleClass>) {
 }
 
 
-async function initPageModule(pageModule: InstanceType<PageModuleClass>) {
+async function initPageModule(pageModule: PageModuleInstance) {
 
-  await pageModule.load();
+  if (typeof pageModule.init === 'function') {
+
+    await pageModule.init();
+
+  } else {
+
+    await pageModule.load();
+
+    pageModule.render();
+
+    pageModule.bindEvents();
+
+  }
 
   bodyLoader.end();
 
@@ -237,10 +262,6 @@ async function initPageModule(pageModule: InstanceType<PageModuleClass>) {
   await new Promise<void>((resolve) => {
 
     requestAnimationFrame(() => {
-
-      pageModule.render();
-
-      pageModule.bindEvents();
 
       applyCapabilityGatedElements(getAccessCapabilities());
 
@@ -318,11 +339,19 @@ async function bootAuthPage(ModuleClass: PageModuleClass, page: string) {
 
   const pageModule = new ModuleClass();
 
-  await pageModule.load();
+  if (typeof pageModule.init === 'function') {
 
-  pageModule.render();
+    await pageModule.init();
 
-  pageModule.bindEvents();
+  } else {
+
+    await pageModule.load();
+
+    pageModule.render();
+
+    pageModule.bindEvents();
+
+  }
 
 
 
@@ -336,13 +365,15 @@ async function bootAuthPage(ModuleClass: PageModuleClass, page: string) {
 
 async function bootAppPage(ModuleClass: PageModuleClass, page: string) {
 
+  clearLegacyPersistedViewOverrides();
+
   bodyLoader.mount();
 
   bodyLoader.begin('Loading your data…');
 
 
 
-  const prefetchKeys = PREFETCH_BY_PAGE[page];
+  const prefetchKeys = getPrefetchKeysForPage(page);
 
   if (prefetchKeys?.length) {
 
@@ -362,12 +393,17 @@ async function bootAppPage(ModuleClass: PageModuleClass, page: string) {
 
   const pageModule = new ModuleClass();
 
-  const bootstrapPending = storage.isBootstrapPending();
-
-
+  await storage.waitForBootstrap();
 
   await ensureShell();
   await initPageModule(pageModule);
+
+  const viewModeSynced = await syncModuleViewModeFromSettings(pageModule);
+  if (viewModeSynced && typeof pageModule.render === 'function') {
+    pageModule.render();
+  } else if (typeof pageModule.setViewModeFromStore === 'function') {
+    pageModule.setViewModeFromStore();
+  }
 
 
 
@@ -386,22 +422,6 @@ async function bootAppPage(ModuleClass: PageModuleClass, page: string) {
   window.__paDebug = { pageModule, page };
 
   focusMainContent();
-
-  if (bootstrapPending) {
-
-    void storage.waitForBootstrap().then(() => {
-
-      if (activePageModule === pageModule && typeof pageModule.render === 'function') {
-
-        pageModule.render();
-
-        applyCapabilityGatedElements(getAccessCapabilities());
-
-      }
-
-    });
-
-  }
 
 }
 
