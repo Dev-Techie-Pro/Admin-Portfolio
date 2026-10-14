@@ -2,7 +2,7 @@ import {
   CATEGORY_META_PROJECTS,
   bindTechnologySuggest,
   pickSceneForCategory
-} from "./chunk-QYVK2ISB.js";
+} from "./chunk-SBZQW2GH.js";
 import {
   addChip,
   addProjectCategoryChip,
@@ -37,7 +37,7 @@ import {
 import "./chunk-FNKMPPAH.js";
 import "./chunk-KIKQZPYB.js";
 import "./chunk-IZ7T64RP.js";
-import "./chunk-QXOCPCV6.js";
+import "./chunk-Z5SVHIB7.js";
 import {
   Module,
   activateTab,
@@ -924,4 +924,4 @@ var QuickAddModule = class extends Module {
 export {
   QuickAddModule
 };
-//# sourceMappingURL=QuickAddModule-AIEYVIAU.js.map
+//# sourceMappingURL=QuickAddModule-FE2SSXT4.js.map

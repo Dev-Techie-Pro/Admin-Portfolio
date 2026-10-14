@@ -7,7 +7,7 @@ import {
 } from "./chunk-FRUJZYET.js";
 import {
   CrudCardModule
-} from "./chunk-EY2RJ2ZY.js";
+} from "./chunk-HQJ4MZNZ.js";
 import {
   setStatTrend,
   setStatValue
@@ -22,7 +22,7 @@ import {
 import "./chunk-FNKMPPAH.js";
 import "./chunk-KIKQZPYB.js";
 import "./chunk-IZ7T64RP.js";
-import "./chunk-QXOCPCV6.js";
+import "./chunk-Z5SVHIB7.js";
 import {
   activateTab,
   openPanel
@@ -275,4 +275,4 @@ export {
   ExperienceModule,
   SEED_EXPERIENCE
 };
-//# sourceMappingURL=ExperienceModule-TB2QFOHE.js.map
+//# sourceMappingURL=ExperienceModule-NXLHQ27C.js.map

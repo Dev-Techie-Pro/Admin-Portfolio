@@ -123,7 +123,7 @@ export class ProjectsModule extends Module {
     super({
       name: 'Projects',
       storageKey: 'pa_projects',
-      initialState: { records: [], searchQuery: '', categoryFilter: 'all', statusFilter: 'all', layoutMode: 'flat', viewMode: 'grid', page: 1 },
+      initialState: { records: [], searchQuery: '', categoryFilter: 'all', statusFilter: 'all', layoutMode: 'flat', viewMode: 'list', page: 1 },
     });
     this.nextId = 1;
     this.currentEditId = null;

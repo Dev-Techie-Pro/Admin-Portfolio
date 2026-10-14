@@ -4,7 +4,7 @@ import {
 import "./chunk-FRUJZYET.js";
 import {
   CrudCardModule
-} from "./chunk-EY2RJ2ZY.js";
+} from "./chunk-HQJ4MZNZ.js";
 import {
   setStatTrend,
   setStatValue
@@ -28,7 +28,7 @@ import "./chunk-KIKQZPYB.js";
 import "./chunk-IZ7T64RP.js";
 import {
   effectiveViewMode
-} from "./chunk-QXOCPCV6.js";
+} from "./chunk-Z5SVHIB7.js";
 import {
   closePanels,
   storage
@@ -632,4 +632,4 @@ var CategoriesModule = class extends CrudCardModule {
 export {
   CategoriesModule
 };
-//# sourceMappingURL=CategoriesModule-M5YGPNQY.js.map
+//# sourceMappingURL=CategoriesModule-ISXREE6R.js.map

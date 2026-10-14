@@ -28,11 +28,15 @@ import {
   toggleCardMenu
 } from "./chunk-IZ7T64RP.js";
 import {
+  bindDefaultViewChanged,
   clearAllPageViewOverrides,
+  effectiveViewMode,
   emitDefaultViewChanged,
+  hydratePageViewMode,
   normalizeViewMode,
-  persistSiteDefaultView
-} from "./chunk-QXOCPCV6.js";
+  persistSiteDefaultView,
+  setPageViewOverride
+} from "./chunk-Z5SVHIB7.js";
 import {
   Module,
   activateTab,
@@ -469,6 +473,7 @@ var SecurityManager = class {
 };
 
 // client/modules/settings/SystemManager.ts
+var SYSTEM_TABLES_VIEW_PAGE_KEY = "settings-system-tables";
 var UNCHANGED_SECRET = "__UNCHANGED__";
 var ENV_TOGGLE_KEYS = /* @__PURE__ */ new Set([
   "REQUIRE_MFA_ADMINS",
@@ -619,7 +624,7 @@ var SystemManager = class {
       tableFilter: "",
       categoryFilter: "all",
       sizeFilter: "all",
-      viewMode: "grid",
+      viewMode: "list",
       page: 1,
       pageSize: 10,
       exportRunning: false,
@@ -692,6 +697,15 @@ var SystemManager = class {
     if (gridViewBtn) this.on(gridViewBtn, "click", () => this.setViewMode("grid"));
     const listViewBtn = $id("systemTableListViewBtn");
     if (listViewBtn) this.on(listViewBtn, "click", () => this.setViewMode("list"));
+    bindDefaultViewChanged(
+      SYSTEM_TABLES_VIEW_PAGE_KEY,
+      (event, handler) => this.on(event, handler),
+      (mode) => {
+        this.state.viewMode = mode;
+        this.syncViewMode();
+      },
+      () => this.renderTables()
+    );
     const pageSizeSelect = $id("systemTablePageSize");
     if (pageSizeSelect) {
       this.on(pageSizeSelect, "change", (e) => {
@@ -872,12 +886,13 @@ var SystemManager = class {
     }
   }
   setViewMode(mode) {
-    this.state.viewMode = mode;
+    setPageViewOverride(SYSTEM_TABLES_VIEW_PAGE_KEY, mode);
+    this.state.viewMode = effectiveViewMode(mode);
     this.syncViewMode();
     this.renderTables();
   }
   syncViewMode() {
-    const mode = this.state.viewMode;
+    const mode = effectiveViewMode(this.state.viewMode);
     const gridBtn = $id("systemTableGridViewBtn");
     const listBtn = $id("systemTableListViewBtn");
     const gridWrap = $id("systemTableGridWrap");
@@ -927,6 +942,9 @@ var SystemManager = class {
     }
     this.bindEvents();
     activateTab("system-section", "database");
+    await hydratePageViewMode(SYSTEM_TABLES_VIEW_PAGE_KEY, (mode) => {
+      this.state.viewMode = mode;
+    });
     this.syncViewMode();
     this.populateCategoryFilter();
     await Promise.all([
@@ -3043,4 +3061,4 @@ var SettingsModule = class extends Module {
 export {
   SettingsModule
 };
-//# sourceMappingURL=SettingsModule-HN3YFZNZ.js.map
+//# sourceMappingURL=SettingsModule-Z7X456JO.js.map

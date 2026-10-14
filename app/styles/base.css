@@ -10,6 +10,26 @@
 [hidden] {
   display: none !important;
 }
+
+@keyframes paEnvListItemIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes paEnvTimelineSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 @keyframes paMobileSearchIn {
   from {
     opacity: 0;

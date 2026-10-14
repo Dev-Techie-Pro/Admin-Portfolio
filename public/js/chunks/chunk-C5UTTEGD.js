@@ -1,6 +1,6 @@
 import {
   CrudCardModule
-} from "./chunk-EY2RJ2ZY.js";
+} from "./chunk-HQJ4MZNZ.js";
 import {
   setStatTrend,
   setStatValue
@@ -32,7 +32,7 @@ import {
 } from "./chunk-KIKQZPYB.js";
 import {
   effectiveViewMode
-} from "./chunk-QXOCPCV6.js";
+} from "./chunk-Z5SVHIB7.js";
 import {
   activateTab,
   closePanels,
@@ -634,4 +634,4 @@ export {
   DEFAULT_TAG_ENTITY_LABELS,
   TagsModule
 };
-//# sourceMappingURL=chunk-3OSZF26K.js.map
+//# sourceMappingURL=chunk-C5UTTEGD.js.map

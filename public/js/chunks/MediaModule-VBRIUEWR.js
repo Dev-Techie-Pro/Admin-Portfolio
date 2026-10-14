@@ -31,7 +31,7 @@ import {
   effectiveViewMode,
   hydratePageViewMode,
   setPageViewOverride
-} from "./chunk-QXOCPCV6.js";
+} from "./chunk-Z5SVHIB7.js";
 import {
   Module,
   canManageContent,
@@ -1499,4 +1499,4 @@ export {
   MediaModule,
   SEED_MEDIA
 };
-//# sourceMappingURL=MediaModule-EEOP7VO7.js.map
+//# sourceMappingURL=MediaModule-VBRIUEWR.js.map

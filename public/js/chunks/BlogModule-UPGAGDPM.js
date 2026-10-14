@@ -22,7 +22,7 @@ import {
 } from "./chunk-FRUJZYET.js";
 import {
   CrudCardModule
-} from "./chunk-EY2RJ2ZY.js";
+} from "./chunk-HQJ4MZNZ.js";
 import {
   setStatTrend,
   setStatValue
@@ -50,7 +50,7 @@ import {
 } from "./chunk-FNKMPPAH.js";
 import "./chunk-KIKQZPYB.js";
 import "./chunk-IZ7T64RP.js";
-import "./chunk-QXOCPCV6.js";
+import "./chunk-Z5SVHIB7.js";
 import {
   canManageContent,
   requestDelete,
@@ -1322,4 +1322,4 @@ var BlogModule = class extends CrudCardModule {
 export {
   BlogModule
 };
-//# sourceMappingURL=BlogModule-B7XKTKQO.js.map
+//# sourceMappingURL=BlogModule-UPGAGDPM.js.map

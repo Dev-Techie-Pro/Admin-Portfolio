@@ -26,7 +26,7 @@ import {
   effectiveViewMode,
   hydratePageViewMode,
   setPageViewOverride
-} from "./chunk-QXOCPCV6.js";
+} from "./chunk-Z5SVHIB7.js";
 import {
   Module,
   activateTab,
@@ -644,4 +644,4 @@ var CrudCardModule = class extends Module {
 export {
   CrudCardModule
 };
-//# sourceMappingURL=chunk-EY2RJ2ZY.js.map
+//# sourceMappingURL=chunk-HQJ4MZNZ.js.map

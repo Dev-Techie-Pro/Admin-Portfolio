@@ -11,7 +11,7 @@ import {
 } from "./chunk-FRUJZYET.js";
 import {
   CrudCardModule
-} from "./chunk-EY2RJ2ZY.js";
+} from "./chunk-HQJ4MZNZ.js";
 import {
   setStatTrend,
   setStatValue
@@ -429,4 +429,4 @@ export {
   SEED_TECHNOLOGIES,
   TechnologiesModule
 };
-//# sourceMappingURL=chunk-O4ZCTZJT.js.map
+//# sourceMappingURL=chunk-EPOLL32E.js.map

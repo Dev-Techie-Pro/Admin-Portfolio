@@ -18,7 +18,7 @@ import {
   effectiveViewMode,
   hydratePageViewMode,
   setPageViewOverride
-} from "./chunk-QXOCPCV6.js";
+} from "./chunk-Z5SVHIB7.js";
 import {
   Module,
   storage
@@ -41,14 +41,25 @@ var ProjectTechnologiesModule = class extends Module {
         records: [],
         searchQuery: "",
         page: 1,
-        viewMode: "grid",
+        viewMode: "list",
         filters: { usage: "all", sort: "name" }
       }
     });
   }
+  getViewPageKey() {
+    return "project-technologies";
+  }
+  setViewModeFromStore() {
+    const mode = effectiveViewMode(this.store.get("viewMode"));
+    const gridBtn = $id("paGridViewBtn");
+    const listBtn = $id("paListViewBtn");
+    gridBtn?.classList.toggle("active", mode === "grid");
+    listBtn?.classList.toggle("active", mode === "list");
+  }
   async init() {
     await hydratePageViewMode("project-technologies", (mode) => this.store.set("viewMode", mode));
     await this.load();
+    this.setViewModeFromStore();
     this.render();
     this.bindEvents();
   }
@@ -320,4 +331,4 @@ var ProjectTechnologiesModule = class extends Module {
 export {
   ProjectTechnologiesModule
 };
-//# sourceMappingURL=ProjectTechnologiesModule-LRP4P7IM.js.map
+//# sourceMappingURL=ProjectTechnologiesModule-Q6WBYQNE.js.map

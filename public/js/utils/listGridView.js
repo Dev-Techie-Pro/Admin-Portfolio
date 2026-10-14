@@ -44,6 +44,8 @@ function readDefaultViewFromSettings(settings) {
 function getGlobalDefaultViewMode() {
   const fromCache = readDefaultViewFromSettings(storage.peek("pa_settings"));
   if (fromCache) return fromCache;
+  const fromLs = readSiteDefaultViewFromLocalStorage();
+  if (fromLs) return fromLs;
   return FALLBACK_VIEW_MODE;
 }
 async function getGlobalDefaultViewModeAsync() {

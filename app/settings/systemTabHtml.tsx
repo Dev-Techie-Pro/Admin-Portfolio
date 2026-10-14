@@ -35,8 +35,8 @@ export const SYSTEM_TAB_HTML = `
                                     </div>
                                     <div class="pa-bkp-list-head-right">
                                         <div class="pa-view-toggle pa-bkp-view-toggle" role="group" aria-label="View mode">
-                                            <button class="pa-view-btn active" type="button" id="systemTableGridViewBtn" title="Grid view" aria-label="Grid view"><i class="ri-layout-grid-fill"></i></button>
-                                            <button class="pa-view-btn" type="button" id="systemTableListViewBtn" title="List view" aria-label="List view"><i class="ri-list-unordered"></i></button>
+                                            <button class="pa-view-btn active" type="button" id="systemTableListViewBtn" title="List view" aria-label="List view"><i class="ri-list-unordered"></i></button>
+                                            <button class="pa-view-btn" type="button" id="systemTableGridViewBtn" title="Grid view" aria-label="Grid view"><i class="ri-layout-grid-fill"></i></button>
                                         </div>
                                     </div>
                                 </div>

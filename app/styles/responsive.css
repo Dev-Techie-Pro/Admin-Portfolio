@@ -786,6 +786,9 @@
   }
 }
 @media (max-width: 640px) {
+  .pa-role-access-body {
+    grid-template-columns: 1fr;
+  }
   .pa-icon-picker-toolbar {
     flex-direction: column;
     align-items: stretch;
@@ -1126,20 +1129,47 @@
     filter: none !important;
     transform: none !important;
   }
-}
+  .pa-env-card,
+  .pa-env-intro-tips,
+  .pa-env-field-more {
+    --pa-env-expand-duration: 0.001ms;
+    --pa-env-fade-duration: 0.001ms;
+  }
 
-/* Sidebar: no outer vertical line between nav and main (expanded or collapsed) */
-.pa-shell > .pa-sidebar,
-#paSidebar.pa-sidebar {
-  border: none !important;
-  border-right: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
+  .pa-env-card-body,
+  .pa-env-intro-tips-body,
+  .pa-env-field-more > .pa-env-field-help {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 
-.pa-shell > .pa-sidebar > .pa-sidebar-panel,
-.pa-shell > .pa-sidebar > .pa-sidebar-rail {
-  border: none !important;
-  border-right: none !important;
-  box-shadow: none !important;
+  .pa-env-field-more[open] .pa-env-field-details li,
+  .pa-env-intro-tips[open] .pa-env-intro-list-item {
+    animation: none !important;
+  }
+
+  .pa-motion-stagger > * {
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .pa-surface-interactive,
+  .pa-surface-interactive:hover {
+    transform: none !important;
+  }
+
+  .pa-border-glow::before {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+
+  .pa-shimmer-line::after {
+    animation: none !important;
+  }
+}
+@media (hover: hover) {
+  .pa-surface-interactive:hover {
+    transform: translateY(-2px);
+  }
 }

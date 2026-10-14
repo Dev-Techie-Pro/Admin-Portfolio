@@ -68,7 +68,7 @@ import {
   effectiveViewMode,
   hydratePageViewMode,
   setPageViewOverride
-} from "./chunk-QXOCPCV6.js";
+} from "./chunk-Z5SVHIB7.js";
 import {
   Module,
   requestDelete,
@@ -1012,7 +1012,7 @@ var ProjectsModule = class extends Module {
     super({
       name: "Projects",
       storageKey: "pa_projects",
-      initialState: { records: [], searchQuery: "", categoryFilter: "all", statusFilter: "all", layoutMode: "flat", viewMode: "grid", page: 1 }
+      initialState: { records: [], searchQuery: "", categoryFilter: "all", statusFilter: "all", layoutMode: "flat", viewMode: "list", page: 1 }
     });
     this.nextId = 1;
     this.currentEditId = null;
@@ -1918,4 +1918,4 @@ export {
   PROJ_WS_PREFIX,
   ProjectsModule
 };
-//# sourceMappingURL=chunk-QYVK2ISB.js.map
+//# sourceMappingURL=chunk-SBZQW2GH.js.map

@@ -15,7 +15,7 @@ import {
   effectiveViewMode,
   hydratePageViewMode,
   setPageViewOverride
-} from "./chunk-QXOCPCV6.js";
+} from "./chunk-Z5SVHIB7.js";
 import {
   Module,
   getAccessCapabilities,
@@ -80,7 +80,7 @@ var BlogEngagementModule = class extends Module {
         likes: [],
         likesTotal: 0,
         likesPage: 1,
-        likesViewMode: "grid",
+        likesViewMode: "list",
         stats: null
       }
     });
@@ -487,6 +487,9 @@ var BlogEngagementModule = class extends Module {
     const grid = $id("paBlogEngLikesGrid");
     grid?.classList.toggle("is-list", mode === "list");
   }
+  setViewModeFromStore() {
+    this.setLikesViewModeFromStore();
+  }
   renderLikesPagination() {
     const total = this.store.get("likesTotal") || 0;
     const page = this.store.get("likesPage") || 1;
@@ -717,4 +720,4 @@ var BlogEngagementModule = class extends Module {
 export {
   BlogEngagementModule
 };
-//# sourceMappingURL=BlogEngagementModule-4XLPSYCP.js.map
+//# sourceMappingURL=BlogEngagementModule-E64Y5UJ7.js.map

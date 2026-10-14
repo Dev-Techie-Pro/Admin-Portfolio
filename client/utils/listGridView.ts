@@ -55,6 +55,8 @@ function readDefaultViewFromSettings(settings: unknown): ViewMode | null {
 export function getGlobalDefaultViewMode(): ViewMode {
   const fromCache = readDefaultViewFromSettings(storage.peek('pa_settings'));
   if (fromCache) return fromCache;
+  const fromLs = readSiteDefaultViewFromLocalStorage();
+  if (fromLs) return fromLs;
   return FALLBACK_VIEW_MODE;
 }
 

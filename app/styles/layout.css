@@ -713,7 +713,6 @@ a.pa-sidebar-brand.pa-logo-link,
   color: var(--pa-text);
   background: var(--pa-orange-dim);
   border-left-color: transparent;
-  box-shadow: inset 3px 0 0 var(--pa-orange);
 }
 
 .pa-nav-item.active i {
@@ -888,7 +887,6 @@ a.pa-sidebar-brand.pa-logo-link,
 
 .pa-nav-group.open .pa-nav-item--parent.active {
   border-left-color: transparent;
-  box-shadow: inset 3px 0 0 var(--pa-orange);
 }
 .pa-nav-group.open{
   border-bottom: 1px solid var(--pa-bg-chip);

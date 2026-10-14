@@ -64,7 +64,7 @@ class BlogEngagementModule extends Module {
         likes: [],
         likesTotal: 0,
         likesPage: 1,
-        likesViewMode: "grid",
+        likesViewMode: "list",
         stats: null
       }
     });
@@ -470,6 +470,9 @@ class BlogEngagementModule extends Module {
     listBtn?.classList.toggle("active", mode === "list");
     const grid = $id("paBlogEngLikesGrid");
     grid?.classList.toggle("is-list", mode === "list");
+  }
+  setViewModeFromStore() {
+    this.setLikesViewModeFromStore();
   }
   renderLikesPagination() {
     const total = this.store.get("likesTotal") || 0;

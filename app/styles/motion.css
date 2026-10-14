@@ -31,11 +31,6 @@
     box-shadow 0.22s ease;
 }
 
-@media (hover: hover) {
-  .pa-surface-interactive:hover {
-    transform: translateY(-2px);
-  }
-}
 
 .pa-border-glow {
   position: relative;
@@ -158,45 +153,4 @@
   overflow-x: hidden;
   overflow-y: auto;
   pointer-events: auto;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pa-env-card,
-  .pa-env-intro-tips,
-  .pa-env-field-more {
-    --pa-env-expand-duration: 0.001ms;
-    --pa-env-fade-duration: 0.001ms;
-  }
-
-  .pa-env-card-body,
-  .pa-env-intro-tips-body,
-  .pa-env-field-more > .pa-env-field-help {
-    opacity: 1 !important;
-    transform: none !important;
-  }
-
-  .pa-env-field-more[open] .pa-env-field-details li,
-  .pa-env-intro-tips[open] .pa-env-intro-list-item {
-    animation: none !important;
-  }
-
-  .pa-motion-stagger > * {
-    opacity: 1 !important;
-    animation: none !important;
-    transform: none !important;
-  }
-
-  .pa-surface-interactive,
-  .pa-surface-interactive:hover {
-    transform: none !important;
-  }
-
-  .pa-border-glow::before {
-    animation: none !important;
-    opacity: 0 !important;
-  }
-
-  .pa-shimmer-line::after {
-    animation: none !important;
-  }
 }

@@ -75,7 +75,7 @@ export class BlogEngagementModule extends Module {
         likes: [] as Array<Record<string, unknown>>,
         likesTotal: 0,
         likesPage: 1,
-        likesViewMode: 'grid' as 'grid' | 'list',
+        likesViewMode: 'list' as 'grid' | 'list',
         stats: null as Record<string, number> | null,
       },
     });
@@ -515,6 +515,10 @@ export class BlogEngagementModule extends Module {
     listBtn?.classList.toggle('active', mode === 'list');
     const grid = $id('paBlogEngLikesGrid');
     grid?.classList.toggle('is-list', mode === 'list');
+  }
+
+  setViewModeFromStore() {
+    this.setLikesViewModeFromStore();
   }
 
   renderLikesPagination() {

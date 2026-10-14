@@ -775,6 +775,8 @@ select.pa-filter-select:not(.pa-select-native):focus {
   background: var(--pa-bg-card);
   border: 1px solid var(--pa-border);
   border-radius: var(--pa-radius);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
   overflow: hidden;
 }
 
@@ -2110,14 +2112,6 @@ select.pa-filter-select:not(.pa-select-native):focus {
   border-color: var(--pa-border-soft);
 }
 
-@keyframes paEnvTimelineSpin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
 
 .pa-env-step-panels {
   min-width: 0;
@@ -2897,18 +2891,6 @@ select.pa-filter-select:not(.pa-select-native):focus {
 .pa-collapse-details.is-pa-collapse-reveal .pa-env-intro-list-item:nth-child(3),
 .pa-env-details-animated.is-pa-collapse-reveal .pa-env-intro-list-item:nth-child(3) {
   animation-delay: 0.22s;
-}
-
-@keyframes paEnvListItemIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .pa-env-field-help-compact {
@@ -4038,11 +4020,6 @@ body.pa-rte-fullscreen-active {
   margin-bottom: 16px;
 }
 
-@media (max-width: 640px) {
-  .pa-role-access-body {
-    grid-template-columns: 1fr;
-  }
-}
 
 .pa-role-access-section-title {
   display: flex;
@@ -11073,6 +11050,7 @@ select.pa-act-sort-select:not(.pa-select-native) {
   justify-content: space-between;
   gap: var(--pa-card-gap);
   margin-bottom: 14px;
+  border-radius: var(--pa-radius);
   min-height: 42px;
   padding: 10px;
   background: var(--pa-bg-raised);

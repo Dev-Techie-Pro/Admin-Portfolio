@@ -6,6 +6,14 @@ import { closeAllCardMenus, toggleCardMenu } from '../shell/cardMenu.js';
 import { setupAllPasswordToggles } from '../../utils/password-toggle.js';
 import { activateTab } from '../shell/panels.js';
 import { staggerReveal } from '../../utils/motion.js';
+import {
+  bindDefaultViewChanged,
+  effectiveViewMode,
+  hydratePageViewMode,
+  setPageViewOverride,
+} from '../../utils/listGridView.js';
+
+const SYSTEM_TABLES_VIEW_PAGE_KEY = 'settings-system-tables';
 
 const UNCHANGED_SECRET = '__UNCHANGED__';
 
@@ -229,7 +237,7 @@ export class SystemManager {
       tableFilter: '',
       categoryFilter: 'all',
       sizeFilter: 'all',
-      viewMode: 'grid',
+      viewMode: 'list',
       page: 1,
       pageSize: 10,
       exportRunning: false,
@@ -310,6 +318,16 @@ export class SystemManager {
 
     const listViewBtn = $id('systemTableListViewBtn');
     if (listViewBtn) this.on(listViewBtn, 'click', () => this.setViewMode('list'));
+
+    bindDefaultViewChanged(
+      SYSTEM_TABLES_VIEW_PAGE_KEY,
+      (event, handler) => this.on(event, handler),
+      (mode) => {
+        this.state.viewMode = mode;
+        this.syncViewMode();
+      },
+      () => this.renderTables(),
+    );
 
     const pageSizeSelect = $id('systemTablePageSize');
     if (pageSizeSelect) {
@@ -493,13 +511,14 @@ export class SystemManager {
   }
 
   setViewMode(mode) {
-    this.state.viewMode = mode;
+    setPageViewOverride(SYSTEM_TABLES_VIEW_PAGE_KEY, mode);
+    this.state.viewMode = effectiveViewMode(mode);
     this.syncViewMode();
     this.renderTables();
   }
 
   syncViewMode() {
-    const mode = this.state.viewMode;
+    const mode = effectiveViewMode(this.state.viewMode);
     const gridBtn = $id('systemTableGridViewBtn');
     const listBtn = $id('systemTableListViewBtn');
     const gridWrap = $id('systemTableGridWrap');
@@ -553,6 +572,9 @@ export class SystemManager {
 
     this.bindEvents();
     activateTab('system-section', 'database');
+    await hydratePageViewMode(SYSTEM_TABLES_VIEW_PAGE_KEY, (mode) => {
+      this.state.viewMode = mode;
+    });
     this.syncViewMode();
     this.populateCategoryFilter();
     await Promise.all([
