@@ -2512,7 +2512,7 @@ var getPrefetchKeysForPage = PREFETCH_CONFIG.getKeysForPage || ((p) => PREFETCH_
 async function loadPageModuleClass(page) {
   switch (page) {
     case "dashboard":
-      return (await import("./chunks/DashboardModule-TOW6QMVJ.js")).DashboardModule;
+      return (await import("./chunks/DashboardModule-XMTUYZVW.js")).DashboardModule;
     case "projects":
       return (await import("./chunks/ProjectsModule-VXNFS2K2.js")).ProjectsModule;
     case "categories":
@@ -2551,7 +2551,7 @@ async function loadPageModuleClass(page) {
     case "recent-activities":
       return (await import("./chunks/RecentActivitiesModule-PT4WD5ME.js")).RecentActivitiesModule;
     case "settings":
-      return (await import("./chunks/SettingsModule-Z7X456JO.js")).SettingsModule;
+      return (await import("./chunks/SettingsModule-IEFHERC5.js")).SettingsModule;
     case "login":
       return (await import("./chunks/LoginModule-EKWSTS2H.js")).LoginModule;
     case "forgot-password":

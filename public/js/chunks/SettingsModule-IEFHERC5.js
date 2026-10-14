@@ -613,8 +613,9 @@ function sizeBucket(bytes) {
   return "large";
 }
 var SystemManager = class {
-  constructor({ on, getProfile }) {
+  constructor({ on, onBus, getProfile }) {
     this.on = on;
+    this.onBus = onBus;
     this.getProfile = getProfile;
     this.state = {
       tables: [],
@@ -699,7 +700,7 @@ var SystemManager = class {
     if (listViewBtn) this.on(listViewBtn, "click", () => this.setViewMode("list"));
     bindDefaultViewChanged(
       SYSTEM_TABLES_VIEW_PAGE_KEY,
-      (event, handler) => this.on(event, handler),
+      (event, handler) => this.onBus(event, handler),
       (mode) => {
         this.state.viewMode = mode;
         this.syncViewMode();
@@ -1932,6 +1933,7 @@ var SettingsModule = class extends Module {
     });
     this.system = new SystemManager({
       on: this.on.bind(this),
+      onBus: this.onBus.bind(this),
       getProfile: async () => this.store.get("profile") || authService.getProfile().catch(() => null)
     });
   }
@@ -3061,4 +3063,4 @@ var SettingsModule = class extends Module {
 export {
   SettingsModule
 };
-//# sourceMappingURL=SettingsModule-Z7X456JO.js.map
+//# sourceMappingURL=SettingsModule-IEFHERC5.js.map

@@ -215,19 +215,27 @@ type SystemManagerState = {
   env: EnvConfig | null;
 };
 
+type BusSubscribe = (
+  event: string,
+  handler: (payload: { defaultView?: string }) => void,
+) => void;
+
 type SystemManagerOptions = {
   on: EventBinder;
+  onBus: BusSubscribe;
   getProfile?: ProfileGetter;
 };
 
 export class SystemManager {
   on: EventBinder;
+  onBus: BusSubscribe;
   getProfile?: ProfileGetter;
   state: SystemManagerState;
   _bound: boolean;
 
-  constructor({ on, getProfile }: SystemManagerOptions) {
+  constructor({ on, onBus, getProfile }: SystemManagerOptions) {
     this.on = on;
+    this.onBus = onBus;
     this.getProfile = getProfile;
     this.state = {
       tables: [],
@@ -321,7 +329,7 @@ export class SystemManager {
 
     bindDefaultViewChanged(
       SYSTEM_TABLES_VIEW_PAGE_KEY,
-      (event, handler) => this.on(event, handler),
+      (event, handler) => this.onBus(event, handler),
       (mode) => {
         this.state.viewMode = mode;
         this.syncViewMode();

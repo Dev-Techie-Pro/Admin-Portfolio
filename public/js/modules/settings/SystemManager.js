@@ -151,8 +151,9 @@ function sizeBucket(bytes) {
   return "large";
 }
 class SystemManager {
-  constructor({ on, getProfile }) {
+  constructor({ on, onBus, getProfile }) {
     this.on = on;
+    this.onBus = onBus;
     this.getProfile = getProfile;
     this.state = {
       tables: [],
@@ -237,7 +238,7 @@ class SystemManager {
     if (listViewBtn) this.on(listViewBtn, "click", () => this.setViewMode("list"));
     bindDefaultViewChanged(
       SYSTEM_TABLES_VIEW_PAGE_KEY,
-      (event, handler) => this.on(event, handler),
+      (event, handler) => this.onBus(event, handler),
       (mode) => {
         this.state.viewMode = mode;
         this.syncViewMode();

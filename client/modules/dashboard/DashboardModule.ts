@@ -657,7 +657,7 @@ export class DashboardModule extends Module {
     this.buildDonut(card, segments, filteredTechnologies.length);
 
     const container = $('.pa-donut-canvas', card);
-    if (container) container.setAttribute('aria-label', 'Technologies by skill level donut chart');
+    if (container) container.setAttribute('aria-label', 'Tech by skill level donut chart');
   }
 
   renderCompletionGauge() {

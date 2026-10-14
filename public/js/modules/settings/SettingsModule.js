@@ -56,6 +56,7 @@ class SettingsModule extends Module {
     });
     this.system = new SystemManager({
       on: this.on.bind(this),
+      onBus: this.onBus.bind(this),
       getProfile: async () => this.store.get("profile") || authService.getProfile().catch(() => null)
     });
   }

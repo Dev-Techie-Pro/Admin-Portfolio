@@ -938,7 +938,7 @@ var DashboardModule = class extends Module {
     }));
     this.buildDonut(card, segments, filteredTechnologies.length);
     const container = $(".pa-donut-canvas", card);
-    if (container) container.setAttribute("aria-label", "Technologies by skill level donut chart");
+    if (container) container.setAttribute("aria-label", "Tech by skill level donut chart");
   }
   renderCompletionGauge() {
     const card = $('[data-dash-gauge="projects-completion"]');
@@ -1138,4 +1138,4 @@ var DashboardModule = class extends Module {
 export {
   DashboardModule
 };
-//# sourceMappingURL=DashboardModule-TOW6QMVJ.js.map
+//# sourceMappingURL=DashboardModule-XMTUYZVW.js.map
