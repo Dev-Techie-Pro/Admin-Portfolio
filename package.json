@@ -57,6 +57,6 @@
     "knip": "^5.88.1",
     "stylelint": "^16.20.0",
     "stylelint-config-standard": "^38.0.0",
-    "typescript": "^5.8.3"
+    "typescript": "^7.0.2"
   }
 }
